@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Tic-Tac-Toe</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: background-image 1s ease-in-out;
+        }
+        
+        /* Dynamic background container */
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            transition: opacity 1.5s ease-in-out;
+        }
+        
+        .bg-container.fade-in {
+            opacity: 1;
+        }
+        
+        .bg-container.fade-out {
+            opacity: 0;
+        }
+        
+        /* Overlay for better text readability */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                135deg,
+                rgba(26, 26, 46, 0.85) 0%,
+                rgba(22, 33, 62, 0.8) 50%,
+                rgba(15, 52, 96, 0.85) 100%
+            );
+            z-index: -1;
+        }
+        
+        /* Animated particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -3;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(0, 212, 255, 0.3);
+            border-radius: 50%;
+            animation: float 15s infinite ease-in-out;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-100px) rotate(180deg); opacity: 0.6; }
+        }
+        
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            background: linear-gradient(90deg, #00d4ff, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            z-index: 10;
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            color: #a0a0a0;
+            z-index: 10;
+        }
+        
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 10;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .cell {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(145deg, #2a2a4a, #1a1a3a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .cell:hover:not(.taken) {
+            background: linear-gradient(145deg, #3a3a5a, #2a2a4a);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.3);
+            border-color: rgba(0, 212, 255, 0.5);
+        }
+        
+        .cell.taken {
+            cursor: default;
+        }
+        
+        .cell.x {
+            color: #00d4ff;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+        }
+        
+        .cell.o {
+            color: #ff6b6b;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.8);
+        }
+        
+        .cell.winning {
+            animation: pulse 1s infinite;
+            background: linear-gradient(145deg, #4a4a6a, #3a3a5a);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .status {
+            font-size: 1.5em;
+            margin: 20px 0;
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            text-align: center;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .status.your-turn {
+            border: 2px solid #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .status.computer-turn {
+            border: 2px solid #ff6b6b;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+        
+        .status.win {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(255, 107, 107, 0.3));
+            border: 2px solid #00d4ff;
+            animation: glow 1.5s ease-in-out infinite;
+        }
+        
+        .status.draw {
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+        
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(0, 212, 255, 0.8); }
+        }
+        
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            background: linear-gradient(135deg, #00d4ff, #0f3460);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.5);
+        }
+        
+        button.secondary {
+            background: linear-gradient(135deg, #ff6b6b, #c44545);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+        
+        button.secondary:hover {
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+        }
+        
+        .scoreboard {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        
+        .score {
+            text-align: center;
+            padding: 10px 20px;
+        }
+        
+        .score-label {
+            font-size: 0.9em;
+            color: #a0a0a0;
+            margin-bottom: 5px;
+        }
+        
+        .score-value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .score-value.player {
+            color: #00d4ff;
+        }
+        
+        .score-value.computer {
+            color: #ff6b6b;
+        }
+        
+        .score-value.draws {
+            color: #ffd700;
+        }
+        
+        /* Background indicator */
+        .bg-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            color: #a0a0a0;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-container" id="bg-container"></div>
+    <div class="overlay"></div>
+    <div class="particles" id="particles"></div>
+    
+    <h1>Smart Tic-Tac-Toe</h1>
+    <div class="subtitle">You are X | Computer is O (Unbeatable AI)</div>
+    
+    <div class="game-container">
+        <div class="scoreboard">
+            <div class="score">
+                <div class="score-label">You (X)</div>
+                <div class="score-value player" id="player-score">0</div>
+            </div>
+            <div class="score">
+                <div class="score-label">Draws</div>
+                <div class="score-value draws" id="draw-score">0</div>
+            </div>
+            <div class="score">
+                <div class="score-label">Computer (O)</div>
+                <div class="score-value computer" id="computer-score">0</div>
+            </div>
+        </div>
+        
+        <div class="board" id="board"></div>
+        
+        <div class="status" id="status">Your turn (X)</div>
+        
+        <div class="btn-container">
+            <button onclick="resetGame()">New Game</button>
+            <button class="secondary" onclick="resetScores()">Reset Scores</button>
+        </div>
+    </div>
+    
+    <div class="bg-indicator" id="bg-indicator">Background: Loading...</div>
+
+    <script>
+        // Background images collection - curated abstract/gaming themed images
+        const backgroundImages = [
+            'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1920&q=80',
+            'https://images.unsplash.com/photo-1558478551-1a378f63328e?w=1920&q=80',
+            'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1920&q=80',
+            'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1920&q=80',
+            'https://images.unsplash.com/photo-1506459225024-1428097a7e18?w=1920&q=80',
+            'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1920&q=80',
+            'https://images.unsplash.com/photo-1574315042611-e88006f20e7e?w=1920&q=80',
+            'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?w=1920&q=80',
+            'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=1920&q=80',
+            'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1920&q=80'
+        ];
+        
+        let currentBgIndex = parseInt(localStorage.getItem('tictactoe_bg_index')) || 0;
+        let bgChangeInterval = null;
+
+        const boardElement = document.getElementById('board');
+        const statusElement = document.getElementById('status');
+        const playerScoreElement = document.getElementById('player-score');
+        const computerScoreElement = document.getElementById('computer-score');
+        const drawScoreElement = document.getElementById('draw-score');
+        const bgContainer = document.getElementById('bg-container');
+        const bgIndicator = document.getElementById('bg-indicator');
+        const particlesContainer = document.getElementById('particles');
+        
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+        let currentPlayer = 'X';
+        let playerScore = 0;
+        let computerScore = 0;
+        let drawScore = 0;
+
+        const winConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        // Background rotation system
+        function changeBackground() {
+            // Fade out
+            bgContainer.classList.remove('fade-in');
+            bgContainer.classList.add('fade-out');
+            
+            setTimeout(() => {
+                // Change image
+                currentBgIndex = (currentBgIndex + 1) % backgroundImages.length;
+                localStorage.setItem('tictactoe_bg_index', currentBgIndex);
+                
+                const bgUrl = backgroundImages[currentBgIndex];
+                bgContainer.style.backgroundImage = `url('${bgUrl}')`;
+                bgContainer.style.backgroundSize = 'cover';
+                bgContainer.style.backgroundPosition = 'center';
+                bgIndicator.textContent = `Background: ${currentBgIndex + 1}/${backgroundImages.length}`;
+                
+                // Fade in
+                bgContainer.classList.remove('fade-out');
+                bgContainer.classList.add('fade-in');
+            }, 1000);
+        }
+
+        function initBackground() {
+            // Set initial background
+            const bgUrl = backgroundImages[currentBgIndex];
+            bgContainer.style.backgroundImage = `url('${bgUrl}')`;
+            bgContainer.style.backgroundSize = 'cover';
+            bgContainer.style.backgroundPosition = 'center';
+            bgContainer.classList.add('fade-in');
+            bgIndicator.textContent = `Background: ${currentBgIndex + 1}/${backgroundImages.length}`;
+            
+            // Start automatic background changes every 30 seconds
+            bgChangeInterval = setInterval(changeBackground, 30000);
+        }
+
+        // Particle system for special effects
+        function createParticles() {
+            const particleCount = 20;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random positioning
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                const size = Math.random() * 20 + 5;
+                const delay = Math.random() * 15;
+                const duration = Math.random() * 10 + 10;
+                
+                particle.style.left = `${left}%`;
+                particle.style.top = `${top}%`;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.animationDelay = `${delay}s`;
+                particle.style.animationDuration = `${duration}s`;
+                
+                // Random colors
+                const colors = ['rgba(0, 212, 255, 0.3)', 'rgba(255, 107, 107, 0.3)', 'rgba(255, 215, 0, 0.2)'];
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        function createBoard() {
+            boardElement.innerHTML = '';
+            board.forEach((cell, index) => {
+                const cellElement = document.createElement('div');
+                cellElement.classList.add('cell');
+                cellElement.setAttribute('data-index', index);
+                if (cell !== '') {
+                    cellElement.classList.add('taken');
+                    cellElement.classList.add(cell.toLowerCase());
+                    cellElement.innerText = cell;
+                }
+                cellElement.addEventListener('click', handleCellClick);
+                boardElement.appendChild(cellElement);
+            });
+        }
+
+        function handleCellClick(e) {
+            const clickedCell = e.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+            if (board[clickedCellIndex] !== '' || !gameActive || currentPlayer !== 'X') {
+                return;
+            }
+
+            handleCellPlayed(clickedCell, clickedCellIndex);
+            handleResultValidation();
+            
+            if (gameActive) {
+                currentPlayer = 'O';
+                statusElement.innerText = "Computer's turn (O)";
+                statusElement.className = 'status computer-turn';
+                setTimeout(computerMove, 700);
+            }
+        }
+
+        function handleCellPlayed(clickedCell, clickedCellIndex) {
+            board[clickedCellIndex] = currentPlayer;
+            clickedCell.innerText = currentPlayer;
+            clickedCell.classList.add('taken');
+            clickedCell.classList.add(currentPlayer.toLowerCase());
+        }
+
+        function computerMove() {
+            if (!gameActive) return;
+
+            let bestScore = -Infinity;
+            let move;
+            
+            // Try to make a move
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === '') {
+                    board[i] = 'O';
+                    let score = minimax(board, 0, false);
+                    board[i] = '';
+                    if (score > bestScore) {
+                        bestScore = score;
+                        move = i;
+                    }
+                }
+            }
+
+            const cellElement = document.querySelector(`.cell[data-index='${move}']`);
+            handleCellPlayed(cellElement, move);
+            handleResultValidation();
+            
+            if (gameActive) {
+                currentPlayer = 'X';
+                statusElement.innerText = "Your turn (X)";
+                statusElement.className = 'status your-turn';
+            }
+        }
+
+        function minimax(currentBoard, depth, isMaximizing) {
+            let result = checkWinner(currentBoard);
+            if (result !== null) {
+                return result;
+            }
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (currentBoard[i] === '') {
+                        currentBoard[i] = 'O';
+                        let score = minimax(currentBoard, depth + 1, false);
+                        currentBoard[i] = '';
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (currentBoard[i] === '') {
+                        currentBoard[i] = 'X';
+                        let score = minimax(currentBoard, depth + 1, true);
+                        currentBoard[i] = '';
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        function checkWinner(currentBoard) {
+            for (let i = 0; i < winConditions.length; i++) {
+                const [a, b, c] = winConditions[i];
+                if (currentBoard[a] && currentBoard[a] === currentBoard[b] && currentBoard[a] === currentBoard[c]) {
+                    return currentBoard[a] === 'O' ? 10 : -10;
+                }
+            }
+            if (!currentBoard.includes('')) return 0;
+            return null;
+        }
+
+        function handleResultValidation() {
+            let roundWon = false;
+            let winningLine = [];
+            
+            for (let i = 0; i < winConditions.length; i++) {
+                const [a, b, c] = winConditions[i];
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    roundWon = true;
+                    winningLine = [a, b, c];
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                // Highlight winning cells
+                winningLine.forEach(index => {
+                    const cell = document.querySelector(`.cell[data-index='${index}']`);
+                    cell.classList.add('winning');
+                });
+                
+                if (currentPlayer === 'X') {
+                    statusElement.innerText = "🎉 You win!";
+                    statusElement.className = 'status win';
+                    playerScore++;
+                    playerScoreElement.innerText = playerScore;
+                } else {
+                    statusElement.innerText = "💻 Computer wins!";
+                    statusElement.className = 'status win';
+                    computerScore++;
+                    computerScoreElement.innerText = computerScore;
+                }
+                gameActive = false;
+                return;
+            }
+
+            if (!board.includes('')) {
+                statusElement.innerText = "🤝 It's a draw!";
+                statusElement.className = 'status draw';
+                drawScore++;
+                drawScoreElement.innerText = drawScore;
+                gameActive = false;
+                return;
+            }
+        }
+
+        function resetGame() {
+            gameActive = true;
+            currentPlayer = 'X';
+            board = ['', '', '', '', '', '', '', '', ''];
+            statusElement.innerText = "Your turn (X)";
+            statusElement.className = 'status your-turn';
+            createBoard();
+        }
+
+        function resetScores() {
+            playerScore = 0;
+            computerScore = 0;
+            drawScore = 0;
+            playerScoreElement.innerText = '0';
+            computerScoreElement.innerText = '0';
+            drawScoreElement.innerText = '0';
+            resetGame();
+        }
+
+        // Initialize game
+        createBoard();
+        statusElement.className = 'status your-turn';
+        initBackground();
+        createParticles();
+    </script>
+</body>
+</html>

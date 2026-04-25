@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bouncing Ball Physics - FIXED</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { color: #00d4ff; }
+        .container { display: flex; gap: 20px; }
+        canvas {
+            border: 4px solid #00d4ff;
+            background: #0a0a1a;
+            cursor: pointer;
+        }
+        .controls {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+        }
+        .btn-primary { background: #00d4ff; color: #000; }
+        .btn-danger { background: #ff6b6b; color: white; }
+        .debug { background: #000; padding: 10px; margin-top: 10px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🎱 Bouncing Ball Physics</h1>
+    <p>Click on the canvas to add balls!</p>
+    
+    <div class="container">
+        <canvas id="canvas" width="800" height="500"></canvas>
+        
+        <div class="controls">
+            <button class="btn-primary" id="addBall">Add Ball</button>
+            <button class="btn-primary" id="addTen">Add 10 Balls</button>
+            <button class="btn-danger" id="clear">Clear All</button>
+            <div class="debug">
+                <div>Balls: <span id="ballCount">0</span></div>
+                <div>Gravity: <span id="gravityVal">0.15</span></div>
+                <div>Last Click: <span id="lastClick">None</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Error handling
+        window.onerror = function(msg, url, line) {
+            console.error('ERROR:', msg, 'at line', line);
+            document.body.innerHTML += '<div style="background:red;color:white;padding:10px;">JAVASCRIPT ERROR: ' + msg + '</div>';
+            return false;
+        };
+        
+        try {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            console.log('=== CANVAS INITIALIZED ===');
+            console.log('Canvas width:', canvas.width);
+            console.log('Canvas height:', canvas.height);
+            
+            let balls = [];
+            let gravity = 0.15;
+            let bounce = 0.8;
+            
+            class Ball {
+                constructor(x, y, radius) {
+                    this.x = x;
+                    this.y = y;
+                    this.radius = radius;
+                    this.vx = (Math.random() - 0.5) * 10;
+                    this.vy = (Math.random() - 0.5) * 10;
+                    this.color = `hsl(${Math.random()*360}, 80%, 55%)`;
+                }
+                
+                update() {
+                    this.vy += gravity;
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    
+                    if (this.x + this.radius > canvas.width) { this.x = canvas.width - this.radius; this.vx *= -bounce; }
+                    if (this.x - this.radius < 0) { this.x = this.radius; this.vx *= -bounce; }
+                    if (this.y + this.radius > canvas.height) { this.y = canvas.height - this.radius; this.vy *= -bounce; }
+                    if (this.y - this.radius < 0) { this.y = this.radius; this.vy *= -bounce; }
+                }
+                
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+            }
+            
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                balls.forEach(ball => {
+                    ball.update();
+                    ball.draw();
+                });
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.fillText('Balls: ' + balls.length, 20, 30);
+                
+                requestAnimationFrame(draw);
+            }
+            
+            function addBall(x, y) {
+                const radius = 20 + Math.random() * 30;
+                const ball = new Ball(x || canvas.width/2, y || canvas.height/3, radius);
+                balls.push(ball);
+                document.getElementById('ballCount').textContent = balls.length;
+                console.log('Ball added! Total:', balls.length);
+            }
+            
+            // CLICK HANDLER - PRIMARY DEBUG
+            canvas.addEventListener('click', function(e) {
+                console.log('=== CLICK DETECTED ===');
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                document.getElementById('lastClick').textContent = '(' + x + ', ' + y + ')';
+                addBall(x, y);
+            });
+            
+            // Button handlers
+            document.getElementById('addBall').addEventListener('click', function() {
+                console.log('Add Ball button clicked');
+                addBall();
+            });
+            
+            document.getElementById('addTen').addEventListener('click', function() {
+                for(let i=0; i<10; i++) addBall();
+            });
+            
+            document.getElementById('clear').addEventListener('click', function() {
+                balls = [];
+                document.getElementById('ballCount').textContent = 0;
+            });
+            
+            // Start animation
+            console.log('Starting animation loop...');
+            draw();
+            console.log('Animation started! Try clicking the canvas.');
+            
+            // Add initial balls
+            for(let i=0; i<5; i++) addBall();
+            
+        } catch (e) {
+            console.error('Initialization error:', e);
+            document.body.innerHTML += '<div style="background:red;color:white;padding:10px;">INIT ERROR: ' + e.message + '</div>';
+        }
+    </script>
+</body>
+</html>
