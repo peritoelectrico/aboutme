@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Ball Bouncing with Controls</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; }
+        #info { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; }
+        #velocity { position: absolute; top: 40px; left: 10px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; }
+        #stats { position: absolute; top: 70px; left: 10px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="info">Click to reset ball position</div>
+    <div id="velocity">Velocity: <span id="vel-display">0.00</span> m/s</div>
+    <div id="stats">Position: <span id="pos-display">(0, 0, 0)</span></div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        camera.position.set(8, 6, 8);
+        camera.lookAt(0, 0, 0);
+
+        scene.background = new THREE.Color(0x050510);
+        
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0xffffff, 1, 100);
+        pointLight1.position.set(5, 8, 5);
+        pointLight1.castShadow = true;
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0x4488ff, 0.5, 100);
+        pointLight2.position.set(-5, 3, -5);
+        scene.add(pointLight2);
+
+        const containerSize = 6;
+        const wallThickness = 0.1;
+        const containerGeometry = new THREE.BoxGeometry(
+            containerSize + wallThickness * 2,
+            containerSize + wallThickness * 2,
+            containerSize + wallThickness * 2
+        );
+        
+        const wallMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0x88ccff,
+            transparent: true,
+            opacity: 0.15,
+            roughness: 0.1,
+            metalness: 0.1,
+            side: THREE.BackSide
+        });
+        
+        const container = new THREE.Mesh(containerGeometry, wallMaterial);
+        scene.add(container);
+
+        const edgeGeometry = new THREE.EdgesGeometry(new THREE.BoxGeometry(containerSize, containerSize, containerSize));
+        const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x4488ff, opacity: 0.8, transparent: true });
+        const edges = new THREE.LineSegments(edgeGeometry, edgeMaterial);
+        scene.add(edges);
+
+        const ballRadius = 0.4;
+        const ballGeometry = new THREE.SphereGeometry(ballRadius, 64, 64);
+        
+        const ballMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff6644,
+            roughness: 0.2,
+            metalness: 0.8,
+            emissive: 0xff2200,
+            emissiveIntensity: 0.1
+        });
+        
+        const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+        ball.castShadow = true;
+        ball.receiveShadow = true;
+        scene.add(ball);
+
+        const glowGeometry = new THREE.SphereGeometry(ballRadius * 1.3, 32, 32);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: 0xff4422,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.BackSide
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        ball.add(glow);
+
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 2000;
+        const starPositions = new Float32Array(starCount * 3);
+        
+        for (let i = 0; i < starCount * 3; i += 3) {
+            const radius = 20 + Math.random() * 30;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            
+            starPositions[i] = radius * Math.sin(phi) * Math.cos(theta);
+            starPositions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            starPositions[i + 2] = radius * Math.cos(phi);
+        }
+        
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        const starMaterial = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.1,
+            sizeAttenuation: true
+        });
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+
+        // Physics parameters (accessible to GUI)
+        const params = {
+            gravityY: -0.5,
+            restitution: 0.92,
+            friction: 0.995,
+            airResistance: 0.9995,
+            timeScale: 1.0,
+            ballRadius: 0.4,
+            reset: () => resetBall(),
+            randomize: () => randomizeBall()
+        };
+
+        let velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 8,
+            (Math.random() - 0.5) * 8,
+            (Math.random() - 0.5) * 8
+        );
+        
+        const position = new THREE.Vector3(0, 0, 0);
+        
+        const gravity = new THREE.Vector3(0, params.gravityY, 0);
+
+        let lastTime = performance.now();
+
+        function resetBall() {
+            position.set(0, 0, 0);
+            velocity.set(0, 0, 0);
+            ball.position.copy(position);
+        }
+
+        function randomizeBall() {
+            position.set(
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2
+            );
+            velocity.set(
+                (Math.random() - 0.5) * 10,
+                (Math.random() - 0.5) * 10,
+                (Math.random() - 0.5) * 10
+            );
+        }
+
+        function updatePhysics(deltaTime) {
+            const dt = Math.min(deltaTime, 0.05) * params.timeScale;
+            
+            gravity.y = params.gravityY;
+            velocity.addScaledVector(gravity, dt);
+            velocity.multiplyScalar(params.airResistance);
+            
+            position.addScaledVector(velocity, dt);
+            
+            const halfSize = containerSize / 2 - params.ballRadius;
+            
+            if (position.x > halfSize) {
+                position.x = halfSize;
+                velocity.x = -velocity.x * params.restitution;
+                applyFriction();
+            } else if (position.x < -halfSize) {
+                position.x = -halfSize;
+                velocity.x = -velocity.x * params.restitution;
+                applyFriction();
+            }
+            
+            if (position.y > halfSize) {
+                position.y = halfSize;
+                velocity.y = -velocity.y * params.restitution;
+                applyFriction();
+            } else if (position.y < -halfSize) {
+                position.y = -halfSize;
+                velocity.y = -velocity.y * params.restitution;
+                applyFriction();
+            }
+            
+            if (position.z > halfSize) {
+                position.z = halfSize;
+                velocity.z = -velocity.z * params.restitution;
+                applyFriction();
+            } else if (position.z < -halfSize) {
+                position.z = -halfSize;
+                velocity.z = -velocity.z * params.restitution;
+                applyFriction();
+            }
+            
+            ball.position.copy(position);
+            
+            const speed = velocity.length();
+            document.getElementById('vel-display').textContent = speed.toFixed(2);
+            document.getElementById('pos-display').textContent = 
+                `(${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)})`;
+            
+            glowMaterial.opacity = 0.1 + Math.min(speed / 20, 0.3);
+            ballMaterial.emissiveIntensity = 0.1 + Math.min(speed / 30, 0.4);
+        }
+        
+        function applyFriction() {
+            velocity.x *= params.friction;
+            velocity.y *= params.friction;
+            velocity.z *= params.friction;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const currentTime = performance.now();
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+            
+            updatePhysics(deltaTime);
+            controls.update();
+            
+            stars.rotation.y += 0.0001;
+            
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        renderer.domElement.addEventListener('click', (event) => {
+            randomizeBall();
+        });
+
+        animate();
+
+        // GUI Controls
+        const gui = new dat.GUI({ width: 300 });
+        
+        const physicsFolder = gui.addFolder('Physics');
+        physicsFolder.add(params, 'gravityY', -2, 0).name('Gravity Y');
+        physicsFolder.add(params, 'restitution', 0.1, 1.5).name('Bounciness');
+        physicsFolder.add(params, 'friction', 0.9, 1.0).name('Friction');
+        physicsFolder.add(params, 'airResistance', 0.99, 1.0).name('Air Resistance');
+        physicsFolder.add(params, 'timeScale', 0.1, 2.0).name('Time Scale');
+        physicsFolder.open();
+
+        const ballFolder = gui.addFolder('Ball');
+        ballFolder.add(params, 'ballRadius', 0.1, 1.0).name('Radius');
+        ballFolder.open();
+
+        const actionsFolder = gui.addFolder('Actions');
+        actionsFolder.add(params, 'reset').name('Reset Ball');
+        actionsFolder.add(params, 'randomize').name('Randomize');
+        actionsFolder.open();
+
+        gui.open();
+    </script>
+</body>
+</html>
