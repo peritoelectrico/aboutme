@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bouncing Ball Physics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { color: #00d4ff; text-align: center; }
+        .container { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-right: 15%; }
+        canvas {
+            border: 4px solid #00d4ff;
+            background: #0a0a1a;
+            cursor: pointer;
+        }
+        .stats {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: flex;
+            gap: 30px;
+            font-size: 14px;
+        }
+        .stats div {
+            font-family: monospace;
+        }
+        .stats span {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎱 Bouncing Ball Physics</h1>
+    <p style="text-align: center; color: #888;">Click on the canvas to add balls!</p>
+    
+    <div class="container">
+        <canvas id="canvas" width="800" height="500"></canvas>
+        
+        <div class="stats">
+            <div>Balls: <span id="ballCount">0</span></div>
+            <div>Gravity: <span id="gravityVal">0.15</span></div>
+            <div>Last Click: <span id="lastClick">None</span></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+    <script>
+        // Error handling
+        window.onerror = function(msg, url, line) {
+            console.error('ERROR:', msg, 'at line', line);
+            return false;
+        };
+        
+        try {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            let balls = [];
+            
+            // Physics parameters (accessible to GUI)
+            const params = {
+                gravity: 0.15,
+                bounce: 0.8,
+                friction: 0.995,
+                airResistance: 0.9995,
+                defaultRadius: 25,
+                radiusVariance: 25,
+                addBallCount: 1,
+                // Actions (replaces removed buttons)
+                addBall: () => {
+                    addBall();
+                },
+                addTenBalls: () => {
+                    for(let i=0; i<10; i++) addBall();
+                },
+                clearAll: () => {
+                    balls = [];
+                    document.getElementById('ballCount').textContent = 0;
+                },
+                reset: () => {
+                    balls = [];
+                    document.getElementById('ballCount').textContent = 0;
+                    for(let i=0; i<5; i++) addBall();
+                },
+                randomizeAll: () => {
+                    balls.forEach(ball => {
+                        ball.vx = (Math.random() - 0.5) * 15;
+                        ball.vy = (Math.random() - 0.5) * 15;
+                    });
+                }
+            };
+            
+            class Ball {
+                constructor(x, y, radius) {
+                    this.x = x;
+                    this.y = y;
+                    this.radius = radius;
+                    this.vx = (Math.random() - 0.5) * 10;
+                    this.vy = (Math.random() - 0.5) * 10;
+                    this.color = `hsl(${Math.random()*360}, 80%, 55%)`;
+                }
+                
+                update() {
+                    this.vy += params.gravity;
+                    this.vx *= params.airResistance;
+                    this.vy *= params.airResistance;
+                    
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    
+                    if (this.x + this.radius > canvas.width) { 
+                        this.x = canvas.width - this.radius; 
+                        this.vx *= -params.bounce; 
+                        this.vx *= params.friction;
+                    }
+                    if (this.x - this.radius < 0) { 
+                        this.x = this.radius; 
+                        this.vx *= -params.bounce; 
+                        this.vx *= params.friction;
+                    }
+                    if (this.y + this.radius > canvas.height) { 
+                        this.y = canvas.height - this.radius; 
+                        this.vy *= -params.bounce; 
+                        this.vy *= params.friction;
+                    }
+                    if (this.y - this.radius < 0) { 
+                        this.y = this.radius; 
+                        this.vy *= -params.bounce; 
+                        this.vy *= params.friction;
+                    }
+                }
+                
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+            }
+            
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                balls.forEach(ball => {
+                    ball.update();
+                    ball.draw();
+                });
+                
+                requestAnimationFrame(draw);
+            }
+            
+            function addBall(x, y) {
+                const radius = params.defaultRadius + (Math.random() - 0.5) * params.radiusVariance;
+                const ball = new Ball(x || canvas.width/2, y || canvas.height/3, radius);
+                balls.push(ball);
+                document.getElementById('ballCount').textContent = balls.length;
+            }
+            
+            // CLICK HANDLER
+            canvas.addEventListener('click', function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                document.getElementById('lastClick').textContent = '(' + x + ', ' + y + ')';
+                addBall(x, y);
+            });
+            
+            // Start animation
+            draw();
+            
+            // Add initial balls
+            for(let i=0; i<5; i++) addBall();
+            
+            // GUI Controls
+            const gui = new dat.GUI({ width: 320 });
+            
+            const physicsFolder = gui.addFolder('Physics');
+            physicsFolder.add(params, 'gravity', 0, 1).name('Gravity');
+            physicsFolder.add(params, 'bounce', 0.1, 1.5).name('Bounciness');
+            physicsFolder.add(params, 'friction', 0.9, 1.0).name('Friction');
+            physicsFolder.add(params, 'airResistance', 0.99, 1.0).name('Air Resistance');
+            physicsFolder.open();
+
+            const ballFolder = gui.addFolder('Ball Settings');
+            ballFolder.add(params, 'defaultRadius', 10, 50).name('Default Radius');
+            ballFolder.add(params, 'radiusVariance', 0, 40).name('Size Variance');
+            ballFolder.add(params, 'addBallCount', 1, 20).name('Add Balls Count');
+            ballFolder.open();
+
+            const actionsFolder = gui.addFolder('Actions');
+            actionsFolder.add(params, 'addBall').name('Add Ball');
+            actionsFolder.add(params, 'addTenBalls').name('Add 10 Balls');
+            actionsFolder.add(params, 'clearAll').name('Clear All');
+            actionsFolder.add(params, 'reset').name('Reset (5 balls)');
+            actionsFolder.add(params, 'randomizeAll').name('Randomize Velocities');
+            actionsFolder.open();
+
+            gui.open();
+            
+            // Update gravity display
+            setInterval(() => {
+                document.getElementById('gravityVal').textContent = params.gravity.toFixed(2);
+            }, 100);
+            
+        } catch (e) {
+            console.error('Initialization error:', e);
+        }
+    </script>
+</body>
+</html>
