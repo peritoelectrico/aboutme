@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3-Phase AC Motor Analysis - VFD vs Variac</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+background: #0a0e17;
+color: #e0e6f0;
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+overflow-x: hidden;
+}
+h1 {
+text-align: center;
+padding: 20px;
+font-size: 1.8em;
+background: linear-gradient(135deg, #0d1528, #1a2744);
+border-bottom: 2px solid #1e90ff33;
+letter-spacing: 2px;
+}
+h1 span { color: #1e90ff; }
+.container {
+display: flex;
+gap: 20px;
+padding: 20px;
+max-width: 1500px;
+margin: 0 auto;
+flex-wrap: wrap;
+justify-content: center;
+}
+.motor-section {
+background: linear-gradient(180deg, #111b2e, #0d1528);
+border: 1px solid #1e3a5f;
+border-radius: 16px;
+padding: 24px;
+width: 48%;
+min-width: 520px;
+box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.motor-section h2 {
+text-align: center;
+font-size: 1.3em;
+margin-bottom: 8px;
+padding-bottom: 10px;
+border-bottom: 1px solid #1e3a5f;
+}
+.motor-section.vfd h2 { color: #00e5ff; }
+.motor-section.variac h2 { color: #ff9100; }
+.motor-section .subtitle {
+text-align: center;
+font-size: 0.85em;
+color: #8899aa;
+margin-bottom: 16px;
+}
+canvas {
+display: block;
+margin: 0 auto;
+border-radius: 12px;
+}
+.formula-panel {
+background: #0a1020;
+border: 1px solid #1e3a5f;
+border-radius: 10px;
+padding: 16px;
+margin: 16px 0;
+}
+.formula-panel h3 {
+font-size: 0.95em;
+color: #8899aa;
+margin-bottom: 10px;
+text-transform: uppercase;
+letter-spacing: 1px;
+}
+.formula {
+background: #0d1a2d;
+border: 1px solid #1e3a5f;
+border-radius: 8px;
+padding: 12px 16px;
+margin: 8px 0;
+font-family: 'Courier New', monospace;
+font-size: 1.05em;
+display: flex;
+align-items: center;
+gap: 6px;
+flex-wrap: wrap;
+line-height: 1.8;
+}
+.formula .label {
+color: #8899aa;
+min-width: 40px;
+}
+.formula .var {
+font-weight: bold;
+transition: color 0.3s;
+}
+.formula .val {
+color: #fff;
+font-weight: bold;
+min-width: 50px;
+display: inline-block;
+transition: all 0.3s;
+}
+.formula .op { color: #556677; }
+.formula .unit { color: #6688aa; font-size: 0.85em; }
+.highlight-hz { color: #00e5ff !important; }
+.highlight-volts { color: #ff9100 !important; }
+.highlight-xl { color: #e040fb !important; }
+.highlight-z { color: #76ff03 !important; }
+.highlight-i { color: #ffea00 !important; }
+.highlight-power { color: #ff5252 !important; }
+.highlight-speed { color: #69f0ae !important; }
+.highlight-torque { color: #40c4ff !important; }
+.highlight-vf { color: #eeff41 !important; }
+.slider-container {
+margin: 16px 0;
+text-align: center;
+}
+.slider-container label {
+display: block;
+font-size: 1em;
+margin-bottom: 8px;
+font-weight: bold;
+}
+.slider-container input[type="range"] {
+width: 100%;
+-webkit-appearance: none;
+appearance: none;
+height: 8px;
+border-radius: 4px;
+outline: none;
+}
+.slider-container.vfd-slider input[type="range"] {
+background: linear-gradient(90deg, #004466, #00e5ff);
+}
+.slider-container.variac-slider input[type="range"] {
+background: linear-gradient(90deg, #663300, #ff9100);
+}
+input[type="range"]::-webkit-slider-thumb {
+-webkit-appearance: none;
+appearance: none;
+width: 22px;
+height: 22px;
+border-radius: 50%;
+cursor: pointer;
+border: 2px solid #fff;
+}
+.slider-container.vfd-slider input[type="range"]::-webkit-slider-thumb {
+background: #00e5ff;
+box-shadow: 0 0 10px #00e5ff88;
+}
+.slider-container.variac-slider input[type="range"]::-webkit-slider-thumb {
+background: #ff9100;
+box-shadow: 0 0 10px #ff910088;
+}
+.slider-value {
+font-size: 1.4em;
+font-weight: bold;
+margin-top: 6px;
+font-family: 'Courier New', monospace;
+}
+.readings {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 8px;
+margin-top: 12px;
+}
+.reading-box {
+background: #0a1020;
+border: 1px solid #1e3a5f;
+border-radius: 8px;
+padding: 10px;
+text-align: center;
+}
+.reading-box .r-label {
+font-size: 0.75em;
+color: #6688aa;
+text-transform: uppercase;
+letter-spacing: 1px;
+}
+.reading-box .r-value {
+font-size: 1.3em;
+font-weight: bold;
+font-family: 'Courier New', monospace;
+margin-top: 4px;
+}
+.power-bar-container {
+margin: 12px 0;
+background: #0a1020;
+border: 1px solid #1e3a5f;
+border-radius: 8px;
+padding: 10px;
+}
+.power-bar-container .pb-label {
+font-size: 0.8em;
+color: #6688aa;
+text-transform: uppercase;
+letter-spacing: 1px;
+margin-bottom: 6px;
+}
+.power-bar {
+height: 18px;
+background: #111b2e;
+border-radius: 9px;
+overflow: hidden;
+position: relative;
+}
+.power-bar-fill {
+height: 100%;
+border-radius: 9px;
+transition: width 0.3s, background 0.3s;
+position: relative;
+}
+.power-bar-fill::after {
+content: '';
+position: absolute;
+top: 0; left: 0; right: 0; bottom: 0;
+background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+animation: shimmer 2s infinite;
+}
+@keyframes shimmer {
+0% { transform: translateX(-100%); }
+100% { transform: translateX(100%); }
+}
+.info-box {
+background: #0d1a2d;
+border-left: 3px solid;
+border-radius: 0 8px 8px 0;
+padding: 10px 14px;
+margin: 10px 0;
+font-size: 0.85em;
+line-height: 1.5;
+}
+.info-box.vfd-info { border-color: #00e5ff; }
+.info-box.variac-info { border-color: #ff9100; }
+.comparison-section {
+background: linear-gradient(180deg, #111b2e, #0d1528);
+border: 1px solid #1e3a5f;
+border-radius: 16px;
+padding: 24px;
+margin: 0 20px 20px;
+max-width: 1500px;
+margin-left: auto;
+margin-right: auto;
+}
+.comparison-section h2 {
+text-align: center;
+color: #e0e6f0;
+margin-bottom: 16px;
+}
+.comparison-table {
+width: 100%;
+border-collapse: collapse;
+}
+.comparison-table th, .comparison-table td {
+padding: 10px 14px;
+text-align: center;
+border: 1px solid #1e3a5f;
+}
+.comparison-table th {
+background: #0a1020;
+color: #8899aa;
+text-transform: uppercase;
+font-size: 0.8em;
+letter-spacing: 1px;
+}
+.comparison-table td { font-family: 'Courier New', monospace; }
+.comparison-table .vfd-col { color: #00e5ff; }
+.comparison-table .variac-col { color: #ff9100; }
+</style>
+</head>
+<body>
+
+<h1>⚡ <span>3-Phase AC Motor</span> Analysis — VFD vs Variac Control</h1>
+
+<div class="container">
+<!-- VFD MOTOR SECTION -->
+<div class="motor-section vfd">
+<h2>🔷 Motor 1 — VFD Frequency Control</h2>
+<p class="subtitle">Variable Frequency Drive: V/f ratio kept constant → Power maintained</p>
+
+<canvas id="motor1Canvas" width="460" height="300"></canvas>
+
+<div class="slider-container vfd-slider">
+<label>🎚️ Frequency Control (VFD)</label>
+<input type="range" id="freqSlider" min="5" max="60" value="60" step="1">
+<div class="slider-value" id="freqValue" style="color:#00e5ff;">60 Hz</div>
+</div>
+
+<div class="formula-panel">
+<h3>📐 Live Calculations</h3>
+<div class="formula">
+<span class="label">V = </span>
+<span class="var highlight-vf">V/f Ratio</span>
+<span class="op">= </span>
+<span class="val highlight-vf" id="vfd_vf">4.00</span>
+<span class="unit">V/Hz × f = </span>
+<span class="val highlight-volts" id="vfd_v">240</span>
+<span class="unit">V</span>
+</div>
+<div class="formula">
+<span class="label">X<sub>L</sub> = </span>
+<span class="op">2π × </span>
+<span class="var highlight-hz">f</span>
+<span class="op"> × </span>
+<span class="var">L</span>
+<span class="op">= 2π × </span>
+<span class="val highlight-hz" id="vfd_f">60</span>
+<span class="op"> × </span>
+<span class="val">0.150</span>
+<span class="op">= </span>
+<span class="val highlight-xl" id="vfd_xl">56.55</span>
+<span class="unit">Ω</span>
+</div>
+<div class="formula">
+<span class="label">Z = </span>
+<span class="op">√(R² + X<sub>L</sub>²) = √(</span>
+<span class="val">2.0²</span>
+<span class="op"> + </span>
+<span class="val highlight-xl" id="vfd_xl2">56.55²</span>
+<span class="op">) = </span>
+<span class="val highlight-z" id="vfd_z">56.56</span>
+<span class="unit">Ω</span>
+</div>
+<div class="formula">
+<span class="label">I = </span>
+<span class="op">V / Z = </span>
+<span class="val highlight-volts" id="vfd_v2">240</span>
+<span class="op"> / </span>
+<span class="val highlight-z" id="vfd_z2">56.56</span>
+<span class="op">= </span>
+<span class="val highlight-i" id="vfd_i">4.24</span>
+<span class="unit">A</span>
+</div>
+<div class="formula">
+<span class="label">P = </span>
+<span class="op">√3 × V<sub>LL</sub> × I × pf = </span>
+<span class="val">1.732</span>
+<span class="op">×</span>
+<span class="val highlight-volts" id="vfd_v3">240</span>
+<span class="op">×</span>
+<span class="val highlight-i" id="vfd_i2">4.24</span>
+<span class="op">×</span>
+<span class="val">0.85</span>
+<span class="op">= </span>
+<span class="val highlight-power" id="vfd_p">1480</span>
+<span class="unit">W</span>
+</div>
+<div class="formula">
+<span class="label">N = </span>
+<span class="op">120 × f / P = </span>
+<span class="val">120</span>
+<span class="op">×</span>
+<span class="val highlight-hz" id="vfd_f2">60</span>
+<span class="op">/ </span>
+<span class="val">4</span>
+<span class="op">= </span>
+<span class="val highlight-speed" id="vfd_rpm">1740</span>
+<span class="unit">RPM (actual)</span>
+</div>
+<div class="formula">
+<span class="label">Torque = </span>
+<span class="op">P / ω = </span>
+<span class="val highlight-power" id="vfd_p2">1480</span>
+<span class="op">/ </span>
+<span class="val" id="vfd_omega">182.2</span>
+<span class="op">= </span>
+<span class="val highlight-torque" id="vfd_torque">8.12</span>
+<span class="unit">N·m</span>
+</div>
+</div>
+
+<div class="power-bar-container">
+<div class="pb-label">Power Output</div>
+<div class="power-bar">
+<div class="power-bar-fill" id="vfdPowerBar" style="width:100%; background: linear-gradient(90deg, #00e5ff, #69f0ae);"></div>
+</div>
+</div>
+
+<div class="readings">
+<div class="reading-box">
+<div class="r-label">Voltage</div>
+<div class="r-value" id="vfdReadingV" style="color:#ff9100;">240 V</div>
+</div>
+<div class="reading-box">
+<div class="r-label">Current</div>
+<div class="r-value" id="vfdReadingI" style="color:#ffea00;">4.24 A</div>
+</div>
+<div class="reading-box">
+<div class="r-label">Speed</div>
+<div class="r-value" id="vfdReadingRPM" style="color:#69f0ae;">1740 RPM</div>
+</div>
+<div class="reading-box">
+<div class="r-label">Power</div>
+<div class="r-value" id="vfdReadingP" style="color:#ff5252;">1480 W</div>
+</div>
+</div>
+
+<div class="info-box vfd-info">
+💡 <strong>VFD Control:</strong> The VFD adjusts BOTH frequency AND voltage proportionally (constant V/f ratio). This keeps the magnetic flux constant, so the motor maintains its torque and power output at any speed.
+</div>
+</div>
+
+<!-- VARIAC MOTOR SECTION -->
+<div class="motor-section variac">
+<h2>🟠 Motor 2 — Variac Voltage Control</h2>
+<p class="subtitle">Variable Voltage: Only voltage changes → Power drops with speed</p>
+
+<canvas id="motor2Canvas" width="460" height="300"></canvas>
+
+<div class="slider-container variac-slider">
+<label>🎚️ Voltage Control (Variac)</label>
+<input type="range" id="voltSlider" min="50" max="240" value="240" step="1">
+<div class="slider-value" id="voltValue" style="color:#ff9100;">240 V</div>
+</div>
+
+<div class="formula-panel">
+<h3>📐 Live Calculations</h3>
+<div class="formula">
+<span class="label">V = </span>
+<span class="val highlight-volts" id="variac_v">240</span>
+<span class="unit">V (via Variac)</span>
+<span class="op"> | f = </span>
+<span class="val highlight-hz">60</span>
+<span class="unit">Hz (fixed)</span>
+</div>
+<div class="formula">
+<span class="label">X<sub>L</sub> = </span>
+<span class="op">2π × </span>
+<span class="var highlight-hz">f</span>
+<span class="op"> × </span>
+<span class="var">L</span>
+<span class="op">= 2π × </span>
+<span class="val highlight-hz">60</span>
+<span class="op"> × </span>
+<span class="val">0.150</span>
+<span class="op">= </span>
+<span class="val highlight-xl" id="variac_xl">56.55</span>
+<span class="unit">Ω (fixed)</span>
+</div>
+<div class="formula">
+<span class="label">Z = </span>
+<span class="op">√(R² + X<sub>L</sub>²) = √(</span>
+<span class="val">2.0²</span>
+<span class="op"> + </span>
+<span class="val highlight-xl" id="variac_xl2">56.55²</span>
+<span class="op">) = </span>
+<span class="val highlight-z" id="variac_z">56.56</span>
+<span class="unit">Ω (fixed)</span>
+</div>
+<div class="formula">
+<span class="label">I = </span>
+<span class="op">V / Z = </span>
+<span class="val highlight-volts" id="variac_v2">240</span>
+<span class="op"> / </span>
+<span class="val highlight-z" id="variac_z2">56.56</span>
+<span class="op">= </span>
+<span class="val highlight-i" id="variac_i">4.24</span>
+<span class="unit">A</span>
+</div>
+<div class="formula">
+<span class="label">P = </span>
+<span class="op">√3 × V<sub>LL</sub> × I × pf = </span>
+<span class="val">1.732</span>
+<span class="op">×</span>
+<span class="val highlight-volts" id="variac_v3">240</span>
+<span class="op">×</span>
+<span class="val highlight-i" id="variac_i2">4.24</span>
+<span class="op">×</span>
+<span class="val">0.85</span>
+<span class="op">= </span>
+<span class="val highlight-power" id="variac_p">1480</span>
+<span class="unit">W</span>
+</div>
+<div class="formula">
+<span class="label">N = </span>
+<span class="op">~</span>
+<span class="val highlight-speed" id="variac_rpm">1740</span>
+<span class="unit">RPM (slip increases as V drops)</span>
+</div>
+<div class="formula">
+<span class="label">Torque = </span>
+<span class="op">∝ V² = (</span>
+<span class="val highlight-volts" id="variac_v4">240</span>
+<span class="op">/</span>
+<span class="val">240</span>
+<span class="op">)² × </span>
+<span class="val">8.12</span>
+<span class="op">= </span>
+<span class="val highlight-torque" id="variac_torque">8.12</span>
+<span class="unit">N·m</span>
+</div>
+</div>
+
+<div class="power-bar-container">
+<div class="pb-label">Power Output</div>
+<div class="power-bar">
+<div class="power-bar-fill" id="variacPowerBar" style="width:100%; background: linear-gradient(90deg, #ff9100, #ff5252);"></div>
+</div>
+</div>
+
+<div class="readings">
+<div class="reading-box">
+<div class="r-label">Voltage</div>
+<div class="r-value" id="variacReadingV" style="color:#ff9100;">240 V</div>
+</div>
+<div class="reading-box">
+<div class="r-label">Current</div>
+<div class="r-value" id="variacReadingI" style="color:#ffea00;">4.24 A</div>
+</div>
+<div class="reading-box">
+<div class="r-label">Speed</div>
+<div class="r-value" id="variacReadingRPM" style="color:#69f0ae;">1740 RPM</div>
+</div>
+<div class="reading-box">
+<div class="r-label">Power</div>
+<div class="r-value" id="variacReadingP" style="color:#ff5252;">1480 W</div>
+</div>
+</div>
+
+<div class="info-box variac-info">
+⚠️ <strong>Variac Control:</strong> Only voltage changes while frequency stays at 60 Hz. Torque drops proportional to V², causing the motor to slow down AND lose significant power at lower voltages.
+</div>
+</div>
+</div>
+
+<!-- COMPARISON TABLE -->
+<div class="comparison-section">
+<h2>📊 Side-by-Side Comparison at Current Settings</h2>
+<table class="comparison-table">
+<tr>
+<th>Parameter</th>
+<th class="vfd-col">🔷 VFD Motor</th>
+<th class="variac-col">🟠 Variac Motor</th>
+<th>Key Difference</th>
+</tr>
+<tr>
+<td>Control Method</td>
+<td class="vfd-col">Frequency + Voltage</td>
+<td class="variac-col">Voltage only</td>
+<td>F/f ratio vs raw voltage</td>
+</tr>
+<tr>
+<td>Frequency</td>
+<td class="vfd-col" id="comp_vfd_f">60 Hz</td>
+<td class="variac-col">60 Hz</td>
+<td>VFD varies f</td>
+</tr>
+<tr>
+<td>Voltage</td>
+<td class="vfd-col" id="comp_vfd_v">240 V</td>
+<td class="variac-col" id="comp_variac_v">240 V</td>
+<td>VFD scales V with f</td>
+</tr>
+<tr>
+<td>X<sub>L</sub></td>
+<td class="vfd-col" id="comp_vfd_xl">56.55 Ω</td>
+<td class="variac-col" id="comp_variac_xl">56.55 Ω</td>
+<td>XL ∝ frequency</td>
+</tr>
+<tr>
+<td>Impedance Z</td>
+<td class="vfd-col" id="comp_vfd_z">56.56 Ω</td>
+<td class="variac-col" id="comp_variac_z">56.56 Ω</td>
+<td>Z changes with XL</td>
+</tr>
+<tr>
+<td>Current</td>
+<td class="vfd-col" id="comp_vfd_i">4.24 A</td>
+<td class="variac-col" id="comp_variac_i">4.24 A</td>
+<td>I = V/Z</td>
+</tr>
+<tr>
+<td>Speed (RPM)</td>
+<td class="vfd-col" id="comp_vfd_rpm">1740</td>
+<td class="variac-col" id="comp_variac_rpm">1740</td>
+<td>VFD: N ∝ f</td>
+</tr>
+<tr>
+<td><strong>Power</strong></td>
+<td class="vfd-col" id="comp_vfd_p" style="color:#69f0ae !important; font-weight:bold;">1480 W</td>
+<td class="variac-col" id="comp_variac_p" style="color:#ff5252 !important; font-weight:bold;">1480 W</td>
+<td id="comp_power_diff">Equal</td>
+</tr>
+<tr>
+<td><strong>Torque</strong></td>
+<td class="vfd-col" id="comp_vfd_torque" style="color:#40c4ff !important; font-weight:bold;">8.12 N·m</td>
+<td class="variac-col" id="comp_variac_torque" style="color:#40c4ff !important; font-weight:bold;">8.12 N·m</td>
+<td>Variac: T ∝ V²</td>
+</tr>
+</table>
+</div>
+
+<script>
+// === MOTOR PARAMETERS ===
+const R = 2.0;
+const L = 0.150;
+const poles = 4;
+const pf = 0.85;
+const baseFreq = 60;
+const baseVoltage = 240;
+const baseSpeed = 1740; // actual with slip at 60Hz, 4-pole
+const vOverf = baseVoltage / baseFreq; // 4.0 V/Hz
+
+// === SLIDER ELEMENTS ===
+const freqSlider = document.getElementById('freqSlider');
+const voltSlider = document.getElementById('voltSlider');
+
+// === CANVAS SETUP ===
+const canvas1 = document.getElementById('motor1Canvas');
+const ctx1 = canvas1.getContext('2d');
+const canvas2 = document.getElementById('motor2Canvas');
+const ctx2 = canvas2.getContext('2d');
+
+// === ANIMATION STATE ===
+let motor1Angle = 0;
+let motor2Angle = 0;
+let motor1Speed = 1;
+let motor2Speed = 1;
+
+// === DRAW MOTOR FUNCTION ===
+function drawMotor(ctx, cx, cy, radius, angle, speed, color, label, powerPct) {
+    ctx.clearRect(0, 0, canvas1.width, canvas1.height);
+
+    const r = radius;
+
+    // === Draw stator (outer ring) ===
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 30, 0, Math.PI * 2);
+    ctx.strokeStyle = '#1e3a5f';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // === Stator windings (3 phases) ===
+    for (let phase = 0; phase < 3; phase++) {
+        const phaseAngle = (phase * 2 * Math.PI / 3);
+        const pulse = Math.sin(angle * speed + phaseAngle) * 0.5 + 0.5;
+        const alpha = 0.3 + pulse * 0.7;
+
+        // North pole
+        const nx = cx + (r + 10) * Math.cos(phaseAngle);
+        const ny = cy + (r + 10) * Math.sin(phaseAngle);
+        ctx.beginPath();
+        ctx.arc(nx, ny, 8, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(0, 229, 255, ${alpha * 0.3})`;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(0, 229, 255, ${alpha})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // South pole (opposite)
+        const sx = cx + (r + 10) * Math.cos(phaseAngle + Math.PI);
+        const sy = cy + (r + 10) * Math.sin(phaseAngle + Math.PI);
+        ctx.beginPath();
+        ctx.arc(sx, sy, 8, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 82, 82, ${alpha * 0.3})`;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(255, 82, 82, ${alpha})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    // === Rotating magnetic field arrows ===
+    for (let i = 0; i < 6; i++) {
+        const a = angle * speed + (i * Math.PI / 3);
+        const x1 = cx + (r - 5) * Math.cos(a);
+        const y1 = cy + (r - 5) * Math.sin(a);
+        const x2 = cx + (r - 25) * Math.cos(a);
+        const y2 = cy + (r - 25) * Math.sin(a);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = `rgba(118, 255, 3, ${0.3 + Math.sin(angle * speed + i) * 0.2})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+
+    // === Rotor (rotating) ===
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle * speed);
+
+    // Rotor body
+    ctx.beginPath();
+    ctx.arc(0, 0, r - 10, 0, Math.PI * 2);
+    const rotorGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, r - 10);
+    rotorGrad.addColorStop(0, '#1a2744');
+    rotorGrad.addColorStop(1, '#0d1528');
+    ctx.fillStyle = rotorGrad;
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Rotor bars (squirrel cage visualization)
+    for (let i = 0; i < 12; i++) {
+        const a = i * Math.PI / 6;
+        ctx.beginPath();
+        ctx.moveTo((r - 25) * Math.cos(a), (r - 25) * Math.sin(a));
+        ctx.lineTo((r - 15) * Math.cos(a), (r - 15) * Math.sin(a));
+        ctx.strokeStyle = '#8899aa';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    // Rotor shaft
+    ctx.beginPath();
+    ctx.arc(0, 0, 12, 0, Math.PI * 2);
+    ctx.fillStyle = '#2a3a55';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Rotating indicator line
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, -(r - 15));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Arrow tip
+    ctx.beginPath();
+    ctx.moveTo(0, -(r - 15));
+    ctx.lineTo(-5, -(r - 25));
+    ctx.lineTo(5, -(r - 25));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    ctx.restore();
+
+    // === Power glow effect ===
+    const glowIntensity = powerPct / 100;
+    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, r + 40);
+    glow.addColorStop(0, `rgba(${color === '#00e5ff' ? '0,229,255' : '255,145,0'}, ${glowIntensity * 0.15})`);
+    glow.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 40, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+
+    // === Speed label ===
+    ctx.fillStyle = '#e0e6f0';
+    ctx.font = 'bold 14px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, cx, cy + r + 55);
+}
+
+// === UPDATE VFD MOTOR ===
+function updateVFD() {
+    const f = parseFloat(freqSlider.value);
+    const v = f * vOverf; // V scales with frequency
+    const xl = 2 * Math.PI * f * L;
+    const z = Math.sqrt(R * R + xl * xl);
+    const i = v / z;
+    const p = Math.sqrt(3) * v * i * pf;
+    const syncSpeed = 120 * f / poles;
+    const slip = 0.034 + (60 - f) * 0.0001; // slight slip variation
+    const actualRPM = syncSpeed * (1 - slip);
+    const omega = actualRPM * 2 * Math.PI / 60;
+    const torque = omega > 0 ? p / omega : 0;
+    const powerPct = (p / 1480) * 100;
+
+    // Update formulas
+    document.getElementById('vfd_vf').textContent = vOverf.toFixed(2);
+    document.getElementById('vfd_v').textContent = v.toFixed(0);
+    document.getElementById('vfd_f').textContent = f;
+    document.getElementById('vfd_xl').textContent = xl.toFixed(2);
+    document.getElementById('vfd_xl2').textContent = xl.toFixed(2);
+    document.getElementById('vfd_z').textContent = z.toFixed(2);
+    document.getElementById('vfd_v2').textContent = v.toFixed(0);
+    document.getElementById('vfd_z2').textContent = z.toFixed(2);
+    document.getElementById('vfd_i').textContent = i.toFixed(2);
+    document.getElementById('vfd_v3').textContent = v.toFixed(0);
+    document.getElementById('vfd_i2').textContent = i.toFixed(2);
+    document.getElementById('vfd_p').textContent = p.toFixed(0);
+    document.getElementById('vfd_f2').textContent = f;
+    document.getElementById('vfd_rpm').textContent = Math.round(actualRPM);
+    document.getElementById('vfd_p2').textContent = p.toFixed(0);
+    document.getElementById('vfd_omega').textContent = omega.toFixed(1);
+    document.getElementById('vfd_torque').textContent = torque.toFixed(2);
+
+    // Update readings
+    document.getElementById('vfdReadingV').textContent = v.toFixed(0) + ' V';
+    document.getElementById('vfdReadingI').textContent = i.toFixed(2) + ' A';
+    document.getElementById('vfdReadingRPM').textContent = Math.round(actualRPM) + ' RPM';
+    document.getElementById('vfdReadingP').textContent = p.toFixed(0) + ' W';
+
+    // Power bar
+    document.getElementById('vfdPowerBar').style.width = Math.min(powerPct, 100) + '%';
+
+    // Comparison table
+    document.getElementById('comp_vfd_f').textContent = f + ' Hz';
+    document.getElementById('comp_vfd_v').textContent = v.toFixed(0) + ' V';
+    document.getElementById('comp_vfd_xl').textContent = xl.toFixed(2) + ' Ω';
+    document.getElementById('comp_vfd_z').textContent = z.toFixed(2) + ' Ω';
+    document.getElementById('comp_vfd_i').textContent = i.toFixed(2) + ' A';
+    document.getElementById('comp_vfd_rpm').textContent = Math.round(actualRPM);
+    document.getElementById('comp_vfd_p').textContent = p.toFixed(0) + ' W';
+    document.getElementById('comp_vfd_torque').textContent = torque.toFixed(2) + ' N·m';
+
+    // Motor animation speed
+    motor1Speed = actualRPM / 1740;
+}
+
+// === UPDATE VARIAC MOTOR ===
+function updateVARIAC() {
+    const v = parseFloat(voltSlider.value);
+    const f = 60;
+    const xl = 2 * Math.PI * f * L;
+    const z = Math.sqrt(R * R + xl * xl);
+    const i = v / z;
+    const p = Math.sqrt(3) * v * i * pf;
+    // Speed drops with voltage due to increased slip
+    const vRatio = v / baseVoltage;
+    const torqueRatio = vRatio * vRatio;
+    const slip = 0.034 + (1 - vRatio) * 0.08; // slip increases as voltage drops
+    const syncSpeed = 120 * f / poles;
+    const actualRPM = syncSpeed * (1 - Math.min(slip, 0.25));
+    const omega = actualRPM * 2 * Math.PI / 60;
+    const torque = torqueRatio * 8.12;
+    const powerPct = (p / 1480) * 100;
+
+    // Update formulas
+    document.getElementById('variac_v').textContent = v.toFixed(0);
+    document.getElementById('variac_xl').textContent = xl.toFixed(2);
+    document.getElementById('variac_xl2').textContent = xl.toFixed(2);
+    document.getElementById('variac_z').textContent = z.toFixed(2);
+    document.getElementById('variac_v2').textContent = v.toFixed(0);
+    document.getElementById('variac_z2').textContent = z.toFixed(2);
+    document.getElementById('variac_i').textContent = i.toFixed(2);
+    document.getElementById('variac_v3').textContent = v.toFixed(0);
+    document.getElementById('variac_i2').textContent = i.toFixed(2);
+    document.getElementById('variac_p').textContent = p.toFixed(0);
+    document.getElementById('variac_rpm').textContent = Math.round(actualRPM);
+    document.getElementById('variac_v4').textContent = v.toFixed(0);
+    document.getElementById('variac_torque').textContent = torque.toFixed(2);
+
+    // Update readings
+    document.getElementById('variacReadingV').textContent = v.toFixed(0) + ' V';
+    document.getElementById('variacReadingI').textContent = i.toFixed(2) + ' A';
+    document.getElementById('variacReadingRPM').textContent = Math.round(actualRPM) + ' RPM';
+    document.getElementById('variacReadingP').textContent = p.toFixed(0) + ' W';
+
+    // Power bar
+    document.getElementById('variacPowerBar').style.width = Math.min(powerPct, 100) + '%';
+
+    // Comparison table
+    document.getElementById('comp_variac_v').textContent = v.toFixed(0) + ' V';
+    document.getElementById('comp_variac_xl').textContent = xl.toFixed(2) + ' Ω';
+    document.getElementById('comp_variac_z').textContent = z.toFixed(2) + ' Ω';
+    document.getElementById('comp_variac_i').textContent = i.toFixed(2) + ' A';
+    document.getElementById('comp_variac_rpm').textContent = Math.round(actualRPM);
+    document.getElementById('comp_variac_p').textContent = p.toFixed(0) + ' W';
+    document.getElementById('comp_variac_torque').textContent = torque.toFixed(2) + ' N·m';
+
+    // Motor animation speed
+    motor2Speed = actualRPM / 1740;
+}
+
+// === ANIMATION LOOP ===
+function animate() {
+    motor1Angle += 0.02 * motor1Speed;
+    motor2Angle += 0.02 * motor2Speed;
+
+    // Draw Motor 1 (VFD)
+    const f1 = parseFloat(freqSlider.value);
+    const v1 = f1 * vOverf;
+    const p1 = Math.sqrt(3) * v1 * (v1 / Math.sqrt(R*R + (2*Math.PI*f1*L)*(2*Math.PI*f1*L))) * pf;
+    const powerPct1 = Math.min((p1 / 1480) * 100, 100);
+    drawMotor(ctx1, 230, 150, 80, motor1Angle, motor1Speed, '#00e5ff',
+        `VFD: ${f1} Hz | ${v1.toFixed(0)}V | ${p1.toFixed(0)}W | ${(Math.round(1740*f1/60))} RPM`, powerPct1);
+
+    // Draw Motor 2 (Variac)
+    const v2 = parseFloat(voltSlider.value);
+    const xl2 = 2 * Math.PI * 60 * L;
+    const z2 = Math.sqrt(R*R + xl2*xl2);
+    const i2 = v2 / z2;
+    const p2 = Math.sqrt(3) * v2 * i2 * pf;
+    const powerPct2 = Math.min((p2 / 1480) * 100, 100);
+    drawMotor(ctx2, 230, 150, 80, motor2Angle, motor2Speed, '#ff9100',
+        `VARIAC: ${v2}V | 60 Hz | ${p2.toFixed(0)}W | ${Math.round(1740*(1-(1-v2/240)*0.08))} RPM`, powerPct2);
+
+    requestAnimationFrame(animate);
+}
+
+// === EVENT LISTENERS ===
+freqSlider.addEventListener('input', () => {
+    document.getElementById('freqValue').textContent = freqSlider.value + ' Hz';
+    updateVFD();
+});
+
+voltSlider.addEventListener('input', () => {
+    document.getElementById('voltValue').textContent = voltSlider.value + ' V';
+    updateVARIAC();
+});
+
+// === INITIALIZE ===
+updateVFD();
+updateVARIAC();
+animate();
+</script>
+
+</body>
+</html>
