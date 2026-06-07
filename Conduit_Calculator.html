@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Conduit Fill Calculator</title>
+    <style>
+        :root { 
+            --primary: #4fc3f7; 
+            --primary-glow: rgba(79, 195, 247, 0.3);
+            --text: #e0e0e0; 
+            --text-light: #b0bec5;
+            --glass-bg: rgba(15, 23, 42, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-shadow: 0 15px 45px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+            --input-bg: rgba(255, 255, 255, 0.06);
+            --input-border: rgba(255, 255, 255, 0.1);
+            --input-focus: rgba(79, 195, 247, 0.4);
+            --success: #66bb6a;
+            --warning: #ffa726;
+            --danger: #ef5350;
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            margin: 0; 
+            height: 100vh; 
+            overflow: hidden; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            
+            /* Dark electrical background image */
+            background: 
+                linear-gradient(135deg, rgba(10,15,30,0.85) 0%, rgba(20,30,50,0.75) 50%, rgba(10,20,40,0.9) 100%),
+                url('https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .main-wrapper {
+            display: flex;
+            gap: 30px;
+            max-width: 1200px;
+            width: 95%;
+            height: 90vh;
+        }
+
+        /* --- GLASSMORPHISM PANELS --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 24px;
+        }
+
+        /* --- VISUALIZER CARD --- */
+        .visualizer-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 40px;
+        }
+
+        .visualizer-card::before {
+            content: "3D MODEL PREVIEW";
+            position: absolute;
+            top: 24px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: rgba(255,255,255,0.25);
+            letter-spacing: 3px;
+        }
+
+        .pipe-scene { perspective: 1000px; width: 220px; height: 220px; display: flex; justify-content: center; align-items: center; }
+        .pipe-3d {
+            width: 160px; height: 160px; border-radius: 50%; position: relative;
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: rotateX(15deg) rotateY(0deg);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+        .pipe-wall { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 50%; border-style: solid; transition: all 0.6s ease; }
+        .pipe-bore { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            border-radius: 50%; 
+            background: radial-gradient(circle at 35% 35%, #2a3a4a, #0a0f1a); 
+            box-shadow: inset 0 8px 25px rgba(0,0,0,0.9); 
+            transition: all 0.6s ease; 
+        }
+        .pipe-highlight { position: absolute; top: 6px; left: 6px; right: 6px; bottom: 6px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.15); pointer-events: none; }
+
+        .type-EMT .pipe-wall { border-width: 5px; background: linear-gradient(135deg, #7a8a9a 0%, #b0c4d8 50%, #5a6a7a 100%); box-shadow: inset 0 0 15px rgba(0,0,0,0.2); }
+        .type-EMT .pipe-bore { width: 84%; height: 84%; }
+        .type-RMC .pipe-wall { border-width: 14px; background: linear-gradient(135deg, #4a5a6a 0%, #7a8a9a 50%, #3a4a5a 100%); box-shadow: inset 0 0 15px rgba(0,0,0,0.4); }
+        .type-RMC .pipe-bore { width: 72%; height: 72%; }
+        .type-PVC .pipe-wall { border-width: 18px; background: linear-gradient(135deg, #d8e0e8 0%, #f0f4f8 50%, #c0c8d0 100%); box-shadow: inset 0 2px 8px rgba(0,0,0,0.05); }
+        .type-PVC .pipe-bore { width: 68%; height: 68%; }
+
+        /* --- CONTROLS CARD --- */
+        .controls-card {
+            flex: 1.3;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            color: var(--text);
+        }
+
+        h1 { font-size: 1.8rem; margin: 0 0 20px 0; color: #fff; display: flex; align-items: center; gap: 12px; }
+        h1::before { content: ''; display: block; width: 8px; height: 30px; background: var(--primary); border-radius: 4px; box-shadow: 0 0 15px var(--primary-glow); }
+
+        .control-group { margin-bottom: 20px; }
+        
+        label { color: var(--text-light) !important; }
+
+        .cable-row { 
+            display: grid; grid-template-columns: 1fr 1fr 45px; gap: 12px; margin-bottom: 12px; align-items: end;
+            background: var(--input-bg); padding: 14px; border-radius: 12px; border: 1px solid var(--input-border);
+            transition: transform 0.2s, background 0.2s;
+        }
+        .cable-row:hover { transform: translateX(4px); background: rgba(255,255,255,0.1); }
+
+        .input-wrapper label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .input-wrapper input { padding: 10px; border: 1px solid var(--input-border); border-radius: 8px; width: 100%; box-sizing: border-box; font-size: 0.95rem; background: rgba(255,255,255,0.08); color: #fff; transition: 0.2s; }
+        .input-wrapper input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--input-focus); }
+        .input-wrapper input::placeholder { color: rgba(255,255,255,0.3); }
+
+        .btn-remove { 
+            height: 42px; width: 42px; border: none; border-radius: 8px; cursor: pointer; 
+            background: rgba(239, 83, 80, 0.15); color: var(--danger); font-size: 1.3rem; 
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+        }
+        .btn-remove:hover { background: var(--danger); color: white; }
+        
+        .btn-add { 
+            background: rgba(255,255,255,0.06); border: 2px dashed rgba(255,255,255,0.15); color: var(--text-light); width: 100%; padding: 12px; 
+            border-radius: 12px; cursor: pointer; font-weight: 600; transition: 0.2s; margin-top: 8px;
+        }
+        .btn-add:hover { border-color: var(--primary); color: var(--primary); background: rgba(79,195,247,0.08); }
+
+        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--input-border); font-size: 0.95rem; background: rgba(255,255,255,0.08); color: #fff; cursor: pointer; }
+        select:focus { outline: none; border-color: var(--primary); }
+        select option { background: #1a2332; color: #fff; }
+
+        /* Results */
+        .results-box { 
+            background: rgba(255,255,255,0.06); padding: 24px; border-radius: 16px; 
+            border: 1px solid var(--input-border); 
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2); 
+        }
+        .result-header { font-size: 0.75rem; font-weight: 800; color: var(--text-light); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1.5px; }
+        
+        .metric { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 1rem; color: var(--text); }
+        .metric strong { color: #fff; }
+        
+        .metric.highlight { color: var(--primary); font-size: 1.15rem; font-weight: 700; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.1); }
+        
+        .metric.sub-highlight { 
+            margin-top: 6px; 
+            background: rgba(255,255,255,0.04); 
+            padding: 8px 12px; 
+            border-radius: 8px; 
+            font-size: 0.95rem; 
+        }
+        .clearance-text {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-weight: 400;
+            background: rgba(255,255,255,0.06);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .practicality-panel { margin-top: 20px; padding: 16px; border-radius: 10px; display: none; animation: fadeIn 0.4s; background: rgba(255,255,255,0.06); border-left: 4px solid transparent; }
+        .practicality-panel.success { border-left-color: var(--success); }
+        .practicality-panel.warning { border-left-color: var(--warning); }
+        .practicality-panel.danger { border-left-color: var(--danger); }
+        .practicality-panel strong { color: #fff; }
+        .practicality-panel span { color: var(--text-light); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 900px) {
+            .main-wrapper { flex-direction: column; height: auto; overflow-y: auto; }
+            body { overflow-y: auto; height: auto; padding: 40px 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    
+    <!-- 3D VISUALIZER -->
+    <div class="visualizer-card glass-panel">
+        <div class="pipe-scene">
+            <div id="pipeModel" class="pipe-3d type-EMT">
+                <div class="pipe-wall"></div>
+                <div class="pipe-highlight"></div>
+                <div class="pipe-bore"></div>
+            </div>
+        </div>
+        <div style="margin-top: 35px; text-align: center;">
+            <strong style="color: var(--text-light);">Selected Type:</strong> <br>
+            <span id="visualizerLabel" style="font-weight: 700; color: var(--primary); font-size: 1.1rem; margin-top:5px; display:inline-block;">EMT</span>
+        </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls-card glass-panel">
+        <h1>Conduit Calculator</h1>
+        
+        <div class="control-group">
+            <label style="font-weight: 600; display: block; margin-bottom: 8px; color: var(--text-light);">Conduit Type</label>
+            <select id="conduitType">
+                <option value="EMT">EMT (Electrical Metallic Tubing)</option>
+                <option value="RMC">RMC (Rigid Metal Conduit)</option>
+                <option value="PVC">PVC Schedule 40</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <label style="font-weight: 600; margin: 0; color: var(--text-light);">Conductor Inputs</label>
+                <span style="font-size: 0.75rem; color: var(--text-light); background:rgba(255,255,255,0.06); padding: 2px 8px; border-radius:4px;">Max 5 Types</span>
+            </div>
+            <div id="cables-container"></div>
+            <button class="btn-add" id="addCableBtn">+ Add Conductor Type</button>
+        </div>
+
+        <div class="results-box">
+            <div class="result-header">Calculation Results</div>
+            <div class="metric"><span>Total Wires:</span> <strong id="resTotalWires">0</strong></div>
+            <div class="metric"><span>NEC Fill Limit:</span> <strong id="resNECLimit">40%</strong></div>
+            
+            <div class="metric highlight"><span>Min. Conduit Size:</span> <strong id="resMinConduit">--</strong></div>
+            
+            <div class="metric sub-highlight">
+                <span>Next Standard Size:</span> 
+                <div style="display:flex; align-items:center;">
+                    <strong id="resNextSize">--</strong>
+                    <span class="clearance-text" id="resNextClearance">0% Fill</span>
+                </div>
+            </div>
+
+            <div class="metric" style="margin-top: 10px;"><span>Current Fill %:</span> <strong id="resFillPercent">0%</strong></div>
+            <div id="error-msg" style="color: var(--danger); font-weight: 700; display: none; margin-top: 15px; text-align: center; font-size: 0.9rem;">Exceeds 3" Limit</div>
+        </div>
+
+        <div id="practicalityPanel" class="practicality-panel">
+            <strong>⚡ Field Assessment:</strong> <span id="practicalityText"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const CONDUIT_AREAS = {
+        "1/2\"": 0.349, "3/4\"": 0.602, "1\"": 0.864, "1-1/4\"": 1.384,
+        "1-1/2\"": 2.038, "2\"": 3.356, "2-1/2\"": 5.000, "3\"": 7.048
+    };
+
+    const VISUAL_CONFIG = {
+        "EMT": { class: "type-EMT", label: "EMT (Thin Wall)" },
+        "RMC": { class: "type-RMC", label: "RMC (Thick Wall)" },
+        "PVC": { class: "type-PVC", label: "PVC (Thickest)" }
+    };
+
+    const CALC_MULTIPLIER = { "EMT": 1.0, "RMC": 1.02, "PVC": 0.95 };
+
+    const cablesContainer = document.getElementById('cables-container');
+    const addBtn = document.getElementById('addCableBtn');
+    const conduitTypeSelect = document.getElementById('conduitType');
+    const pipeModel = document.getElementById('pipeModel');
+    const visualizerLabel = document.getElementById('visualizerLabel');
+
+    let cableCount = 0;
+
+    addCableRow();
+
+    addBtn.addEventListener('click', addCableRow);
+
+    conduitTypeSelect.addEventListener('change', (e) => {
+        const type = e.target.value;
+        pipeModel.className = `pipe-3d ${VISUAL_CONFIG[type].class}`;
+        visualizerLabel.innerText = VISUAL_CONFIG[type].label;
+        calculate();
+    });
+
+    function addCableRow() {
+        if (cableCount >= 5) return;
+        cableCount++;
+        const row = document.createElement('div');
+        row.className = 'cable-row';
+        row.innerHTML = `
+            <div class="input-wrapper">
+                <label>OD (Inches)</label>
+                <input type="number" step="0.001" value="0.250" class="diam-input">
+            </div>
+            <div class="input-wrapper">
+                <label>Qty</label>
+                <input type="number" step="1" value="1" min="1" class="qty-input">
+            </div>
+            <button class="btn-remove">×</button>
+        `;
+
+        row.querySelector('.btn-remove').addEventListener('click', () => {
+            row.remove();
+            cableCount--;
+            calculate();
+        });
+
+        row.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', calculate);
+        });
+
+        cablesContainer.appendChild(row);
+        calculate();
+    }
+
+    function getNextSize(currentSize) {
+        const sizes = ["1/2\"", "3/4\"", "1\"", "1-1/4\"", "1-1/2\"", "2\"", "2-1/2\"", "3\""];
+        const idx = sizes.indexOf(currentSize);
+        return idx < sizes.length - 1 ? sizes[idx + 1] : null;
+    }
+
+    function calculate() {
+        const rows = document.querySelectorAll('.cable-row');
+        let totalArea = 0;
+        let totalCount = 0;
+
+        rows.forEach(row => {
+            const diam = parseFloat(row.querySelector('.diam-input').value) || 0;
+            const qty = parseInt(row.querySelector('.qty-input').value) || 0;
+            const radius = diam / 2;
+            totalArea += (Math.PI * (radius * radius)) * qty;
+            totalCount += qty;
+        });
+
+        let limitPercent = totalCount === 1 ? 53 : totalCount === 2 ? 31 : 40;
+        
+        document.getElementById('resTotalWires').innerText = totalCount;
+        document.getElementById('resNECLimit').innerText = limitPercent + "%";
+        document.getElementById('error-msg').style.display = 'none';
+
+        const selectedType = conduitTypeSelect.value;
+        const calcMult = CALC_MULTIPLIER[selectedType];
+        
+        let foundSize = null;
+        let actualFill = 0;
+
+        for (const [size, area] of Object.entries(CONDUIT_AREAS)) {
+            const effectiveArea = area * calcMult;
+            const fill = (totalArea / effectiveArea) * 100;
+            if (fill <= limitPercent) {
+                foundSize = size;
+                actualFill = fill;
+                break;
+            }
+        }
+
+        const elMinConduit = document.getElementById('resMinConduit');
+        const elNextSize = document.getElementById('resNextSize');
+        const elNextClearance = document.getElementById('resNextClearance');
+        const elFillPercent = document.getElementById('resFillPercent');
+        const elPracticality = document.getElementById('practicalityPanel');
+
+        if (foundSize) {
+            elMinConduit.innerText = foundSize;
+            elFillPercent.innerText = actualFill.toFixed(2) + "%";
+            
+            const nextSizeKey = getNextSize(foundSize);
+            if (nextSizeKey) {
+                elNextSize.innerText = nextSizeKey;
+                const nextArea = CONDUIT_AREAS[nextSizeKey] * calcMult;
+                const nextFill = (totalArea / nextArea) * 100;
+                elNextClearance.innerText = `${nextFill.toFixed(1)}% Fill`;
+            } else {
+                elNextSize.innerText = "None";
+                elNextClearance.innerText = "";
+            }
+
+            updatePracticality(foundSize, actualFill, totalCount);
+        } else {
+            elMinConduit.innerText = "N/A";
+            elNextSize.innerText = "3\" (Max)";
+            elNextClearance.innerText = "";
+            elFillPercent.innerText = "Overfilled";
+            document.getElementById('error-msg').style.display = 'block';
+            elPracticality.style.display = 'none';
+        }
+    }
+
+    function updatePracticality(size, fill, count) {
+        const elPanel = document.getElementById('practicalityPanel');
+        const elText = document.getElementById('practicalityText');
+        elPanel.style.display = 'block';
+        elPanel.className = 'practicality-panel';
+
+        if (fill > 35) {
+            elPanel.classList.add('danger');
+            elText.innerHTML = `At <strong>${fill.toFixed(1)}%</strong> fill, expect tight pulls. Jamming is a real risk on bends.`;
+        } else if (fill > 25) {
+            elPanel.classList.add('warning');
+            elText.innerHTML = `Standard commercial fill. Manageable, but use lubricant for long runs or multiple bends.`;
+        } else {
+            elPanel.classList.add('success');
+            elText.innerHTML = `Excellent clearance. Wires will pull easily with plenty of room for upgrades.`;
+        }
+    }
+</script>
+
+</body>
+</html>
