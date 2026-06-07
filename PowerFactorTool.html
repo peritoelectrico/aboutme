@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power Factor & Correction Calculator</title>
+    <style>
+        :root { 
+            --primary: #4fc3f7; 
+            --accent: #ff9f43;
+            --bg-overlay: rgba(15, 23, 42, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text: #e0e0e0;
+            --text-light: #b0bec5;
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            margin: 0; 
+            height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            background: 
+                linear-gradient(135deg, rgba(10,15,30,0.9) 0%, rgba(20,30,50,0.85) 100%),
+                url('https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .card {
+            background: var(--bg-overlay);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 900px; /* Increased width for new columns */
+            display: flex;
+            gap: 40px;
+            color: var(--text);
+        }
+
+        .input-section { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+        .output-section { flex: 1; display: flex; flex-direction: column; gap: 20px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; }
+
+        h1 { margin: 0 0 10px 0; font-size: 1.8rem; color: #fff; display: flex; align-items: center; gap: 10px; }
+        h1 span { color: var(--primary); }
+
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 0.85rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* --- FIXED DROPDOWN STYLING --- */
+        input, select {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        /* Ensure options inside the dropdown are also dark */
+        select option {
+            background-color: #1a2332;
+            color: #ffffff;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.2); }
+        
+        /* Range Slider */
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--primary); margin-top: -6px; cursor: pointer; box-shadow: 0 0 10px var(--primary); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; }
+
+        /* Result Cards */
+        .result-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .result-card h3 { margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-light); font-weight: 600; }
+        .result-card .val { font-size: 1.6rem; font-weight: 700; color: #fff; }
+        .result-card .unit { font-size: 0.9rem; color: var(--primary); margin-left: 4px; }
+        .result-card.accent h3 { color: var(--accent); }
+        .result-card.accent .val { color: var(--accent); }
+
+        /* Power Triangle Visualization */
+        .triangle-container { margin-top: 20px; height: 120px; position: relative; border-bottom: 2px solid rgba(255,255,255,0.2); display: flex; align-items: flex-end; justify-content: center; gap: 20px; }
+        .bar { width: 60px; background: var(--primary); transition: height 0.5s ease; position: relative; border-radius: 4px 4px 0 0; opacity: 0.8; }
+        .bar.reactive { background: var(--accent); }
+        .bar-label { position: absolute; bottom: -25px; width: 100%; text-align: center; font-size: 0.8rem; color: #aaa; white-space: nowrap; }
+
+        @media (max-width: 900px) {
+            .card { flex-direction: column; padding: 25px; height: auto; margin: 20px; }
+            .output-section { border-left: none; padding-left: 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="input-section">
+        <h1><span>⚡</span> Power Factor Tool</h1>
+        <p style="color: #aaa; margin-bottom: 10px;">Calculate system power and capacitor requirements.</p>
+
+        <div class="form-group">
+            <label>Voltage (Volts)</label>
+            <input type="number" id="volts" value="480">
+        </div>
+        
+        <div class="form-group">
+            <label>Current (Amps)</label>
+            <input type="number" id="amps" value="50">
+        </div>
+
+        <div class="form-group">
+            <label>Frequency (Hz)</label>
+            <input type="number" id="freq" value="60" min="50" max="60" step="5">
+        </div>
+
+        <div class="form-group">
+            <label>Phase</label>
+            <!-- FIXED: Styling applied via CSS above -->
+            <select id="phase">
+                <option value="3">Three Phase (3φ)</option>
+                <option value="1">Single Phase (1φ)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Current PF: <span id="pfDisplay" style="color:var(--accent)">0.80</span></label>
+            <input type="range" id="pfInput" min="0.5" max="1" step="0.01" value="0.80">
+        </div>
+
+        <div class="form-group">
+            <label>Target PF</label>
+            <input type="number" id="targetPf" value="0.95" step="0.01" min="0.51" max="1">
+        </div>
+    </div>
+
+    <div class="output-section">
+        <h1 style="font-size: 1.4rem;">System Results</h1>
+        
+        <div style="display: flex; gap: 15px;">
+            <div class="result-card" style="flex:1">
+                <h3>Real Power</h3>
+                <span class="val" id="resKw">0</span><span class="unit">kW</span>
+            </div>
+            <div class="result-card accent" style="flex:1">
+                <h3>Apparent Power</h3>
+                <span class="val" id="resKva">0</span><span class="unit">kVA</span>
+            </div>
+        </div>
+
+        <div class="result-card">
+            <h3>Reactive Power (Current)</h3>
+            <span class="val" id="resKvar" style="color:var(--accent)">0</span><span class="unit">kVAR</span>
+        </div>
+
+        <!-- Visualization -->
+        <div class="triangle-container">
+            <div class="bar" id="barReal" style="height: 50px; background: #4fc3f7;">
+                <div class="bar-label">Real (kW)</div>
+            </div>
+            <div class="bar reactive" id="barReact" style="height: 40px;">
+                <div class="bar-label">Reactive (kVAR)</div>
+            </div>
+        </div>
+
+        <!-- Capacitor Correction Section -->
+        <div class="result-card" style="background: rgba(79, 195, 247, 0.1); border: 1px solid rgba(79, 195, 247, 0.2);">
+            <h3>Capacitor Correction Required</h3>
+            <div style="display:flex; justify-content:space-between; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <span style="font-size: 0.8rem; color: #aaa;">kVAR Needed</span>
+                <span class="val" id="resCorrection" style="font-size: 1.2rem;">--</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <span style="font-size:0.75rem; color:#aaa; display:block;">Microfarads (µF)</span>
+                    <span style="font-size:1.1rem; color:#fff; font-weight:bold;" id="resMuf">--</span>
+                </div>
+                <div>
+                    <span style="font-size:0.75rem; color:#aaa; display:block;">Millifarads (mF)</span>
+                    <span style="font-size:1.1rem; color:#fff; font-weight:bold;" id="resMf">--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const inputs = ['volts', 'amps', 'pfInput', 'targetPf', 'phase', 'freq'];
+    const pfDisplay = document.getElementById('pfDisplay');
+
+    inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', calculate);
+    });
+
+    function calculate() {
+        const v = parseFloat(document.getElementById('volts').value) || 0;
+        const i = parseFloat(document.getElementById('amps').value) || 0;
+        const phase = parseFloat(document.getElementById('phase').value);
+        const pf = parseFloat(document.getElementById('pfInput').value);
+        const target = parseFloat(document.getElementById('targetPf').value);
+        const freq = parseFloat(document.getElementById('freq').value) || 60;
+
+        // Update slider text
+        pfDisplay.innerText = pf.toFixed(2);
+
+        // 1. Apparent Power (kVA)
+        let kva = 0;
+        if (phase === 3) {
+            kva = (Math.sqrt(3) * v * i) / 1000;
+        } else {
+            kva = (v * i) / 1000;
+        }
+
+        // 2. Real Power (kW)
+        const kw = kva * pf;
+
+        // 3. Reactive Power (kVAR) - Current
+        const kvar = Math.sqrt(Math.pow(kva, 2) - Math.pow(kw, 2));
+
+        // 4. Correction Calculation (kVAR)
+        let kvar_needed = 0;
+        if (target > pf) {
+            const rad_current = Math.acos(pf);
+            const rad_target = Math.acos(target);
+            kvar_needed = kw * (Math.tan(rad_current) - Math.tan(rad_target));
+        }
+
+        // 5. Capacitance Calculation (Farads)
+        // Formula: C = kVAR / (2 * pi * f * V^2)
+        // Note: For 3-phase, if we consider total capacitance required equivalent to single phase logic applied to V_LL
+        let c_farads = 0;
+        if (kvar_needed > 0 && v > 0) {
+             // Converting kVAR to VAR (x1000)
+             c_farads = (kvar_needed * 1000) / (2 * Math.PI * freq * Math.pow(v, 2));
+        }
+
+        const c_mf = c_farads * 1000;
+        const c_muf = c_farads * 1000000;
+
+        // 6. Amp Savings Calculation
+        const new_kva = Math.sqrt(Math.pow(kw, 2) + Math.pow(kvar - kvar_needed, 2));
+        let new_amps = 0;
+        if (phase === 3) new_amps = (new_kva * 1000) / (Math.sqrt(3) * v);
+        else new_amps = (new_kva * 1000) / v;
+        
+        // Update UI
+        document.getElementById('resKw').innerText = kw.toFixed(2);
+        document.getElementById('resKva').innerText = kva.toFixed(2);
+        document.getElementById('resKvar').innerText = kvar.toFixed(2);
+        
+        // Capacitor Section
+        document.getElementById('resCorrection').innerText = kvar_needed.toFixed(2);
+        document.getElementById('resMf').innerText = c_mf.toFixed(3);
+        
+        // Format Microfarads nicely (remove excessive decimals if large)
+        if(c_muf > 100) {
+            document.getElementById('resMuf').innerText = Math.round(c_muf);
+        } else {
+            document.getElementById('resMuf').innerText = c_muf.toFixed(2);
+        }
+
+        // Update Bars
+        const maxH = 100; 
+        if(kva > 0) {
+            document.getElementById('barReal').style.height = (kw / kva * maxH) + 'px';
+            document.getElementById('barReact').style.height = (kvar / kva * maxH) + 'px';
+        }
+    }
+
+    // Init
+    calculate();
+</script>
+
+</body>
+</html>
