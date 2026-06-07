@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEC Voltage Drop Calculator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(30, 41, 59, 0.7);
+      --border: rgba(148, 163, 184, 0.1);
+      --primary: #38bdf8;
+      --text: #f1f5f9;
+      --text-dim: #94a3b8;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --glass: blur(12px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* 3D Canvas */
+    #canvas-container {
+      width: 100%;
+      height: 300px;
+      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+      border-radius: 16px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .label-3d {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.5);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Layout */
+    .container {
+      width: 100%;
+      max-width: 1000px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--panel);
+      backdrop-filter: var(--glass);
+      -webkit-backdrop-filter: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    h2 { font-size: 1.2rem; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    
+    /* Form Elements */
+    .grid-inputs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+    }
+
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-size: 0.85rem; color: var(--text-dim); }
+    
+    input, select {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 1rem;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    /* Results */
+    .result-box {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .metric { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; }
+    .value { font-size: 1.5rem; font-weight: 700; }
+    .value.primary { color: var(--primary); }
+    .value.success { color: var(--success); }
+    .value.warn { color: var(--warning); }
+    .value.danger { color: var(--danger); }
+
+    .min-wire {
+      margin-top: 20px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(16, 185, 129, 0.1));
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .min-wire h3 { font-size: 1rem; margin-bottom: 5px; color: var(--primary); }
+    .min-wire .size { font-size: 1.8rem; font-weight: bold; color: #fff; }
+
+    .progress-bar {
+      height: 6px;
+      background: #334155;
+      border-radius: 3px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--success);
+      transition: width 0.3s, background 0.3s;
+    }
+
+    .note { font-size: 0.75rem; color: var(--text-dim); margin-top: 15px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <div id="canvas-container">
+    <div class="label-3d">3D Visualization (Drag to Rotate)</div>
+  </div>
+
+  <div class="container">
+    <!-- Input Panel -->
+    <div class="panel">
+      <h2>System Parameters</h2>
+      <div class="grid-inputs">
+        <div class="input-group">
+          <label>System Type</label>
+          <select id="sysType">
+            <option value="AC" selected>AC</option>
+            <option value="DC">DC</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Phase</label>
+          <select id="phase">
+            <option value="3" selected>3-Phase</option>
+            <option value="1">Single-Phase</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Voltage (V)</label>
+          <input type="number" id="voltage" value="480" min="12" max="600">
+        </div>
+        <div class="input-group">
+          <label>Current (A)</label>
+          <input type="number" id="current" value="50" min="1">
+        </div>
+        <div class="input-group">
+          <label>Distance (ft)</label>
+          <input type="number" id="distance" value="100" min="1">
+        </div>
+        <div class="input-group">
+          <label>Material</label>
+          <select id="material">
+            <option value="Cu" selected>Copper</option>
+            <option value="Al">Aluminum</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Wire Size (Selected)</label>
+          <select id="awg"></select>
+        </div>
+        <div class="input-group">
+          <label>Power Factor (AC)</label>
+          <input type="number" id="pf" value="0.85" min="0" max="1" step="0.01">
+        </div>
+      </div>
+      <p class="note">Values update automatically. Based on NEC Table 8 K-factors [6], [7].</p>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="panel">
+      <h2>Calculation Results</h2>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="result-box">
+          <div class="metric">Voltage Drop</div>
+          <div class="value primary" id="resVD">0.00 V</div>
+        </div>
+        <div class="result-box">
+          <div class="metric">Percent Drop</div>
+          <div class="value" id="resPercent">0.00 %</div>
+        </div>
+        <div class="result-box">
+          <div class="metric">Voltage at Load</div>
+          <div class="value" id="resLoadV">480.00 V</div>
+        </div>
+        <div class="result-box">
+          <div class="metric">Max Rec Drop (3%)</div>
+          <div class="value" id="resMaxVD">14.40 V</div>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" id="vdBar"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-top:4px; color:var(--text-dim);">
+        <span>0%</span>
+        <span>3% (Rec)</span>
+        <span>5% (Max)</span>
+      </div>
+
+      <div class="min-wire">
+        <h3>Min Recommended Wire Size</h3>
+        <div class="size" id="minWireSize">-</div>
+        <div style="font-size:0.8rem; color:var(--text-dim); margin-top:5px;">Based on 3% Voltage Drop Limit</div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // --- Data & Setup ---
+    // Wire Data: AWG, Circular Mils (CM), Radius (inches approx for 3D scaling)
+    const wireData = [
+      { label: "14 AWG", cm: 4110, r: 0.050 }, { label: "12 AWG", cm: 6530, r: 0.064 },
+      { label: "10 AWG", cm: 10380, r: 0.081 }, { label: "8 AWG", cm: 16510, r: 0.104 },
+      { label: "6 AWG", cm: 26240, r: 0.130 }, { label: "4 AWG", cm: 41740, r: 0.164 },
+      { label: "3 AWG", cm: 52620, r: 0.183 }, { label: "2 AWG", cm: 66360, r: 0.205 },
+      { label: "1 AWG", cm: 83690, r: 0.230 }, { label: "1/0 AWG", cm: 105600, r: 0.259 },
+      { label: "2/0 AWG", cm: 133100, r: 0.290 }, { label: "3/0 AWG", cm: 167800, r: 0.325 },
+      { label: "4/0 AWG", cm: 211600, r: 0.364 }, { label: "250 kcmil", cm: 250000, r: 0.399 },
+      { label: "300 kcmil", cm: 300000, r: 0.436 }, { label: "350 kcmil", cm: 350000, r: 0.469 },
+      { label: "400 kcmil", cm: 400000, r: 0.503 }, { label: "500 kcmil", cm: 500000, r: 0.562 },
+      { label: "600 kcmil", cm: 600000, r: 0.617 }, { label: "750 kcmil", cm: 750000, r: 0.687 },
+      { label: "1000 kcmil", cm: 1000000, r: 0.775 }
+    ];
+
+    const awgSelect = document.getElementById('awg');
+    wireData.forEach(w => {
+      const opt = document.createElement('option');
+      opt.value = w.label;
+      opt.textContent = w.label;
+      awgSelect.appendChild(opt);
+    });
+    
+    // Default selection based on typical 480V usage
+    awgSelect.value = "6 AWG";
+
+    // DOM Elements
+    const inputs = document.querySelectorAll('input, select');
+    const sysType = document.getElementById('sysType');
+    const phase = document.getElementById('phase');
+
+    // --- 3D Scene Setup ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(0, 2, 6);
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = false; // No automatic moving animation
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(5, 10, 7);
+    scene.add(dirLight);
+
+    // Wire Mesh
+    const wireGeo = new THREE.CylinderGeometry(1, 1, 10, 32);
+    const wireMat = new THREE.MeshPhysicalMaterial({
+      color: 0xB87333, // Default Copper
+      metalness: 0.8,
+      roughness: 0.3,
+      clearcoat: 0.5
+    });
+    const wireMesh = new THREE.Mesh(wireGeo, wireMat);
+    wireMesh.rotation.z = Math.PI / 2;
+    scene.add(wireMesh);
+
+    // Grid Helper
+    const grid = new THREE.GridHelper(20, 20, 0x334155, 0x1e293b);
+    grid.position.y = -1;
+    scene.add(grid);
+
+    // --- Calculation Logic ---
+    function calculate() {
+      // Inputs
+      const isAC = sysType.value === 'AC';
+      const is3Phase = phase.value === '3';
+      const voltage = parseFloat(document.getElementById('voltage').value) || 0;
+      const current = parseFloat(document.getElementById('current').value) || 0;
+      const distance = parseFloat(document.getElementById('distance').value) || 0;
+      const material = document.getElementById('material').value;
+      const awgLabel = awgSelect.value;
+      const pf = parseFloat(document.getElementById('pf').value) || 1;
+
+      if (voltage === 0 || current === 0 || distance === 0) return;
+
+      // Constants
+      const K = material === 'Cu' ? 12.9 : 21.2; // NEC Table 8 75C [6], [7]
+      
+      // Find selected wire data
+      const selectedWire = wireData.find(w => w.label === awgLabel);
+      if (!selectedWire) return;
+
+      // Phase Factor: 2 for 1-Phase/DC, sqrt(3) for 3-Phase [5]
+      const factor = (is3Phase && isAC) ? 1.732 : 2;
+
+      // Calculate Voltage Drop
+      // Formula: VD = (PhaseFactor * K * I * L) / CM [5]
+      const VD = (factor * K * current * distance) / selectedWire.cm;
+      const VD_Pct = (VD / voltage) * 100;
+      const V_Load = voltage - VD;
+
+      // Calculate Minimum Required Wire Size for 3% Drop
+      const TargetVD = voltage * 0.03;
+      const CM_Required = (factor * K * current * distance) / TargetVD;
+      
+      // Find smallest wire with CM >= CM_Required
+      let minWire = wireData.find(w => w.cm >= CM_Required);
+      let minWireLabel = minWire ? minWire.label : "Oversized";
+
+      // Update UI
+      document.getElementById('resVD').textContent = VD.toFixed(2) + ' V';
+      document.getElementById('resPercent').textContent = VD_Pct.toFixed(2) + ' %';
+      document.getElementById('resLoadV').textContent = V_Load.toFixed(2) + ' V';
+      document.getElementById('resMaxVD').textContent = TargetVD.toFixed(2) + ' V';
+      document.getElementById('minWireSize').textContent = minWireLabel;
+
+      // Color Logic for Results
+      const pctEl = document.getElementById('resPercent');
+      const barEl = document.getElementById('vdBar');
+      
+      if (VD_Pct <= 3) {
+        pctEl.className = 'value success';
+        barEl.style.backgroundColor = 'var(--success)';
+      } else if (VD_Pct <= 5) {
+        pctEl.className = 'value warn';
+        barEl.style.backgroundColor = 'var(--warning)';
+      } else {
+        pctEl.className = 'value danger';
+        barEl.style.backgroundColor = 'var(--danger)';
+      }
+
+      barEl.style.width = Math.min((VD_Pct / 5) * 100, 100) + '%';
+
+      // Update 3D
+      update3D(selectedWire, material);
+    }
+
+    function update3D(wire, material) {
+      // Update Wire Thickness
+      // Scale radius: Real inches * 50 for visual clarity in 3D units
+      const radius = wire.r * 5; 
+      wireMesh.scale.set(1, radius, 1); 
+
+      // Update Color
+      if (material === 'Cu') {
+        wireMat.color.setHex(0xB87333); // Copper
+      } else {
+        wireMat.color.setHex(0xA8A9AD); // Aluminum
+      }
+    }
+
+    // --- Event Listeners ---
+    inputs.forEach(input => {
+      input.addEventListener('input', calculate);
+      input.addEventListener('change', calculate);
+    });
+
+    sysType.addEventListener('change', () => {
+      // Disable 3-phase for DC
+      if (sysType.value === 'DC') {
+        phase.value = '1';
+      }
+      calculate();
+    });
+
+    // Handle Window Resize
+    window.addEventListener('resize', () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    // Animation Loop (Static render, just for controls smoothness)
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Initial Calculation
+    calculate();
+  </script>
+</body>
+</html>
