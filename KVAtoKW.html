@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KVA to kW & HP Converter</title>
+    <style>
+        :root {
+            --primary: #4fc3f7;
+            --accent: #ff9f43;
+            --success: #66bb6a;
+            --bg-overlay: rgba(15, 23, 42, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --text: #e0e0e0;
+            --text-light: #b0bec5;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background:
+                linear-gradient(135deg, rgba(10,15,30,0.9) 0%, rgba(20,30,50,0.85) 100%),
+                url('https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        .card {
+            background: var(--bg-overlay);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 980px;
+            display: flex;
+            gap: 40px;
+            color: var(--text);
+        }
+        .input-section { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 18px; 
+            min-width: 0; /* Prevents flex overflow */
+        }
+        .output-section { flex: 1; display: flex; flex-direction: column; gap: 20px; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; }
+        h1 { margin: 0 0 8px 0; font-size: 1.8rem; color: #fff; display: flex; align-items: center; gap: 10px; }
+        h1 span { color: var(--primary); }
+        .subtitle { color: #8899a6; font-size: 0.9rem; margin-bottom: 5px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 0.8rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        input, select {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        select option { background-color: #1a2332; color: #ffffff; }
+
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.2); }
+
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--primary); margin-top: -6px; cursor: pointer; box-shadow: 0 0 10px var(--primary); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; }
+        
+        /* Result Cards */
+        .result-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-left: 4px solid var(--primary);
+        }
+        .result-card.reactive { border-left-color: var(--accent); }
+        .result-card.motor { border-left-color: var(--success); background: rgba(102, 187, 106, 0.1); }
+
+        .result-card h3 { margin: 0 0 6px 0; font-size: 0.85rem; color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .result-card .val { font-size: 1.8rem; font-weight: 700; color: #fff; }
+        .result-card .unit { font-size: 1rem; color: var(--primary); margin-left: 4px; }
+        .result-card.reactive .val { color: var(--accent); }
+        .result-card.motor .val { color: var(--success); }
+        .result-card.motor .unit { color: var(--success); }
+
+        /* Bar Graph */
+        .triangle-container {
+            margin-top: 10px;
+            height: 180px;
+            position: relative;
+            border-bottom: 2px solid rgba(255,255,255,0.15);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 80px;
+            padding-bottom: 38px;
+            box-sizing: border-box;
+        }
+        .bar {
+            width: 72px;
+            background: var(--primary);
+            transition: height 0.4s ease;
+            position: relative;
+            border-radius: 6px 6px 0 0;
+            opacity: 0.85;
+            flex-shrink: 0;
+            max-height: 140px;
+        }
+        .bar.reactive { background: var(--accent); }
+        .bar-value {
+            position: absolute;
+            top: -28px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .bar-label {
+            position: absolute;
+            bottom: -34px;
+            width: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #b0bec5;
+            line-height: 1.35;
+        }
+
+        /* ── Student Guide Panel ── */
+        .edu-panel {
+            margin-top: auto;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .edu-panel h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .edu-panel ul {
+            margin: 0;
+            padding-left: 20px;
+            list-style: none;
+        }
+        .edu-panel li {
+            margin-bottom: 8px;
+            font-size: 0.84rem;
+            color: #b0bec5;
+            line-height: 1.5;
+            position: relative;
+            padding-left: 12px;
+        }
+        .edu-panel li::before {
+            content: "•";
+            position: absolute;
+            left: -4px;
+            color: var(--accent);
+        }
+        .edu-panel code {
+            background: rgba(79, 195, 247, 0.15);
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+        .edu-panel strong { color: #e0e0e0; }
+        .edu-panel em { color: #8899a6; font-style: italic; }
+
+        .note {
+            font-size: 0.82rem; color: #8899a6; padding-top: 15px; line-height: 1.5;
+            background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .note strong { color: #b0bec5; }
+        @media (max-width: 900px) {
+            .card { flex-direction: column; padding: 25px; height: auto; margin: 20px; max-width: 100%; }
+            .output-section { border-left: none; padding-left: 0; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 25px; }
+            .input-section { gap: 14px; }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="input-section">
+        <h1><span>⚡</span> KVA to kW & HP</h1>
+        <p class="subtitle">Transformers, Motors & Mechanical Load Sizing</p>
+        
+        <div class="form-group">
+            <label>Apparent Power (kVA)</label>
+            <input type="number" id="kva" value="100" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label>Power Factor: <span id="pfDisplay" style="color:var(--accent)">0.85</span></label>
+            <input type="range" id="pfInput" min="0.50" max="1.00" step="0.01" value="0.85">
+        </div>
+        <div class="form-group">
+            <label>System Phase</label>
+            <select id="phase">
+                <option value="3">Three Phase (3φ)</option>
+                <option value="1">Single Phase (1φ)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Efficiency (%) <span style="font-weight:400; color:#666;">(Motors typically 85-95%)</span></label>
+            <input type="number" id="efficiency" value="92" min="0" max="100">
+        </div>
+
+        <!-- Student Educational Panel -->
+        <div class="edu-panel">
+            <h3>📘 Student Guide & Formulas</h3>
+            <ul>
+                <li><code>kW = kVA × PF × (Efficiency/100)</code></li>
+                <li><code>kVAR = √(kVA² - (kVA × PF)²)</code></li>
+                <li><strong>Phase Selection:</strong> Documents your system type. The kVA→kW conversion math remains identical for 1φ and 3φ.</li>
+                <li><strong>Efficiency:</strong> Accounts for core/copper losses in transformers or mechanical losses in motors.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="output-section">
+        <h1 style="font-size: 1.4rem;">Calculation Results</h1>
+
+        <div class="result-card">
+            <h3>Real Power (Output)</h3>
+            <span class="val" id="resKw">0</span><span class="unit">kW</span>
+        </div>
+        <div class="result-card motor">
+            <h3>Mechanical Rating (HP)</h3>
+            <span class="val" id="resHp">0</span><span class="unit">HP</span>
+        </div>
+        <div class="result-card reactive">
+            <h3>Reactive Power</h3>
+            <span class="val" id="resKvar">0</span><span class="unit">kVAR</span>
+        </div>
+
+        <div class="triangle-container">
+            <div class="bar" id="barReal" style="height: 85px;">
+                <div class="bar-value" id="barRealVal">85.0</div>
+                <div class="bar-label">Real Power (kW)</div>
+            </div>
+            <div class="bar reactive" id="barReact" style="height: 53px;">
+                <div class="bar-value" id="barReactVal">52.7</div>
+                <div class="bar-label">Reactive Power (kVAR)</div>
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>💡 Quick Tip:</strong> HP is derived from real kW output: <code style="background:rgba(102,187,106,0.2); color:var(--success); padding:2px 5px; border-radius:4px; font-size:0.8rem;">HP = kW ÷ 0.746</code>. Always size breakers/cables on kVA, not kW!
+        </div>
+    </div>
+</div>
+<script>
+    const inputs = ['kva', 'pfInput', 'efficiency'];
+    const pfDisplay = document.getElementById('pfDisplay');
+    inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', calculate);
+    });
+    function calculate() {
+        const kva = parseFloat(document.getElementById('kva').value) || 0;
+        const pf = parseFloat(document.getElementById('pfInput').value);
+        const eff = parseFloat(document.getElementById('efficiency').value) || 100;
+
+        pfDisplay.innerText = pf.toFixed(2);
+        const effFactor = eff / 100;
+
+        // 1. Real Power (kW)
+        const kw = kva * pf * effFactor;
+        // 2. Horsepower Calculation
+        const hp = kw / 0.7457;
+        // 3. Reactive Power (kVAR)
+        const kvar = Math.sqrt(Math.pow(kva, 2) - Math.pow(kva * pf, 2));
+
+        // Update UI
+        document.getElementById('resKw').innerText = kw.toFixed(2);
+        document.getElementById('resHp').innerText = hp.toFixed(1);
+        document.getElementById('resKvar').innerText = kvar.toFixed(2);
+
+        // Update Bar Graph
+        const maxH = 140;
+        const scale = (kva > 0) ? maxH / kva : 0;
+        const realH = Math.min(kw * scale, maxH);
+        const reactH = Math.min(kvar * scale, maxH);
+
+        document.getElementById('barReal').style.height = Math.max(realH, 4) + 'px';
+        document.getElementById('barReact').style.height = Math.max(reactH, 4) + 'px';
+        document.getElementById('barRealVal').innerText = kw.toFixed(1);
+        document.getElementById('barReactVal').innerText = kvar.toFixed(1);
+    }
+    calculate();
+</script>
+</body>
+</html>
