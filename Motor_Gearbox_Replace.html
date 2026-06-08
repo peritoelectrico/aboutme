@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Motor & Gearbox Comparison</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        :root {
+            --glass-bg: rgba(15, 23, 42, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --primary: #3b82f6;
+            --success: #10b981;
+            --fail: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #f59e0b;
+            --student-bg: rgba(20, 30, 50, 0.9);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-main);
+            background: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2500&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            grid-column: 1 / -1;
+            text-align: center;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            padding-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .input-group { flex: 1; display: flex; flex-direction: column; }
+        .col-2 { flex: 2; }
+        .col-1 { flex: 1; }
+
+        label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        input, select {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+        }
+        input:focus, select:focus {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-container {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 20px;
+            margin: 10px 0;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-propose {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+        .btn-propose:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.6); }
+
+        .btn-calc {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+        }
+        .btn-calc:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(14, 165, 233, 0.6); }
+
+        #results-section {
+            grid-column: 1 / -1;
+            display: none;
+            margin-top: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .res-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .res-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; }
+        .res-new { font-size: 1.5rem; font-weight: 700; color: #ffffff; line-height: 1.2; }
+        .res-old { font-size: 0.9rem; color: var(--text-muted); margin-top: 5px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px; }
+        .res-old span { font-size: 0.7rem; text-transform: uppercase; margin-right: 5px; opacity: 0.7; }
+
+        .card-proposal {
+            border: 2px solid var(--accent);
+            background: rgba(245, 158, 11, 0.15);
+        }
+        .res-prop-val { color: var(--accent); font-size: 1.8rem; }
+
+        #chart-container {
+            grid-column: 1 / -1;
+            height: 400px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            position: relative;
+        }
+
+        /* --- STUDENT PANEL STYLES --- */
+        .student-panel {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+            background: var(--student-bg);
+            border: 1px dashed var(--accent);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .student-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+        
+        .student-header h2 {
+            border: none;
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .step-box {
+            background: rgba(255,255,255,0.03);
+            padding: 15px;
+            border-left: 4px solid var(--primary);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .step-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .formula-line {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: #cbd5e1;
+        }
+
+        .calc-line {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            background: rgba(0,0,0,0.3);
+            padding: 8px;
+            border-radius: 4px;
+            color: var(--success);
+        }
+
+        .note {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .results-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 768px) {
+            .container, .results-grid { grid-template-columns: 1fr; }
+            .btn-container { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⚡ Motor Replacement Comparison</h1>
+
+    <!-- Left Column: Reference -->
+    <div class="glass-card">
+        <h2>📂 Reference (Old Setup)</h2>
+        <div class="form-row">
+            <div class="input-group col-2">
+                <label>Motor Power</label>
+                <input type="number" id="old_p" placeholder="kW or HP">
+            </div>
+            <div class="input-group col-1">
+                <label>Unit</label>
+                <select id="old_unit"><option value="kW">kW</option><option value="HP">HP</option></select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="input-group">
+                <label>Motor RPM</label>
+                <input type="number" id="old_rpm" placeholder="e.g. 1450">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="input-group">
+                <label>Current Gearbox Ratio</label>
+                <input type="number" id="old_ratio" step="0.1">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="input-group col-2">
+                <label>Rack Scale (Travel / Rev)</label>
+                <input type="number" id="old_scale" placeholder="Distance per 1 rev">
+            </div>
+            <div class="input-group col-1">
+                <label>Unit</label>
+                <select id="old_scale_u"><option value="cm">cm</option><option value="in">in</option></select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="input-group">
+                <label>Service Factor (SF)</label>
+                <input type="number" id="old_sf" value="1.0" step="0.1">
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: New & Proposal -->
+    <div class="glass-card">
+        <h2>🚀 New Configuration</h2>
+        <div class="form-row">
+            <div class="input-group col-2">
+                <label>New Motor Power</label>
+                <input type="number" id="new_p" placeholder="kW or HP">
+            </div>
+            <div class="input-group col-1">
+                <label>Unit</label>
+                <select id="new_unit"><option value="kW">kW</option><option value="HP">HP</option></select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="input-group">
+                <label>New Motor RPM</label>
+                <input type="number" id="new_rpm" placeholder="e.g. 1500">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="input-group">
+                <label>New Service Factor (SF)</label>
+                <input type="number" id="new_sf" value="1.0" step="0.1">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="input-group">
+                <label>Gearbox Efficiency (η)</label>
+                <input type="number" id="eff" value="0.95" step="0.01">
+            </div>
+        </div>
+        
+        <hr style="border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+        
+        <h2>🛠 Real-World Verification</h2>
+        <div class="form-row">
+            <div class="input-group">
+                <label>Available / Purchasable Ratio</label>
+                <input type="number" id="real_ratio" step="0.1" placeholder="Ratio you can buy">
+            </div>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-container">
+        <button class="btn btn-propose" onclick="proposeGearbox()">
+            <span>🎯</span> Propose Ideal Gearbox Ratio
+        </button>
+        <button class="btn btn-calc" onclick="calculateResults()">
+            <span>✅</span> Calculate Comparison
+        </button>
+    </div>
+
+    <!-- Results -->
+    <div id="results-section">
+        <div class="results-grid">
+            <!-- 1. Proposal Result -->
+            <div class="res-card card-proposal">
+                <div class="res-title">🎯 Proposed Ideal Ratio</div>
+                <div class="res-new res-prop-val" id="res_ideal">-</div>
+                <div class="res-old">Required to match Old Torque</div>
+            </div>
+
+            <!-- 2. Torque Comparison -->
+            <div class="res-card">
+                <div class="res-title">⚡ Output Torque</div>
+                <div class="res-new" id="res_torque_new">-</div>
+                <div class="res-old" id="res_torque_old"><span>Old:</span> - Nm</div>
+            </div>
+
+            <!-- 3. Linear Speed Comparison -->
+            <div class="res-card">
+                <div class="res-title">🚀 Linear Speed</div>
+                <div class="res-new" id="res_speed_new">-</div>
+                <div class="res-old" id="res_speed_old"><span>Old:</span> -</div>
+            </div>
+
+            <!-- 4. Linear Force Comparison -->
+            <div class="res-card">
+                <div class="res-title">🏋️ Linear Force</div>
+                <div class="res-new" id="res_force_new">-</div>
+                <div class="res-old" id="res_force_old"><span>Old:</span> -</div>
+            </div>
+        </div>
+
+        <div class="glass-card" style="padding: 10px;">
+            <div id="chart-container"></div>
+        </div>
+
+        <!-- STUDENT PANEL -->
+        <div class="student-panel" id="student-panel">
+            <div class="student-header">
+                <h2>🎓 Student Analysis Panel</h2>
+                <div style="margin-left:auto; font-size:0.8rem; color:#94a3b8;">Showing calculations for New Setup</div>
+            </div>
+            <div class="steps-grid">
+                
+                <!-- Step 1: Power -->
+                <div class="step-box">
+                    <div class="step-title">1. Power Conversion</div>
+                    <div class="formula-line">P (kW) = P (HP) × 0.7457</div>
+                    <div class="calc-line" id="math_power">Waiting for data...</div>
+                    <div class="note">We use kW for standard SI unit calculations.</div>
+                </div>
+
+                <!-- Step 2: Motor Torque -->
+                <div class="step-box">
+                    <div class="step-title">2. Motor Input Torque</div>
+                    <div class="formula-line">T_in (Nm) = (9550 × P_kW) / RPM_motor</div>
+                    <div class="calc-line" id="math_motor_torque">Waiting for data...</div>
+                    <div class="note">Constant 9550 is derived from unit conversion (60×1000 / 2π).</div>
+                </div>
+
+                <!-- Step 3: Gearbox Torque -->
+                <div class="step-box">
+                    <div class="step-title">3. Gearbox Output Torque</div>
+                    <div class="formula-line">T_out = T_in × Ratio × η × SF</div>
+                    <div class="calc-line" id="math_gear_torque">Waiting for data...</div>
+                    <div class="note">The gearbox multiplies torque based on ratio and efficiency.</div>
+                </div>
+
+                <!-- Step 4: Speed -->
+                <div class="step-box">
+                    <div class="step-title">4. Linear Speed</div>
+                    <div class="formula-line">V = (RPM_motor / Ratio) × Travel_Rev</div>
+                    <div class="calc-line" id="math_speed">Waiting for data...</div>
+                </div>
+
+                 <!-- Step 5: Force -->
+                 <div class="step-box">
+                    <div class="step-title">5. Linear Force (Thrust)</div>
+                    <div class="formula-line">F (N) = T_out / Radius_meters</div>
+                    <div class="formula-line" style="font-size:0.8rem; color:#64748b">Radius = (Travel / 2π)</div>
+                    <div class="calc-line" id="math_force">Waiting for data...</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toKW(val, unit) {
+        return unit === 'HP' ? val * 0.7457 : parseFloat(val);
+    }
+
+    let globalCalc = {
+        oldTOut: 0, oldOutRpm: 0, oldSpeed: 0, oldForce: 0,
+        newTOut: 0, newOutRpm: 0, newSpeed: 0, newForce: 0,
+        eff: 0, oldP: 0, newP: 0, oldSf: 0, newSf: 0,
+        scaleVal: 0, isCm: true, newRpm: 0
+    };
+
+    function proposeGearbox() {
+        const oldP = toKW(document.getElementById('old_p').value, document.getElementById('old_unit').value);
+        const oldRpm = parseFloat(document.getElementById('old_rpm').value);
+        const oldRatio = parseFloat(document.getElementById('old_ratio').value);
+        const oldSf = parseFloat(document.getElementById('old_sf').value) || 1;
+        
+        const newP = toKW(document.getElementById('new_p').value, document.getElementById('new_unit').value);
+        const newRpm = parseFloat(document.getElementById('new_rpm').value);
+        const newSf = parseFloat(document.getElementById('new_sf').value) || 1;
+        const eff = parseFloat(document.getElementById('eff').value) || 0.95;
+
+        let scaleVal = parseFloat(document.getElementById('old_scale').value) || 0;
+        const isCm = document.getElementById('old_scale_u').value === 'cm';
+
+        if (isNaN(oldP) || isNaN(oldRpm) || isNaN(oldRatio) || isNaN(newP) || isNaN(newRpm)) {
+            alert("Please fill in all Motor Power, RPM, and Ratio fields.");
+            return;
+        }
+
+        // Calculations
+        const oldTIn = (9550 * oldP) / oldRpm;
+        const newTIn = (9550 * newP) / newRpm;
+        const oldTOut = oldTIn * oldRatio * eff * oldSf;
+        
+        // The Proposal: Calculate ratio needed to match old torque
+        const idealRatio = oldTOut / (newTIn * eff * newSf);
+
+        // UI Update
+        document.getElementById('results-section').style.display = 'block';
+        document.getElementById('student-panel').style.display = 'block'; // Show student panel
+        
+        // Show Proposal
+        document.getElementById('res_ideal').innerText = idealRatio.toFixed(2) + " : 1";
+
+        // Calculate Old Reference Values for the UI
+        const oldOutRpm = oldRpm / oldRatio;
+        const oldSpeed = oldOutRpm * scaleVal;
+        const scaleM = isCm ? scaleVal * 0.01 : scaleVal * 0.0254;
+        const radiusM = scaleM / (2 * Math.PI);
+        const oldForceN = oldTOut / radiusM;
+
+        document.getElementById('res_torque_old').innerHTML = `<span>Old:</span> ${oldTOut.toFixed(1)} Nm`;
+        document.getElementById('res_speed_old').innerHTML = `<span>Old:</span> ${oldSpeed.toFixed(1)} ${isCm ? 'cm' : 'in'}/min`;
+        document.getElementById('res_force_old').innerHTML = `<span>Old:</span> ${oldForceN.toFixed(0)} N`;
+        
+        // Reset New Values
+        document.getElementById('res_torque_new').innerText = "-";
+        document.getElementById('res_speed_new').innerText = "-";
+        document.getElementById('res_force_new').innerText = "-";
+
+        // Store for calculation/chart
+        globalCalc = {
+            oldTOut, oldOutRpm, oldSpeed, oldForce: oldForceN,
+            newTIn, oldSf, newSf, eff, oldP, newP,
+            scaleVal, isCm, newRpm
+        };
+        
+        // Draw initial chart (curves only, no points yet)
+        drawChart(0, 0, 0); 
+    }
+
+    function calculateResults() {
+        if (!globalCalc.oldTOut) {
+            alert("Please click 'Propose Ideal Gearbox Ratio' first.");
+            return;
+        }
+
+        const realRatio = parseFloat(document.getElementById('real_ratio').value);
+        if (isNaN(realRatio)) {
+            alert("Please enter a Real/Purchasable Gearbox Ratio.");
+            return;
+        }
+
+        // --- Calculations ---
+        const realTOut = globalCalc.newTIn * realRatio * globalCalc.eff * globalCalc.newSf;
+        const newOutRpm = globalCalc.newRpm / realRatio;
+        const newSpeed = newOutRpm * globalCalc.scaleVal;
+        
+        const scaleM = globalCalc.isCm ? globalCalc.scaleVal * 0.01 : globalCalc.scaleVal * 0.0254;
+        const radiusM = scaleM / (2 * Math.PI);
+        const newForceN = realTOut / radiusM;
+
+        // --- UI Update ---
+        document.getElementById('res_torque_new').innerText = realTOut.toFixed(1) + " Nm";
+        document.getElementById('res_speed_new').innerText = newSpeed.toFixed(1) + " " + (globalCalc.isCm ? 'cm' : 'in') + "/min";
+        document.getElementById('res_force_new').innerText = newForceN.toFixed(0) + " N";
+
+        // --- UPDATE STUDENT PANEL ---
+        // 1. Power
+        const inputP = parseFloat(document.getElementById('new_p').value);
+        const inputUnit = document.getElementById('new_unit').value;
+        if(inputUnit === 'HP') {
+            document.getElementById('math_power').innerHTML = `${globalCalc.newP.toFixed(2)} kW = ${inputP} HP × 0.7457`;
+        } else {
+            document.getElementById('math_power').innerHTML = `${globalCalc.newP.toFixed(2)} kW = ${inputP} kW (No conversion needed)`;
+        }
+
+        // 2. Motor Torque
+        document.getElementById('math_motor_torque').innerHTML = 
+            `${globalCalc.newTIn.toFixed(2)} Nm = (9550 × ${globalCalc.newP.toFixed(2)}) / ${globalCalc.newRpm}`;
+
+        // 3. Gearbox Torque
+        document.getElementById('math_gear_torque').innerHTML = 
+            `${realTOut.toFixed(1)} Nm = ${globalCalc.newTIn.toFixed(2)} × ${realRatio} × ${globalCalc.eff} × ${globalCalc.newSf}`;
+
+        // 4. Speed
+        document.getElementById('math_speed').innerHTML = 
+            `${newSpeed.toFixed(1)} = (${globalCalc.newRpm} / ${realRatio}) × ${globalCalc.scaleVal}`;
+
+        // 5. Force
+        document.getElementById('math_force').innerHTML = 
+            `${newForceN.toFixed(0)} N = ${realTOut.toFixed(1)} Nm / ${radiusM.toFixed(4)} m`;
+
+
+        // Store and draw
+        globalCalc.newTOut = realTOut;
+        globalCalc.newOutRpm = newOutRpm;
+        globalCalc.realRatio = realRatio;
+        
+        drawChart(newOutRpm, realTOut, realRatio);
+    }
+
+    function drawChart(newOutRpm, realTOut, realRatio) {
+        const maxRPM = Math.max(globalCalc.oldOutRpm, newOutRpm || globalCalc.newOutRpm) * 1.5;
+        const rpmRange = [];
+        for(let i=10; i<maxRPM; i+=10) rpmRange.push(i);
+
+        // Curves
+        const yOld = rpmRange.map(r => (9550 * globalCalc.oldP * globalCalc.eff * globalCalc.oldSf) / r);
+        const yNew = rpmRange.map(r => (9550 * globalCalc.newP * globalCalc.eff * globalCalc.newSf) / r);
+
+        const traceOld = { x: rpmRange, y: yOld, type: 'scatter', mode: 'lines', name: 'Old Setup', line: {color: '#94a3b8', width: 3, dash: 'dot'}, hoverinfo: 'skip' };
+        const traceNew = { x: rpmRange, y: yNew, type: 'scatter', mode: 'lines', name: 'New Setup', line: {color: '#3b82f6', width: 3}, hoverinfo: 'skip' };
+
+        const data = [traceOld, traceNew];
+
+        // If we have calculated the Real Result, add the points
+        if (realRatio) {
+            const pointOld = {
+                x: [globalCalc.oldOutRpm], y: [globalCalc.oldTOut],
+                mode: 'markers', name: 'Old Operating Point',
+                marker: {size: 12, color: '#94a3b8', symbol: 'circle', line: {width:2, color:'white'}}
+            };
+            const pointReal = {
+                x: [newOutRpm], y: [realTOut],
+                mode: 'markers', name: 'New Operating Point',
+                marker: {size: 12, color: '#10b981', symbol: 'star', line: {width:2, color:'white'}}
+            };
+            data.push(pointOld, pointReal);
+        }
+
+        const layout = {
+            title: { text: 'Torque vs RPM', font: {color: '#f8fafc', size: 18} },
+            xaxis: { 
+                title: 'Output RPM (Shaft)', 
+                gridcolor: 'rgba(255,255,255,0.1)',
+                tickfont: { color: '#94a3b8', size: 11 },
+                dtick: (maxRPM / 10) > 10 ? Math.round(maxRPM / 10) : 10,
+                fixedrange: true 
+            },
+            yaxis: { 
+                title: 'Torque (Nm)', 
+                gridcolor: 'rgba(255,255,255,0.1)',
+                tickfont: { color: '#f8fafc', size: 12 },
+                nticks: 8,
+                fixedrange: true
+            },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            legend: { font: {color: '#f8fafc', size: 12}, x: 0.01, y: 0.99 },
+            hovermode: 'closest',
+            margin: { l: 60, r: 30, b: 50, t: 50 }
+        };
+
+        Plotly.newPlot('chart-container', data, layout, {responsive: true, displayModeBar: false});
+    }
+</script>
+
+</body>
+</html>
