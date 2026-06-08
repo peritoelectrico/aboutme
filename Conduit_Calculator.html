@@ -69,40 +69,57 @@
         }
 
         .visualizer-card::before {
-            content: "3D MODEL PREVIEW";
+            content: "CROSS-SECTION VIEW (to scale)";
             position: absolute;
             top: 24px;
             width: 100%;
             text-align: center;
             font-size: 0.75rem;
             font-weight: 800;
-            color: rgba(255,255,255,0.25);
+            color: rgba(255,255,255,0.30);
             letter-spacing: 3px;
         }
 
-        .pipe-scene { perspective: 1000px; width: 220px; height: 220px; display: flex; justify-content: center; align-items: center; }
-        .pipe-3d {
-            width: 160px; height: 160px; border-radius: 50%; position: relative;
-            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            transform: rotateX(15deg) rotateY(0deg);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        .pipe-svg-wrap {
+            width: 100%;
+            max-width: 360px;
+            aspect-ratio: 1 / 1;
+            position: relative;
+            filter: drop-shadow(0 18px 35px rgba(0,0,0,0.55));
         }
-        .pipe-wall { position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 50%; border-style: solid; transition: all 0.6s ease; }
-        .pipe-bore { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            border-radius: 50%; 
-            background: radial-gradient(circle at 35% 35%, #2a3a4a, #0a0f1a); 
-            box-shadow: inset 0 8px 25px rgba(0,0,0,0.9); 
-            transition: all 0.6s ease; 
+        .pipe-svg-wrap svg {
+            width: 100%; height: 100%;
+            display: block;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .pipe-highlight { position: absolute; top: 6px; left: 6px; right: 6px; bottom: 6px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.15); pointer-events: none; }
+        .pipe-svg-wrap:hover svg { transform: scale(1.02); }
 
-        .type-EMT .pipe-wall { border-width: 5px; background: linear-gradient(135deg, #7a8a9a 0%, #b0c4d8 50%, #5a6a7a 100%); box-shadow: inset 0 0 15px rgba(0,0,0,0.2); }
-        .type-EMT .pipe-bore { width: 84%; height: 84%; }
-        .type-RMC .pipe-wall { border-width: 14px; background: linear-gradient(135deg, #4a5a6a 0%, #7a8a9a 50%, #3a4a5a 100%); box-shadow: inset 0 0 15px rgba(0,0,0,0.4); }
-        .type-RMC .pipe-bore { width: 72%; height: 72%; }
-        .type-PVC .pipe-wall { border-width: 18px; background: linear-gradient(135deg, #d8e0e8 0%, #f0f4f8 50%, #c0c8d0 100%); box-shadow: inset 0 2px 8px rgba(0,0,0,0.05); }
-        .type-PVC .pipe-bore { width: 68%; height: 68%; }
+        .vis-legend {
+            margin-top: 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+            justify-content: center;
+            max-width: 320px;
+        }
+        .vis-legend .chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 0.72rem; color: var(--text-light);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 4px 10px; border-radius: 999px;
+        }
+        .vis-legend .swatch {
+            width: 10px; height: 10px; border-radius: 50%;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4);
+        }
+        .vis-stats {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+        .vis-stats strong { color: var(--primary); font-weight: 700; }
 
         /* --- CONTROLS CARD --- */
         .controls-card {
@@ -200,19 +217,16 @@
 
 <div class="main-wrapper">
     
-    <!-- 3D VISUALIZER -->
+    <!-- VISUALIZER -->
     <div class="visualizer-card glass-panel">
-        <div class="pipe-scene">
-            <div id="pipeModel" class="pipe-3d type-EMT">
-                <div class="pipe-wall"></div>
-                <div class="pipe-highlight"></div>
-                <div class="pipe-bore"></div>
-            </div>
+        <div class="pipe-svg-wrap">
+            <svg id="pipeSvg" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg"></svg>
         </div>
-        <div style="margin-top: 35px; text-align: center;">
-            <strong style="color: var(--text-light);">Selected Type:</strong> <br>
-            <span id="visualizerLabel" style="font-weight: 700; color: var(--primary); font-size: 1.1rem; margin-top:5px; display:inline-block;">EMT</span>
+        <div class="vis-stats" id="visStats">
+            <strong id="visualizerLabel">EMT</strong> &middot; <span id="visSize">—</span>
+            &nbsp;|&nbsp; Fill: <strong id="visFill">0%</strong>
         </div>
+        <div class="vis-legend" id="visLegend"></div>
     </div>
 
     <!-- CONTROLS -->
@@ -229,9 +243,26 @@
         </div>
 
         <div class="control-group">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight: 600; color: var(--text-light);">
+                <input type="checkbox" id="nippleMode" style="width:18px; height:18px; accent-color: var(--primary);">
+                <span>Conduit Nipple Mode (≤ 24" — NEC Ch.9 Table 1, Note 4)</span>
+            </label>
+            <div style="font-size: 0.75rem; color: var(--text-light); margin-top:6px; padding-left:28px; line-height:1.4;">
+                When enabled, fill limit becomes <strong style="color: var(--primary);">60%</strong> and 310.15(C)(1) ampacity
+                derating does not apply.
+            </div>
+        </div>
+
+        <div class="control-group">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <label style="font-weight: 600; margin: 0; color: var(--text-light);">Conductor Inputs</label>
                 <span style="font-size: 0.75rem; color: var(--text-light); background:rgba(255,255,255,0.06); padding: 2px 8px; border-radius:4px;">Max 5 Types</span>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-light); background: rgba(79,195,247,0.08); border-left: 3px solid var(--primary); padding: 8px 12px; border-radius: 6px; margin-bottom: 10px; line-height:1.45;">
+                <strong style="color: var(--primary);">ℹ️ OD reference:</strong>
+                Use the insulated-conductor outside diameter from <strong>NEC Ch.9, Table 5</strong> (TW/THHN/THWN/XHHW, etc.)
+                or <strong>Table 5A</strong> for compact stranded conductors. For multi-conductor cables, use the cable's
+                actual outer diameter.
             </div>
             <div id="cables-container"></div>
             <button class="btn-add" id="addCableBtn">+ Add Conductor Type</button>
@@ -253,56 +284,121 @@
             </div>
 
             <div class="metric" style="margin-top: 10px;"><span>Current Fill %:</span> <strong id="resFillPercent">0%</strong></div>
-            <div id="error-msg" style="color: var(--danger); font-weight: 700; display: none; margin-top: 15px; text-align: center; font-size: 0.9rem;">Exceeds 3" Limit</div>
+            <div id="error-msg" style="color: var(--danger); font-weight: 700; display: none; margin-top: 15px; text-align: center; font-size: 0.9rem;">Exceeds largest available trade size (6″)</div>
         </div>
 
         <div id="practicalityPanel" class="practicality-panel">
             <strong>⚡ Field Assessment:</strong> <span id="practicalityText"></span>
+            <div style="font-size:0.7rem; color: var(--text-light); margin-top:6px; font-style:italic;">Field guidance only — not an NEC requirement.</div>
         </div>
     </div>
 </div>
 
 <script>
+    // ============================================================
+    // NEC 2023, Chapter 9, Table 4 — Total Internal Area (100%)
+    // Values in square inches. Order matters: smallest → largest.
+    // ============================================================
     const CONDUIT_AREAS = {
-        "1/2\"": 0.349, "3/4\"": 0.602, "1\"": 0.864, "1-1/4\"": 1.384,
-        "1-1/2\"": 2.038, "2\"": 3.356, "2-1/2\"": 5.000, "3\"": 7.048
+        EMT: {
+            "1/2\"":   0.304,
+            "3/4\"":   0.533,
+            "1\"":     0.864,
+            "1-1/4\"": 1.496,
+            "1-1/2\"": 2.036,
+            "2\"":     3.356,
+            "2-1/2\"": 5.858,
+            "3\"":     8.846,
+            "3-1/2\"": 11.545,
+            "4\"":     14.753
+        },
+        RMC: {
+            "1/2\"":   0.314,
+            "3/4\"":   0.549,
+            "1\"":     0.887,
+            "1-1/4\"": 1.526,
+            "1-1/2\"": 2.071,
+            "2\"":     3.408,
+            "2-1/2\"": 4.866,
+            "3\"":     7.499,
+            "3-1/2\"": 10.010,
+            "4\"":     12.882,
+            "5\"":     20.212,
+            "6\"":     29.158
+        },
+        PVC: { // PVC Schedule 40
+            "1/2\"":   0.285,
+            "3/4\"":   0.508,
+            "1\"":     0.832,
+            "1-1/4\"": 1.453,
+            "1-1/2\"": 1.986,
+            "2\"":     3.291,
+            "2-1/2\"": 4.695,
+            "3\"":     7.268,
+            "3-1/2\"": 9.737,
+            "4\"":     12.554,
+            "5\"":     19.761,
+            "6\"":     28.567
+        }
     };
+
+    // NEC 2023, Chapter 9, Table 4 — INSIDE diameter (inches) per trade size.
+    const CONDUIT_ID = {
+        EMT: { "1/2\"":0.622, "3/4\"":0.824, "1\"":1.049, "1-1/4\"":1.380, "1-1/2\"":1.610,
+                "2\"":2.067, "2-1/2\"":2.731, "3\"":3.356, "3-1/2\"":3.834, "4\"":4.334 },
+        RMC: { "1/2\"":0.632, "3/4\"":0.836, "1\"":1.063, "1-1/4\"":1.394, "1-1/2\"":1.624,
+                "2\"":2.083, "2-1/2\"":2.489, "3\"":3.090, "3-1/2\"":3.570, "4\"":4.050,
+                "5\"":5.073, "6\"":6.093 },
+        PVC: { "1/2\"":0.602, "3/4\"":0.804, "1\"":1.029, "1-1/4\"":1.360, "1-1/2\"":1.590,
+                "2\"":2.047, "2-1/2\"":2.445, "3\"":3.042, "3-1/2\"":3.521, "4\"":3.998,
+                "5\"":5.016, "6\"":6.031 }
+    };
+
+    // Cosmetic wall thickness (fraction of inside radius) per type.
+    const WALL_FRACTION = { EMT: 0.10, RMC: 0.22, PVC: 0.28 };
+
+    // Conductor colors cycled per cable row.
+    const COND_COLORS = ['#fbbf24', '#34d399', '#60a5fa', '#f472b6', '#a78bfa', '#fb923c', '#22d3ee'];
 
     const VISUAL_CONFIG = {
-        "EMT": { class: "type-EMT", label: "EMT (Thin Wall)" },
-        "RMC": { class: "type-RMC", label: "RMC (Thick Wall)" },
-        "PVC": { class: "type-PVC", label: "PVC (Thickest)" }
+        "EMT": { label: "EMT",         wall: ['#9aa8b8', '#cbd6e2', '#5a6877'], inner: '#0a0f1a' },
+        "RMC": { label: "RMC",         wall: ['#5a6877', '#8a98a8', '#3a4858'], inner: '#08101c' },
+        "PVC": { label: "PVC Sch 40",  wall: ['#d8d8dc', '#f1f1f4', '#a8a8b0'], inner: '#0a0f1a' }
     };
-
-    const CALC_MULTIPLIER = { "EMT": 1.0, "RMC": 1.02, "PVC": 0.95 };
 
     const cablesContainer = document.getElementById('cables-container');
     const addBtn = document.getElementById('addCableBtn');
     const conduitTypeSelect = document.getElementById('conduitType');
-    const pipeModel = document.getElementById('pipeModel');
+    const nippleCheckbox = document.getElementById('nippleMode');
+    const pipeSvg = document.getElementById('pipeSvg');
     const visualizerLabel = document.getElementById('visualizerLabel');
+    const visSize = document.getElementById('visSize');
+    const visFill = document.getElementById('visFill');
+    const visLegend = document.getElementById('visLegend');
 
     let cableCount = 0;
 
     addCableRow();
 
     addBtn.addEventListener('click', addCableRow);
+    nippleCheckbox.addEventListener('change', calculate);
 
-    conduitTypeSelect.addEventListener('change', (e) => {
-        const type = e.target.value;
-        pipeModel.className = `pipe-3d ${VISUAL_CONFIG[type].class}`;
-        visualizerLabel.innerText = VISUAL_CONFIG[type].label;
-        calculate();
-    });
+    conduitTypeSelect.addEventListener('change', () => calculate());
 
     function addCableRow() {
         if (cableCount >= 5) return;
+        const idx = cableCount;
         cableCount++;
+        const color = COND_COLORS[idx % COND_COLORS.length];
         const row = document.createElement('div');
         row.className = 'cable-row';
+        row.dataset.color = color;
         row.innerHTML = `
             <div class="input-wrapper">
-                <label>OD (Inches)</label>
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${color}; box-shadow: 0 0 0 1px rgba(0,0,0,0.3);"></span>
+                    OD (Inches)
+                </label>
                 <input type="number" step="0.001" value="0.250" class="diam-input">
             </div>
             <div class="input-wrapper">
@@ -326,10 +422,10 @@
         calculate();
     }
 
-    function getNextSize(currentSize) {
-        const sizes = ["1/2\"", "3/4\"", "1\"", "1-1/4\"", "1-1/2\"", "2\"", "2-1/2\"", "3\""];
+    function getNextSize(currentSize, type) {
+        const sizes = Object.keys(CONDUIT_AREAS[type]);
         const idx = sizes.indexOf(currentSize);
-        return idx < sizes.length - 1 ? sizes[idx + 1] : null;
+        return idx >= 0 && idx < sizes.length - 1 ? sizes[idx + 1] : null;
     }
 
     function calculate() {
@@ -345,21 +441,32 @@
             totalCount += qty;
         });
 
-        let limitPercent = totalCount === 1 ? 53 : totalCount === 2 ? 31 : 40;
-        
+        // NEC Ch.9 Table 1 fill limits.
+        // Nipple (≤24") rule — Note 4 — allows 60% regardless of conductor count.
+        const isNipple = nippleCheckbox.checked;
+        let limitPercent;
+        if (isNipple) {
+            limitPercent = 60;
+        } else if (totalCount === 1) {
+            limitPercent = 53;
+        } else if (totalCount === 2) {
+            limitPercent = 31;
+        } else {
+            limitPercent = 40;
+        }
+
         document.getElementById('resTotalWires').innerText = totalCount;
-        document.getElementById('resNECLimit').innerText = limitPercent + "%";
+        document.getElementById('resNECLimit').innerText = limitPercent + "%" + (isNipple ? " (Nipple)" : "");
         document.getElementById('error-msg').style.display = 'none';
 
         const selectedType = conduitTypeSelect.value;
-        const calcMult = CALC_MULTIPLIER[selectedType];
-        
+        const areaTable = CONDUIT_AREAS[selectedType];
+
         let foundSize = null;
         let actualFill = 0;
 
-        for (const [size, area] of Object.entries(CONDUIT_AREAS)) {
-            const effectiveArea = area * calcMult;
-            const fill = (totalArea / effectiveArea) * 100;
+        for (const [size, area] of Object.entries(areaTable)) {
+            const fill = (totalArea / area) * 100;
             if (fill <= limitPercent) {
                 foundSize = size;
                 actualFill = fill;
@@ -376,11 +483,11 @@
         if (foundSize) {
             elMinConduit.innerText = foundSize;
             elFillPercent.innerText = actualFill.toFixed(2) + "%";
-            
-            const nextSizeKey = getNextSize(foundSize);
+
+            const nextSizeKey = getNextSize(foundSize, selectedType);
             if (nextSizeKey) {
                 elNextSize.innerText = nextSizeKey;
-                const nextArea = CONDUIT_AREAS[nextSizeKey] * calcMult;
+                const nextArea = areaTable[nextSizeKey];
                 const nextFill = (totalArea / nextArea) * 100;
                 elNextClearance.innerText = `${nextFill.toFixed(1)}% Fill`;
             } else {
@@ -389,14 +496,192 @@
             }
 
             updatePracticality(foundSize, actualFill, totalCount);
+            renderVisualizer(selectedType, foundSize, actualFill);
         } else {
+            const sizes = Object.keys(areaTable);
             elMinConduit.innerText = "N/A";
-            elNextSize.innerText = "3\" (Max)";
+            elNextSize.innerText = `${sizes[sizes.length - 1]} (Max)`;
             elNextClearance.innerText = "";
             elFillPercent.innerText = "Overfilled";
             document.getElementById('error-msg').style.display = 'block';
             elPracticality.style.display = 'none';
+            // Still render the largest size with overflow indication so user sees the situation.
+            renderVisualizer(selectedType, sizes[sizes.length - 1], null);
         }
+    }
+
+    // ============================================================
+    // SVG Visualizer — draws conduit cross-section to scale with
+    // conductors packed inside using a greedy circle-packing heuristic.
+    // ============================================================
+    function gatherConductors() {
+        const list = [];
+        document.querySelectorAll('.cable-row').forEach((row, gi) => {
+            const od = parseFloat(row.querySelector('.diam-input').value) || 0;
+            const qty = Math.max(0, parseInt(row.querySelector('.qty-input').value) || 0);
+            const color = row.dataset.color || COND_COLORS[gi % COND_COLORS.length];
+            for (let i = 0; i < qty; i++) {
+                if (od > 0) list.push({ d: od, r: od / 2, color, group: gi });
+            }
+        });
+        return list;
+    }
+
+    function packCircles(circles, R) {
+        // Sort by descending radius for better packing.
+        circles.sort((a, b) => b.r - a.r);
+        const placed = [];
+        for (const c of circles) {
+            const lim = R - c.r;
+            if (lim < 0) { c.x = NaN; c.y = NaN; placed.push(c); continue; }
+
+            const candidates = [];
+            if (placed.length === 0) {
+                candidates.push([0, 0]);
+            } else {
+                // Touch each placed circle at angles around it.
+                for (const p of placed) {
+                    const d = p.r + c.r;
+                    for (let a = 0; a < 360; a += 6) {
+                        const rad = a * Math.PI / 180;
+                        candidates.push([p.x + d * Math.cos(rad), p.y + d * Math.sin(rad)]);
+                    }
+                }
+                // Touch the wall at angles.
+                for (let a = 0; a < 360; a += 6) {
+                    const rad = a * Math.PI / 180;
+                    candidates.push([lim * Math.cos(rad), lim * Math.sin(rad)]);
+                }
+            }
+
+            let best = null;
+            for (const [x, y] of candidates) {
+                if (Math.hypot(x, y) > lim + 1e-6) continue;
+                let ok = true;
+                for (const p of placed) {
+                    if (!isFinite(p.x)) continue;
+                    if (Math.hypot(x - p.x, y - p.y) < (p.r + c.r) - 1e-6) { ok = false; break; }
+                }
+                if (!ok) continue;
+                const score = Math.hypot(x, y); // prefer center
+                if (best === null || score < best.score) best = { x, y, score };
+            }
+            if (best) { c.x = best.x; c.y = best.y; }
+            else { c.x = NaN; c.y = NaN; }
+            placed.push(c);
+        }
+        return placed;
+    }
+
+    function renderVisualizer(type, sizeKey, fillPct) {
+        const ID_in = CONDUIT_ID[type][sizeKey];
+        const cfg = VISUAL_CONFIG[type];
+        const VB = 320;                // viewBox size
+        const cx = VB / 2, cy = VB / 2;
+        const margin = 18;
+        const Router = VB / 2 - margin;
+        const wallFrac = WALL_FRACTION[type];
+        const Rinner = Router / (1 + wallFrac); // inside radius (drawing units)
+        // Pixel-per-inch scaling so conductors are sized correctly relative to the bore.
+        const pxPerIn = (Rinner * 2) / ID_in;
+
+        const conductors = gatherConductors().map(c => ({ ...c, r: c.r * pxPerIn, d: c.d * pxPerIn }));
+        const placed = packCircles(conductors, Rinner);
+
+        const uid = Math.random().toString(36).slice(2, 8);
+        const wallGrad = `wallGrad_${uid}`;
+        const innerGrad = `innerGrad_${uid}`;
+        const condBaseGrad = `condBase_${uid}`;
+
+        let svg = '';
+        svg += `<defs>`;
+        svg += `<radialGradient id="${wallGrad}" cx="35%" cy="30%" r="75%">` +
+               `<stop offset="0%" stop-color="${cfg.wall[1]}"/>` +
+               `<stop offset="55%" stop-color="${cfg.wall[0]}"/>` +
+               `<stop offset="100%" stop-color="${cfg.wall[2]}"/>` +
+               `</radialGradient>`;
+        svg += `<radialGradient id="${innerGrad}" cx="50%" cy="50%" r="60%">` +
+               `<stop offset="0%" stop-color="${cfg.inner}" stop-opacity="0.85"/>` +
+               `<stop offset="100%" stop-color="#000" stop-opacity="1"/>` +
+               `</radialGradient>`;
+        svg += `<filter id="shadow_${uid}" x="-20%" y="-20%" width="140%" height="140%">` +
+               `<feGaussianBlur in="SourceAlpha" stdDeviation="2"/>` +
+               `<feOffset dx="0" dy="1.5" result="off"/>` +
+               `<feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>` +
+               `<feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>` +
+               `</filter>`;
+        svg += `</defs>`;
+
+        // Soft outside drop
+        svg += `<circle cx="${cx + 2}" cy="${cy + 6}" r="${Router}" fill="rgba(0,0,0,0.55)" filter="blur(8px)"/>`;
+
+        // Conduit wall (outer)
+        svg += `<circle cx="${cx}" cy="${cy}" r="${Router}" fill="url(#${wallGrad})" stroke="rgba(0,0,0,0.35)" stroke-width="1"/>`;
+        // Inner bore
+        svg += `<circle cx="${cx}" cy="${cy}" r="${Rinner}" fill="url(#${innerGrad})" stroke="rgba(0,0,0,0.6)" stroke-width="1"/>`;
+        // Subtle inner highlight ring
+        svg += `<circle cx="${cx}" cy="${cy}" r="${Rinner - 1.5}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`;
+
+        // Conductors
+        let unplaced = 0;
+        for (const c of placed) {
+            if (!isFinite(c.x)) { unplaced++; continue; }
+            const x = cx + c.x;
+            const y = cy + c.y;
+            const condGradId = `cg_${uid}_${Math.random().toString(36).slice(2, 6)}`;
+            svg += `<defs><radialGradient id="${condGradId}" cx="35%" cy="30%" r="75%">` +
+                   `<stop offset="0%" stop-color="${shade(c.color, 30)}"/>` +
+                   `<stop offset="60%" stop-color="${c.color}"/>` +
+                   `<stop offset="100%" stop-color="${shade(c.color, -35)}"/>` +
+                   `</radialGradient></defs>`;
+            svg += `<circle cx="${x}" cy="${y}" r="${c.r}" fill="url(#${condGradId})" stroke="rgba(0,0,0,0.45)" stroke-width="0.6" filter="url(#shadow_${uid})"/>`;
+            // tiny highlight
+            svg += `<circle cx="${x - c.r * 0.3}" cy="${y - c.r * 0.35}" r="${c.r * 0.25}" fill="rgba(255,255,255,0.35)"/>`;
+        }
+
+        // Outer label of size
+        svg += `<text x="${cx}" y="${VB - 4}" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="11" fill="rgba(255,255,255,0.35)">ID = ${ID_in.toFixed(3)}″</text>`;
+
+        pipeSvg.innerHTML = svg;
+
+        // Labels & legend
+        visualizerLabel.innerText = cfg.label;
+        visSize.innerText = sizeKey;
+        if (fillPct === null || fillPct === undefined) {
+            visFill.innerText = unplaced > 0 ? `Overfilled (${unplaced} not shown)` : '—';
+            visFill.style.color = 'var(--danger)';
+        } else {
+            visFill.innerText = fillPct.toFixed(2) + '%';
+            visFill.style.color = fillPct > 40 ? 'var(--warning)' : 'var(--primary)';
+        }
+        renderLegend();
+    }
+
+    function renderLegend() {
+        const rows = document.querySelectorAll('.cable-row');
+        let html = '';
+        rows.forEach((row, i) => {
+            const od = parseFloat(row.querySelector('.diam-input').value) || 0;
+            const qty = parseInt(row.querySelector('.qty-input').value) || 0;
+            const color = row.dataset.color || COND_COLORS[i % COND_COLORS.length];
+            if (qty <= 0 || od <= 0) return;
+            html += `<span class="chip"><span class="swatch" style="background:${color}"></span>` +
+                    `${qty} × ⌀ ${od.toFixed(3)}″</span>`;
+        });
+        visLegend.innerHTML = html;
+    }
+
+    function shade(hex, percent) {
+        // Lighten (+) or darken (-) a hex color by percent (-100..100).
+        const c = hex.replace('#', '');
+        const num = parseInt(c.length === 3 ? c.split('').map(x => x + x).join('') : c, 16);
+        let r = (num >> 16) + Math.round(255 * percent / 100);
+        let g = ((num >> 8) & 0xff) + Math.round(255 * percent / 100);
+        let b = (num & 0xff) + Math.round(255 * percent / 100);
+        r = Math.min(255, Math.max(0, r));
+        g = Math.min(255, Math.max(0, g));
+        b = Math.min(255, Math.max(0, b));
+        return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
     }
 
     function updatePracticality(size, fill, count) {
