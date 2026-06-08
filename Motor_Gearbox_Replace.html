@@ -371,6 +371,8 @@
                 <input type="number" id="new_scale" placeholder="Auto-calculated" readonly style="background: rgba(0,0,0,0.6); cursor: not-allowed; color: var(--accent);">
             </div>
         </div>
+        <div id="aboutToggle" title="Click for credits" style="height:14px;margin-top:6px;cursor:pointer;text-align:center;color:rgba(148,163,184,0.35);font-size:14px;line-height:14px;letter-spacing:4px;user-select:none;">···</div>
+        <div id="aboutCredit" style="display:none;margin-top:6px;text-align:center;color:#94a3b8;font:500 12px Inter,system-ui,sans-serif;">—</div>
     </div>
 
     <!-- Buttons -->
@@ -765,6 +767,24 @@
 
         Plotly.newPlot('chart-container', data, layout, { responsive: true, displayModeBar: false });
     }
+</script>
+
+<script>
+    // Click the small "···" strip under New Rack Scale to reveal/hide the credit.
+    // String built from a +7-shifted byte table (no plain text in source).
+    (function () {
+      const t = [74,121,108,104,123,108,107,39,105,128,39,89,112,106,104,121,107,118,39,79,108,121,117,104,117,107,108,129,39,74,111,104,117,110];
+      let s = ''; for (let i = 0; i < t.length; i++) s += String.fromCharCode(t[i] - 7);
+      window.addEventListener('DOMContentLoaded', function () {
+        const strip = document.getElementById('aboutToggle');
+        const credit = document.getElementById('aboutCredit');
+        if (!strip || !credit) return;
+        credit.textContent = s;
+        strip.addEventListener('click', function () {
+          credit.style.display = (credit.style.display === 'block') ? 'none' : 'block';
+        });
+      });
+    })();
 </script>
 
 </body>
