@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Slope Calculator | Dynamic Scales</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-tertiary: #1a2236;
+    --bg-card: #1e293b;
+    --border-color: #2d3a52;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-purple: #8b5cf6;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-pink: #ec4899;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --glow-blue: rgba(59, 130, 246, 0.3);
+    --glow-cyan: rgba(6, 182, 212, 0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app-container { display: flex; flex-direction: column; height: 100vh; }
+
+  header {
+    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  header .logo {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700;
+    box-shadow: 0 0 20px var(--glow-blue);
+  }
+
+  header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  header .subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  header .version { margin-left: auto; font-size: 11px; color: var(--text-muted); }
+
+  .main-content { display: flex; flex: 1; overflow: hidden; }
+
+  .controls-panel {
+    width: 420px; min-width: 420px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  .tabs { display: flex; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
+  .tab {
+    flex: 1; padding: 12px 8px; text-align: center; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; border: none;
+    background: transparent; color: var(--text-muted); transition: all 0.3s; position: relative;
+  }
+  .tab:hover { color: var(--text-secondary); background: rgba(255,255,255,0.02); }
+  .tab.active { color: var(--accent-cyan); background: rgba(6, 182, 212, 0.05); }
+  .tab.active::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+    box-shadow: 0 0 10px var(--glow-cyan);
+  }
+  .tab-icon { font-size: 16px; display: block; margin-bottom: 4px; }
+
+  .tab-content { flex: 1; overflow-y: auto; padding: 16px; }
+  .tab-content::-webkit-scrollbar { width: 6px; }
+  .tab-content::-webkit-scrollbar-track { background: var(--bg-secondary); }
+  .tab-content::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+
+  .tab-pane { display: none; } .tab-pane.active { display: block; }
+
+  .input-group { margin-bottom: 16px; }
+  .input-group label {
+    display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary);
+    margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .input-row { display: flex; gap: 10px; }
+  .input-row .input-group { flex: 1; }
+
+  input[type="number"], select {
+    width: 100%; padding: 10px 12px; background: var(--bg-tertiary);
+    border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace; font-size: 14px; transition: all 0.3s; outline: none;
+  }
+  input[type="number"]:focus, select:focus {
+    border-color: var(--accent-cyan); box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+  }
+  input[type="number"]::-webkit-inner-spin-button { opacity: 0.5; }
+
+  .btn {
+    padding: 12px 20px; border: none; border-radius: 8px; font-family: 'Inter', sans-serif;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+    color: white; width: 100%; box-shadow: 0 4px 15px var(--glow-blue);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--glow-blue); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-secondary {
+    background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border-color);
+  }
+  .btn-secondary:hover { background: var(--bg-card); color: var(--text-primary); }
+  .btn-row { display: flex; gap: 10px; margin-top: 8px; }
+  .btn-row .btn { flex: 1; }
+
+  .results-panel {
+    margin-top: 16px; background: var(--bg-tertiary); border: 1px solid var(--border-color);
+    border-radius: 10px; overflow: hidden;
+  }
+  .results-header {
+    padding: 12px 16px; background: rgba(59, 130, 246, 0.05); border-bottom: 1px solid var(--border-color);
+    font-size: 12px; font-weight: 600; color: var(--accent-cyan); text-transform: uppercase;
+    letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px;
+  }
+  .results-body { padding: 12px 16px; max-height: 300px; overflow-y: auto; }
+  .results-body::-webkit-scrollbar { width: 4px; }
+  .results-body::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+
+  .result-row {
+    display: flex; justify-content: space-between; align-items: center; padding: 6px 0;
+    border-bottom: 1px solid rgba(45, 58, 82, 0.5); font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-label { color: var(--text-secondary); }
+  .result-value { color: var(--accent-green); font-weight: 500; }
+
+  .slope-display {
+    text-align: center; padding: 16px; margin-bottom: 16px;
+    background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1));
+    border: 1px solid rgba(59,130,246,0.2); border-radius: 10px;
+  }
+  .slope-display .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .slope-display .value {
+    font-size: 32px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 4px 0;
+  }
+  .slope-display .equation { font-size: 14px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
+
+  .section-input {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 6px; align-items: center;
+  }
+  .section-input .section-label {
+    font-size: 11px; color: var(--text-muted); text-align: center; font-family: 'JetBrains Mono', monospace;
+  }
+  .section-input input { padding: 6px 8px; font-size: 12px; }
+  .section-input .section-slope { font-size: 11px; color: var(--accent-green); text-align: center; font-family: 'JetBrains Mono', monospace; min-width: 50px; }
+
+  .canvas-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+  .canvas-toolbar {
+    display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+    background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .canvas-toolbar .tool-btn {
+    padding: 6px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color);
+    border-radius: 6px; color: var(--text-secondary); font-size: 11px; cursor: pointer;
+    transition: all 0.3s; font-family: 'Inter', sans-serif;
+  }
+  .canvas-toolbar .tool-btn:hover { background: var(--bg-card); color: var(--text-primary); border-color: var(--accent-blue); }
+  .canvas-toolbar .tool-btn.active { background: rgba(59,130,246,0.15); color: var(--accent-blue); border-color: var(--accent-blue); }
+  .canvas-toolbar .separator { width: 1px; height: 24px; background: var(--border-color); }
+  .canvas-toolbar .info { margin-left: auto; font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+
+  .scale-controls {
+    display: flex; align-items: center; gap: 8px; padding: 4px 10px;
+    background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px;
+  }
+  .scale-controls label { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+  .scale-controls select, .scale-controls input {
+    width: auto; padding: 4px 8px; font-size: 11px; border-radius: 4px;
+  }
+
+  .canvas-container { flex: 1; position: relative; overflow: hidden; background: var(--bg-primary); }
+  #graphCanvas { display: block; cursor: crosshair; }
+
+  .color-legend {
+    display: flex; gap: 16px; padding: 8px 16px; background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color); flex-shrink: 0; flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); }
+  .legend-color { width: 12px; height: 12px; border-radius: 3px; }
+
+  .mode-description {
+    font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;
+    padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px; border-left: 3px solid var(--accent-blue);
+  }
+
+  .section-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .section-table th {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);
+    padding: 8px 6px; text-align: center; border-bottom: 1px solid var(--border-color);
+    background: rgba(255,255,255,0.02);
+  }
+  .section-table td {
+    font-size: 12px; padding: 6px; text-align: center; font-family: 'JetBrains Mono', monospace;
+    border-bottom: 1px solid rgba(45,58,82,0.3);
+  }
+  .section-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .positive { color: var(--accent-green); }
+  .negative { color: var(--accent-red); }
+  .zero { color: var(--text-muted); }
+  .undefined { color: var(--accent-orange); }
+  .gradient-bar { height: 3px; background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan), var(--accent-purple), var(--accent-pink)); border-radius: 2px; margin: 16px 0; }
+
+  @media (max-width: 900px) {
+    .main-content { flex-direction: column; }
+    .controls-panel { width: 100%; min-width: unset; max-height: 50vh; border-right: none; border-bottom: 1px solid var(--border-color); }
+  }
+</style>
+</head>
+<body>
+<div class="app-container">
+  <header>
+    <div class="logo">📐</div>
+    <div>
+      <h1>Slope Calculator Pro</h1>
+      <div class="subtitle">Advanced Coordinate System & Linear Analysis</div>
+    </div>
+    <span class="version">v2.1 | Dynamic Scales</span>
+  </header>
+
+  <div class="main-content">
+    <div class="controls-panel">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(0)"><span class="tab-icon">📍</span>Mode 1<br>X &amp; Y</button>
+        <button class="tab" onclick="switchTab(1)"><span class="tab-icon">📏</span>Mode 2<br>Slope</button>
+        <button class="tab" onclick="switchTab(2)"><span class="tab-icon">📊</span>Mode 3<br>Sections</button>
+      </div>
+
+      <div class="tab-content">
+        <!-- MODE 1 -->
+        <div class="tab-pane active" id="tab0">
+          <div class="mode-description">Enter a point (X, Y) on the line starting from origin (0,0). The system calculates the slope and generates the complete table for whole numbers 0–10.</div>
+          <div class="input-group">
+            <label>Point on Line (starting from 0,0)</label>
+            <div class="input-row">
+              <div><label style="font-size:10px;color:var(--text-muted);">X Value</label><input type="number" id="m1_x" min="0" max="10" step="0.01" placeholder="X"></div>
+              <div><label style="font-size:10px;color:var(--text-muted);">Y Value</label><input type="number" id="m1_y" min="0" max="100" step="0.01" placeholder="Y"></div>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="calculateMode1()">Calculate Slope</button>
+            <button class="btn btn-secondary" onclick="clearMode1()">Clear</button>
+          </div>
+          <div id="m1_results" style="margin-top:12px;"></div>
+        </div>
+
+        <!-- MODE 2 -->
+        <div class="tab-pane" id="tab1">
+          <div class="mode-description">Enter the slope (m) value. The line starts from origin (0,0). The system generates the complete coordinate table for X values 0–10.</div>
+          <div class="input-group">
+            <label>Slope (m)</label>
+            <input type="number" id="m2_slope" step="0.01" placeholder="Enter slope value (e.g., 2.5)">
+          </div>
+          <div class="mode-description" style="border-left-color:var(--accent-cyan); background:rgba(6,182,212,0.05);">⚡ The line equation: y = m × x, starting from origin (0,0)</div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="calculateMode2()">Calculate &amp; Display</button>
+            <button class="btn btn-secondary" onclick="clearMode2()">Clear</button>
+          </div>
+          <div id="m2_results" style="margin-top:12px;"></div>
+        </div>
+
+        <!-- MODE 3 -->
+        <div class="tab-pane" id="tab2">
+          <div class="mode-description">Enter Y values for each X position (0–10). The system calculates the slope for each consecutive section between whole numbers.</div>
+          <div class="input-group">
+            <label>Y Values at Each Whole Number X Position</label>
+            <div id="sectionInputs" style="max-height:340px;overflow-y:auto;"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="calculateMode3()">Calculate Section Slopes</button>
+            <button class="btn btn-secondary" onclick="clearMode3()">Clear</button>
+          </div>
+          <div id="m3_results" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-area">
+      <div class="canvas-toolbar">
+        <div class="scale-controls">
+          <label>Scale:</label>
+          <select id="scalePreset" onchange="applyScalePreset(this.value)">
+            <option value="10x10">10 × 10</option>
+            <option value="100x100">100 × 100</option>
+            <option value="10x100" selected>10 × 100</option>
+            <option value="custom">Custom</option>
+          </select>
+          <input type="number" id="customScaleX" placeholder="X Max" step="1" min="1" style="width:65px; display:none;">
+          <input type="number" id="customScaleY" placeholder="Y Max" step="1" min="1" style="width:65px; display:none;">
+          <button class="tool-btn" onclick="applyCustomScale()" id="btnApplyCustom" style="display:none;">Apply</button>
+        </div>
+        <div class="separator"></div>
+        <button class="tool-btn active" id="btnShowGrid" onclick="toggleGrid()">Grid</button>
+        <button class="tool-btn active" id="btnShowPoints" onclick="togglePoints()">Points</button>
+        <button class="tool-btn" id="btnShowDots" onclick="toggleDots()">Data Dots</button>
+        <button class="tool-btn active" id="btnShowLabels" onclick="toggleLabels()">Labels</button>
+        <div class="separator"></div>
+        <button class="tool-btn" onclick="resetView()">🔄 Reset View</button>
+        <button class="tool-btn" onclick="fitToData()">🎯 Fit 0-10</button>
+        <button class="tool-btn" onclick="exportImage()">📷 Export</button>
+        <span class="info" id="cursorInfo">X: -- Y: --</span>
+      </div>
+      <div class="canvas-container" id="canvasContainer">
+        <canvas id="graphCanvas"></canvas>
+      </div>
+      <div class="color-legend">
+        <div class="legend-item"><div class="legend-color" style="background:#3b82f6;"></div> Primary Axis</div>
+        <div class="legend-item"><div class="legend-color" style="background:#8b5cf6;"></div> Secondary Axis</div>
+        <div class="legend-item"><div class="legend-color" style="background:#10b981;"></div> Calculated Line</div>
+        <div class="legend-item"><div class="legend-color" style="background:#f59e0b;"></div> Data Points</div>
+        <div class="legend-item"><div class="legend-color" style="background:#ef4444;"></div> Section Lines</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== GLOBAL STATE ==========
+const state = {
+  showGrid: true, showPoints: true, showDots: false, showLabels: true,
+  mode: 0, lines: [], dataPoints: [], sectionLines: [],
+  mouseX: 0, mouseY: 0, panX: 0, panY: 0, zoom: 1,
+  isDragging: false, dragStartX: 0, dragStartY: 0, panStartX: 0, panStartY: 0,
+  scaleX: 10, scaleY: 100
+};
+
+const COLORS = {
+  gridPrimary: 'rgba(59, 130, 246, 0.15)', gridSecondary: 'rgba(139, 92, 246, 0.08)',
+  gridMajor: 'rgba(100, 116, 139, 0.25)', axis: 'rgba(148, 163, 184, 0.5)',
+  axisLabel: '#64748b', line: '#10b981', point: '#f59e0b',
+  sectionLine: '#ef4444', sectionColors: [
+    '#3b82f6','#06b6d4','#10b981','#f59e0b','#ef4444',
+    '#ec4899','#8b5cf6','#14b8a6','#f97316','#6366f1'
+  ], bg: '#0a0e1a', origin: '#06b6d4'
+};
+
+// ========== INITIALIZATION ==========
+const canvas = document.getElementById('graphCanvas');
+const ctx = canvas.getContext('2d');
+const container = document.getElementById('canvasContainer');
+
+function resizeCanvas() {
+  const rect = container.getBoundingClientRect();
+  canvas.width = rect.width * window.devicePixelRatio;
+  canvas.height = rect.height * window.devicePixelRatio;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+  draw();
+}
+window.addEventListener('resize', resizeCanvas);
+
+// ========== SECTION INPUTS GENERATION ==========
+function generateSectionInputs() {
+  const container = document.getElementById('sectionInputs');
+  let html = '';
+  for (let i = 0; i <= 10; i++) {
+    html += `<div class="section-input">
+      <span class="section-label">X=${i}</span>
+      <input type="number" id="sec_y_${i}" step="0.01" placeholder="Y value" min="0" max="100">
+      <span class="section-label" id="sec_slope_${i}" style="color:var(--text-muted);">—</span>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+generateSectionInputs();
+
+// ========== TAB SWITCHING ==========
+function switchTab(index) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === index));
+  document.querySelectorAll('.tab-pane').forEach((p, i) => p.classList.toggle('active', i === index));
+  state.mode = index;
+  state.lines = []; state.dataPoints = []; state.sectionLines = [];
+  draw();
+}
+
+// ========== TOGGLE OPTIONS ==========
+function toggleGrid() { state.showGrid = !state.showGrid; document.getElementById('btnShowGrid').classList.toggle('active'); draw(); }
+function togglePoints() { state.showPoints = !state.showPoints; document.getElementById('btnShowPoints').classList.toggle('active'); draw(); }
+function toggleDots() { state.showDots = !state.showDots; document.getElementById('btnShowDots').classList.toggle('active'); draw(); }
+function toggleLabels() { state.showLabels = !state.showLabels; document.getElementById('btnShowLabels').classList.toggle('active'); draw(); }
+
+// ========== SCALE MANAGEMENT ==========
+function applyScalePreset(val) {
+  const customX = document.getElementById('customScaleX');
+  const customY = document.getElementById('customScaleY');
+  const btnApply = document.getElementById('btnApplyCustom');
+  
+  customX.style.display = customY.style.display = btnApply.style.display = 'none';
+
+  if (val === '10x10') { state.scaleX = 10; state.scaleY = 10; }
+  else if (val === '100x100') { state.scaleX = 100; state.scaleY = 100; }
+  else if (val === '10x100') { state.scaleX = 10; state.scaleY = 100; }
+  else if (val === 'custom') {
+    customX.style.display = customY.style.display = btnApply.style.display = 'inline-block';
+    return;
+  }
+  updateScaleUI();
+  draw();
+}
+
+function applyCustomScale() {
+  const x = parseFloat(document.getElementById('customScaleX').value);
+  const y = parseFloat(document.getElementById('customScaleY').value);
+  if (x && x > 0) state.scaleX = x;
+  if (y && y > 0) state.scaleY = y;
+  updateScaleUI();
+  draw();
+}
+
+function updateScaleUI() {
+  const sel = document.getElementById('scalePreset');
+  if (`${state.scaleX}x${state.scaleY}` !== sel.value) {
+    sel.value = 'custom';
+  }
+}
+
+function fitToData() {
+  state.scaleX = 10; state.scaleY = 100;
+  document.getElementById('scalePreset').value = '10x100';
+  document.getElementById('customScaleX').style.display = 'none';
+  document.getElementById('customScaleY').style.display = 'none';
+  document.getElementById('btnApplyCustom').style.display = 'none';
+  resetView();
+  draw();
+}
+
+// ========== COORDINATE TRANSFORMS ==========
+function getGraphArea() {
+  const w = canvas.width / window.devicePixelRatio;
+  const h = canvas.height / window.devicePixelRatio;
+  const margin = { left: 75, right: 45, top: 30, bottom: 65 };
+  return { x: margin.left, y: margin.top, w: w - margin.left - margin.right, h: h - margin.top - margin.bottom, margin };
+}
+
+function worldToScreen(wx, wy, g) {
+  const sx = g.x + (wx / state.scaleX) * g.w + state.panX;
+  const sy = g.y + g.h - (wy / state.scaleY) * g.h + state.panY;
+  return [sx, sy];
+}
+
+function screenToWorld(sx, sy, g) {
+  const wx = ((sx - g.x - state.panX) / g.w) * state.scaleX;
+  const wy = ((g.h - (sy - g.y - state.panY)) / g.h) * state.scaleY;
+  return [wx, wy];
+}
+
+// ========== DYNAMIC TICK GENERATION ==========
+function getAxisTicks(max, min = 0, targetTicks = 10) {
+  if (max <= 0) return { values: [], step: 1 };
+  const range = max - min;
+  const roughStep = range / targetTicks;
+  const mag = Math.pow(10, Math.floor(Math.log10(roughStep)));
+  const norm = roughStep / mag;
+  
+  let step;
+  if (norm <= 1.5) step = mag;
+  else if (norm <= 3.5) step = 2 * mag;
+  else if (norm <= 7.5) step = 5 * mag;
+  else step = 10 * mag;
+
+  const values = [];
+  for (let v = min; v <= max + step * 0.01; v += step) {
+    values.push(Math.round(v * 1000) / 1000);
+  }
+  return { values, step };
+}
+
+// ========== DRAWING ==========
+function draw() {
+  const w = canvas.width / window.devicePixelRatio;
+  const h = canvas.height / window.devicePixelRatio;
+  const g = getGraphArea();
+
+  ctx.clearRect(0, 0, w, h);
+  const bgGrad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w*0.7);
+  bgGrad.addColorStop(0, '#0f1629'); bgGrad.addColorStop(1, '#0a0e1a');
+  ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, w, h);
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(g.x, g.y, g.w, g.h); ctx.clip();
+
+  drawGrid(g);
+  drawAxes(g);
+  drawSecondaryScale(g);
+
+  state.sectionLines.forEach((sl, idx) => {
+    const color = COLORS.sectionColors[idx % COLORS.sectionColors.length];
+    drawLineSegment(sl.x1, sl.y1, sl.x2, sl.y2, color, 2.5, g);
+  });
+
+  state.lines.forEach(line => {
+    drawLineSegment(line.x1, line.y1, line.x2, line.y2, COLORS.line, 3, g);
+  });
+
+  if (state.showDots) {
+    state.dataPoints.forEach(dp => drawPoint(dp.x, dp.y, COLORS.point, 5, g));
+  }
+
+  if (state.showPoints) {
+    state.lines.forEach(line => {
+      if (line.points) {
+        line.points.forEach((p) => {
+          drawPoint(p.x, p.y, '#10b981', 4, g);
+          if (state.showLabels) drawPointLabel(p.x, p.y, `(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`, g);
+        });
+      }
+    });
+  }
+  ctx.restore();
+
+  const [ox, oy] = worldToScreen(0, 0, g);
+  drawOriginMarker(ox, oy);
+  drawAxisLabels(g);
+  drawScaleIndicators(g);
+
+  if (state.mouseX >= g.x && state.mouseX <= g.x + g.w && state.mouseY >= g.y && state.mouseY <= g.y + g.h) {
+    const [wx, wy] = screenToWorld(state.mouseX, state.mouseY, g);
+    if (wx >= 0 && wx <= state.scaleX && wy >= 0 && wy <= state.scaleY) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(g.x, g.y, g.w, g.h); ctx.clip();
+      ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(6, 182, 212, 0.3)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(state.mouseX, g.y); ctx.lineTo(state.mouseX, g.y + g.h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(g.x, state.mouseY); ctx.lineTo(g.x + g.w, state.mouseY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(6, 182, 212, 0.9)'; ctx.font = '11px JetBrains Mono';
+      ctx.fillText(`X: ${wx.toFixed(2)}  Y: ${wy.toFixed(2)}`, state.mouseX + 10, state.mouseY - 10);
+      ctx.restore();
+      document.getElementById('cursorInfo').textContent = `X: ${wx.toFixed(2)}  Y: ${wy.toFixed(2)}`;
+    }
+  }
+
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.6)'; ctx.font = '12px Inter'; ctx.textAlign = 'center';
+  ctx.fillText(`Coordinate System — X: 0–${state.scaleX} | Y: 0–${state.scaleY}`, w/2, h - 12);
+  ctx.textAlign = 'left';
+}
+
+function drawGrid(g) {
+  if (!state.showGrid) return;
+  const xTicks = getAxisTicks(state.scaleX);
+  const yTicks = getAxisTicks(state.scaleY);
+
+  ctx.strokeStyle = COLORS.gridSecondary; ctx.lineWidth = 0.5;
+  const minorX = xTicks.step / 2;
+  const minorY = yTicks.step / 2;
+  for (let i = 0; i <= state.scaleX + minorX*0.1; i += minorX) {
+    const [sx] = worldToScreen(i, 0, g); ctx.beginPath(); ctx.moveTo(sx, g.y); ctx.lineTo(sx, g.y + g.h); ctx.stroke();
+  }
+  for (let i = 0; i <= state.scaleY + minorY*0.1; i += minorY) {
+    const [, sy] = worldToScreen(0, i, g); ctx.beginPath(); ctx.moveTo(g.x, sy); ctx.lineTo(g.x + g.w, sy); ctx.stroke();
+  }
+
+  ctx.strokeStyle = COLORS.gridPrimary; ctx.lineWidth = 0.8;
+  xTicks.values.forEach(v => { const [sx] = worldToScreen(v, 0, g); ctx.beginPath(); ctx.moveTo(sx, g.y); ctx.lineTo(sx, g.y + g.h); ctx.stroke(); });
+  yTicks.values.forEach(v => { const [, sy] = worldToScreen(0, v, g); ctx.beginPath(); ctx.moveTo(g.x, sy); ctx.lineTo(g.x + g.w, sy); ctx.stroke(); });
+}
+
+function drawAxes(g) {
+  const [ox, oy] = worldToScreen(0, 0, g);
+  ctx.strokeStyle = COLORS.axis; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(g.x, oy); ctx.lineTo(g.x + g.w, oy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ox, g.y); ctx.lineTo(ox, g.y + g.h); ctx.stroke();
+  ctx.fillStyle = COLORS.axis;
+  ctx.beginPath(); ctx.moveTo(g.x + g.w, oy); ctx.lineTo(g.x + g.w - 8, oy - 4); ctx.lineTo(g.x + g.w - 8, oy + 4); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(ox, g.y); ctx.lineTo(ox - 4, g.y + 8); ctx.lineTo(ox + 4, g.y + 8); ctx.fill();
+}
+
+function drawSecondaryScale(g) {
+  ctx.save(); ctx.font = '10px JetBrains Mono'; ctx.fillStyle = '#6b46c1'; ctx.textAlign = 'left';
+  const secStep = state.scaleY <= 10 ? 1 : (state.scaleY <= 50 ? 5 : 10);
+  for (let i = 0; i <= state.scaleY; i += secStep) {
+    const [, sy] = worldToScreen(0, i, g);
+    if (sy >= g.y && sy <= g.y + g.h) ctx.fillText(i.toString(), g.x + g.w + 4, sy + 3);
+  }
+  ctx.restore();
+}
+
+function drawAxisLabels(g) {
+  ctx.save(); ctx.font = '11px JetBrains Mono';
+  const xTicks = getAxisTicks(state.scaleX);
+  const yTicks = getAxisTicks(state.scaleY);
+  ctx.fillStyle = COLORS.axisLabel; ctx.textAlign = 'center';
+  xTicks.values.forEach(v => { const [sx, sy] = worldToScreen(v, 0, g); ctx.fillText(v.toString(), sx, sy + 16); });
+  ctx.textAlign = 'right';
+  yTicks.values.forEach(v => { const [sx, sy] = worldToScreen(0, v, g); ctx.fillText(v.toString(), sx - 8, sy + 4); });
+  ctx.font = '12px Inter'; ctx.fillStyle = '#3b82f6'; ctx.textAlign = 'center';
+  ctx.fillText(`X (0–${state.scaleX})`, g.x + g.w / 2, g.y + g.h + 40);
+  ctx.save(); ctx.translate(18, g.y + g.h / 2); ctx.rotate(-Math.PI / 2); ctx.fillText(`Y (0–${state.scaleY})`, 0, 0); ctx.restore();
+  ctx.restore();
+}
+
+function drawScaleIndicators(g) {
+  ctx.save(); const bx = g.x + g.w - 150; const by = g.y + 10;
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.8)'; ctx.strokeStyle = 'rgba(45, 58, 82, 0.5)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect(bx, by, 140, 50, 6); ctx.fill(); ctx.stroke();
+  ctx.font = '10px JetBrains Mono'; ctx.fillStyle = '#3b82f6'; ctx.textAlign = 'left';
+  ctx.fillText(`X Range: 0 – ${state.scaleX}`, bx + 10, by + 18);
+  ctx.fillStyle = '#8b5cf6';
+  ctx.fillText(`Y Range: 0 – ${state.scaleY}`, bx + 10, by + 36);
+  ctx.restore();
+}
+
+function drawLineSegment(x1, y1, x2, y2, color, width, g) {
+  const [sx1, sy1] = worldToScreen(x1, y1, g);
+  const [sx2, sy2] = worldToScreen(x2, y2, g);
+  ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 10;
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(sx1, sy1); ctx.lineTo(sx2, sy2); ctx.stroke(); ctx.restore();
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(sx1, sy1); ctx.lineTo(sx2, sy2); ctx.stroke();
+}
+
+function drawPoint(wx, wy, color, radius, g) {
+  const [sx, sy] = worldToScreen(wx, wy, g);
+  ctx.save(); ctx.shadowColor = color; ctx.shadowBlur = 12;
+  ctx.fillStyle = color; ctx.beginPath(); ctx.arc(sx, sy, radius, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(sx, sy, radius * 0.3, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx, sy, radius, 0, Math.PI * 2); ctx.stroke();
+}
+
+function drawPointLabel(wx, wy, text, g) {
+  const [sx, sy] = worldToScreen(wx, wy, g);
+  ctx.save(); ctx.font = '9px JetBrains Mono';
+  const metrics = ctx.measureText(text); const pad = 3;
+  const lx = sx + 8; const ly = sy - 8;
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)'; ctx.beginPath(); ctx.roundRect(lx - pad, ly - 10, metrics.width + pad*2, 14, 3); ctx.fill();
+  ctx.fillStyle = 'rgba(241, 245, 249, 0.9)'; ctx.textAlign = 'left'; ctx.fillText(text, lx, ly); ctx.restore();
+}
+
+function drawOriginMarker(ox, oy) {
+  ctx.save(); ctx.shadowColor = COLORS.origin; ctx.shadowBlur = 15;
+  ctx.fillStyle = COLORS.origin; ctx.beginPath(); ctx.arc(ox, oy, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ox, oy, 2.5, 0, Math.PI * 2); ctx.fill();
+  ctx.font = 'bold 11px JetBrains Mono'; ctx.fillStyle = COLORS.origin; ctx.textAlign = 'right';
+  ctx.fillText('O(0,0)', ox - 10, oy + 4); ctx.restore();
+}
+
+// ========== MOUSE EVENTS ==========
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  state.mouseX = e.clientX - rect.left; state.mouseY = e.clientY - rect.top;
+  if (state.isDragging) {
+    state.panX = e.clientX - state.dragStartX + state.panStartX;
+    state.panY = e.clientY - state.dragStartY + state.panStartY;
+  }
+  draw();
+});
+canvas.addEventListener('mousedown', (e) => {
+  if (e.button === 0) {
+    state.isDragging = true; state.dragStartX = e.clientX; state.dragStartY = e.clientY;
+    state.panStartX = state.panX; state.panStartY = state.panY; canvas.style.cursor = 'grabbing';
+  }
+});
+canvas.addEventListener('mouseup', () => { state.isDragging = false; canvas.style.cursor = 'crosshair'; });
+canvas.addEventListener('mouseleave', () => { state.isDragging = false; canvas.style.cursor = 'crosshair'; draw(); });
+canvas.addEventListener('wheel', (e) => { e.preventDefault(); const delta = e.deltaY > 0 ? 1 : -1; state.panX += delta * 10; state.panY += delta * 10; draw(); }, { passive: false });
+
+function resetView() { state.panX = 0; state.panY = 0; draw(); }
+function exportImage() { const link = document.createElement('a'); link.download = 'slope_chart.png'; link.href = canvas.toDataURL(); link.click(); }
+
+// ========== MODE 1 ==========
+function calculateMode1() {
+  const xVal = parseFloat(document.getElementById('m1_x').value);
+  const yVal = parseFloat(document.getElementById('m1_y').value);
+  if (isNaN(xVal) || isNaN(yVal) || xVal <= 0) { alert('Enter valid positive X and Y. X must be > 0.'); return; }
+  const slope = yVal / xVal;
+  state.lines = []; state.dataPoints = []; state.sectionLines = [];
+  const points = [];
+  for (let i = 0; i <= 10; i++) points.push({ x: i, y: Math.round(slope * i * 100) / 100 });
+  state.lines.push({ x1: 0, y1: 0, x2: 10, y2: Math.min(slope * 10, state.scaleY), points, slope });
+  let html = buildSlopeDisplay(slope) + buildTable(points, slope) + buildProperties(slope, 0);
+  document.getElementById('m1_results').innerHTML = html;
+  draw();
+}
+function clearMode1() { document.getElementById('m1_x').value = ''; document.getElementById('m1_y').value = ''; document.getElementById('m1_results').innerHTML = ''; state.lines = []; state.dataPoints = []; state.sectionLines = []; draw(); }
+
+// ========== MODE 2 ==========
+function calculateMode2() {
+  const slope = parseFloat(document.getElementById('m2_slope').value);
+  if (isNaN(slope)) { alert('Enter a valid slope value.'); return; }
+  state.lines = []; state.dataPoints = []; state.sectionLines = [];
+  const points = [];
+  for (let i = 0; i <= 10; i++) points.push({ x: i, y: Math.round(slope * i * 100) / 100 });
+  state.lines.push({ x1: 0, y1: 0, x2: 10, y2: Math.min(Math.max(slope * 10, 0), state.scaleY), points, slope });
+  let html = buildSlopeDisplay(slope) + buildTable(points, slope) + buildProperties(slope, slope);
+  document.getElementById('m2_results').innerHTML = html;
+  draw();
+}
+function clearMode2() { document.getElementById('m2_slope').value = ''; document.getElementById('m2_results').innerHTML = ''; state.lines = []; state.dataPoints = []; state.sectionLines = []; draw(); }
+
+// ========== MODE 3 ==========
+function calculateMode3() {
+  state.lines = []; state.dataPoints = []; state.sectionLines = [];
+  const values = [];
+  for (let i = 0; i <= 10; i++) {
+    const val = parseFloat(document.getElementById(`sec_y_${i}`).value);
+    if (isNaN(val)) { alert(`Enter value for X = ${i}`); return; }
+    values.push(Math.round(val * 100) / 100);
+  }
+  const sectionSlopes = [];
+  for (let i = 0; i < 10; i++) {
+    const dy = values[i + 1] - values[i];
+    sectionSlopes.push(dy);
+    state.sectionLines.push({ x1: i, y1: values[i], x2: i + 1, y2: values[i + 1] });
+  }
+  for (let i = 0; i <= 10; i++) state.dataPoints.push({ x: i, y: values[i] });
+  for (let i = 0; i < 10; i++) {
+    const el = document.getElementById(`sec_slope_${i + 1}`);
+    if (el) { const s = sectionSlopes[i]; el.innerHTML = `<span class="${s > 0 ? 'positive' : s < 0 ? 'negative' : 'zero'}">m=${s.toFixed(2)}</span>`; }
+  }
+  const avg = sectionSlopes.reduce((a,b)=>a+b,0)/10;
+  const max = Math.max(...sectionSlopes); const min = Math.min(...sectionSlopes);
+  let html = `
+    <div class="slope-display"><div class="label">Section Analysis Complete</div><div class="value">10 Sections</div><div class="equation">Slopes calculated for each interval</div></div>
+    <div class="gradient-bar"></div>
+    <div class="results-panel"><div class="results-header">📊 Section-by-Section Analysis</div><div class="results-body">
+    <table class="section-table"><thead><tr><th>Section</th><th>Y Start</th><th>Y End</th><th>ΔY</th><th>Slope</th></tr></thead><tbody>`;
+  sectionSlopes.forEach((s, i) => {
+    html += `<tr><td>${i}→${i+1}</td><td>${values[i].toFixed(2)}</td><td>${values[i+1].toFixed(2)}</td><td class="${s>=0?'positive':'negative'}">${s>=0?'+':''}${s.toFixed(2)}</td><td class="${s>0?'positive':s<0?'negative':'zero'}">${s.toFixed(4)}</td></tr>`;
+  });
+  html += `</tbody></table></div></div>
+    <div class="results-panel" style="margin-top:10px;"><div class="results-header">📈 Summary</div><div class="results-body">
+    <div class="result-row"><span class="result-label">Average Slope</span><span class="result-value">${avg.toFixed(4)}</span></div>
+    <div class="result-row"><span class="result-label">Max Slope</span><span class="result-value positive">${max.toFixed(4)}</span></div>
+    <div class="result-row"><span class="result-label">Min Slope</span><span class="result-value negative">${min.toFixed(4)}</span></div>
+    <div class="result-row"><span class="result-label">Overall ΔY</span><span class="result-value">${(values[10]-values[0]).toFixed(2)}</span></div>
+    <div class="result-row"><span class="result-label">Overall Slope</span><span class="result-value">${((values[10]-values[0])/10).toFixed(4)}</span></div></div></div>`;
+  document.getElementById('m3_results').innerHTML = html;
+  draw();
+}
+function clearMode3() {
+  for (let i = 0; i <= 10; i++) { document.getElementById(`sec_y_${i}`).value = ''; const el = document.getElementById(`sec_slope_${i}`); if(el) el.textContent = '—'; }
+  document.getElementById('m3_results').innerHTML = ''; state.lines = []; state.dataPoints = []; state.sectionLines = []; draw();
+}
+
+// ========== HELPERS ==========
+function buildSlopeDisplay(slope) {
+  return `<div class="slope-display"><div class="label">Calculated Slope</div><div class="value">${slope.toFixed(4)}</div><div class="equation">y = ${slope.toFixed(4)} × x</div></div><div class="gradient-bar"></div>`;
+}
+function buildTable(points, slope) {
+  let h = `<div class="results-panel"><div class="results-header">📊 Complete Table (X: 0–10)</div><div class="results-body"><table class="section-table"><thead><tr><th>X</th><th>Y</th><th>Y (exact)</th></tr></thead><tbody>`;
+  points.forEach(p => h += `<tr><td>${p.x.toFixed(1)}</td><td class="result-value">${p.y.toFixed(2)}</td><td style="color:var(--text-muted);font-size:11px;">${(slope*p.x).toFixed(4)}</td></tr>`);
+  h += `</tbody></table></div></div>`;
+  return h;
+}
+function buildProperties(slope, m) {
+  const type = m > 0 ? 'Positive' : m < 0 ? 'Negative' : 'Zero';
+  const cls = m > 0 ? 'positive' : m < 0 ? 'negative' : 'zero';
+  return `<div class="results-panel" style="margin-top:10px;"><div class="results-header">📐 Line Properties</div><div class="results-body">
+    <div class="result-row"><span class="result-label">Slope (m)</span><span class="result-value">${slope.toFixed(4)}</span></div>
+    <div class="result-row"><span class="result-label">Angle</span><span class="result-value">${(Math.atan(Math.abs(slope))*180/Math.PI).toFixed(2)}°</span></div>
+    <div class="result-row"><span class="result-label">Y at X=10</span><span class="result-value">${(slope*10).toFixed(2)}</span></div>
+    <div class="result-row"><span class="result-label">Type</span><span class="result-value ${cls}">${type}</span></div></div></div>`;
+}
+
+// ========== POLYFILL ==========
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (typeof r === 'number') r = [r, r, r, r];
+    this.moveTo(x + r[0], y); this.lineTo(x + w - r[1], y); this.quadraticCurveTo(x + w, y, x + w, y + r[1]);
+    this.lineTo(x + w, y + h - r[2]); this.quadraticCurveTo(x + w, y + h, x + w - r[2], y + h);
+    this.lineTo(x + r[3], y + h); this.quadraticCurveTo(x, y + h, x, y + h - r[3]);
+    this.lineTo(x, y + r[0]); this.quadraticCurveTo(x, y, x + r[0], y); this.closePath(); return this;
+  };
+}
+
+window.addEventListener('load', resizeCanvas);
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape') resetView(); });
+</script>
+</body>
+</html>
