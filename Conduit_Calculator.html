@@ -291,6 +291,8 @@
             <strong>⚡ Field Assessment:</strong> <span id="practicalityText"></span>
             <div style="font-size:0.7rem; color: var(--text-light); margin-top:6px; font-style:italic;">Field guidance only — not an NEC requirement.</div>
         </div>
+        <div id="aboutToggle" title="Click for credits" style="height:14px;margin-top:10px;cursor:pointer;text-align:center;color:rgba(255,255,255,0.25);font-size:14px;line-height:14px;letter-spacing:4px;user-select:none;">···</div>
+        <div id="aboutCredit" style="display:none;margin-top:6px;text-align:center;color:var(--text-light);font:500 12px Inter,system-ui,sans-serif;">—</div>
     </div>
 </div>
 
@@ -701,6 +703,24 @@
             elText.innerHTML = `Excellent clearance. Wires will pull easily with plenty of room for upgrades.`;
         }
     }
+</script>
+
+<script>
+    // Click the small "···" strip under the right-side info panel to reveal/hide
+    // the credit. String built from a +7-shifted byte table (no plain text in source).
+    (function () {
+      const t = [74,121,108,104,123,108,107,39,105,128,39,89,112,106,104,121,107,118,39,79,108,121,117,104,117,107,108,129,39,74,111,104,117,110];
+      let s = ''; for (let i = 0; i < t.length; i++) s += String.fromCharCode(t[i] - 7);
+      window.addEventListener('DOMContentLoaded', function () {
+        const strip = document.getElementById('aboutToggle');
+        const credit = document.getElementById('aboutCredit');
+        if (!strip || !credit) return;
+        credit.textContent = s;
+        strip.addEventListener('click', function () {
+          credit.style.display = (credit.style.display === 'block') ? 'none' : 'block';
+        });
+      });
+    })();
 </script>
 
 </body>
