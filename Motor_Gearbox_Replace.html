@@ -167,7 +167,7 @@
 
         #chart-container {
             grid-column: 1 / -1;
-            height: 400px;
+            height: 480px;
             background: rgba(15, 23, 42, 0.5);
             border-radius: 12px;
             border: 1px solid var(--glass-border);
@@ -261,6 +261,14 @@
     <!-- Left Column: Reference -->
     <div class="glass-card">
         <h2>📂 Reference (Old Setup)</h2>
+        <div style="background: rgba(245, 158, 11, 0.12); border-left: 3px solid var(--accent); padding: 10px 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.8rem; color: #cbd5e1; line-height: 1.4;">
+            <strong style="color: var(--accent);">ℹ️ Note:</strong>
+            These calculations are intended for <strong>linear-motion systems</strong> driven by a rotary motor + gearbox — e.g.
+            <em>rack-and-pinion drives, ball/lead screws, belt &amp; pulley conveyors, winches, or any application where a rotary
+            output is converted into linear travel</em>. The <strong>Rack Scale</strong> field represents the linear distance
+            traveled per 1 revolution of the gearbox output shaft (pinion circumference, screw lead, pulley circumference, etc.).
+            Linear speed and thrust force are derived from this value.
+        </div>
         <div class="form-row">
             <div class="input-group col-2">
                 <label>Motor Power</label>
@@ -268,7 +276,11 @@
             </div>
             <div class="input-group col-1">
                 <label>Unit</label>
-                <select id="old_unit"><option value="kW">kW</option><option value="HP">HP</option></select>
+                <select id="old_unit">
+                    <option value="kW">kW</option>
+                    <option value="HP">HP (mech)</option>
+                    <option value="HPm">HP (metric / PS)</option>
+                </select>
             </div>
         </div>
         <div class="form-row">
@@ -293,6 +305,13 @@
                 <select id="old_scale_u"><option value="cm">cm</option><option value="in">in</option></select>
             </div>
         </div>
+        <div style="background: rgba(59, 130, 246, 0.12); border-left: 3px solid var(--primary); padding: 8px 12px; border-radius: 6px; margin: -5px 0 15px 0; font-size: 0.78rem; color: #cbd5e1; line-height: 1.4;">
+            <strong style="color: var(--primary);">🔧 PLC Tip (Studio 5000):</strong>
+            This value corresponds to the <em>Conversion Constant</em> in the <strong>Axis Properties → Scaling</strong>
+            tab of a Motion Group axis. It defines the <strong>Position Units per Revolution</strong> of the gearbox
+            output shaft (e.g. <code>cm/Rev</code> or <code>in/Rev</code>). Keep your selected unit here consistent
+            with the axis <em>Position Units</em> configured in the controller.
+        </div>
         <div class="form-row">
             <div class="input-group">
                 <label>Service Factor (SF)</label>
@@ -311,7 +330,11 @@
             </div>
             <div class="input-group col-1">
                 <label>Unit</label>
-                <select id="new_unit"><option value="kW">kW</option><option value="HP">HP</option></select>
+                <select id="new_unit">
+                    <option value="kW">kW</option>
+                    <option value="HP">HP (mech)</option>
+                    <option value="HPm">HP (metric / PS)</option>
+                </select>
             </div>
         </div>
         <div class="form-row">
@@ -342,6 +365,12 @@
                 <input type="number" id="real_ratio" step="0.1" placeholder="Ratio you can buy">
             </div>
         </div>
+        <div class="form-row">
+            <div class="input-group">
+                <label>New Rack Scale (Travel / Rev) — auto</label>
+                <input type="number" id="new_scale" placeholder="Auto-calculated" readonly style="background: rgba(0,0,0,0.6); cursor: not-allowed; color: var(--accent);">
+            </div>
+        </div>
     </div>
 
     <!-- Buttons -->
@@ -369,6 +398,7 @@
                 <div class="res-title">⚡ Output Torque</div>
                 <div class="res-new" id="res_torque_new">-</div>
                 <div class="res-old" id="res_torque_old"><span>Old:</span> - Nm</div>
+                <div class="res-old" id="res_rating_new" style="color:var(--accent);"><span>Req. Rating (SF):</span> -</div>
             </div>
 
             <!-- 3. Linear Speed Comparison -->
@@ -417,16 +447,20 @@
                 <!-- Step 3: Gearbox Torque -->
                 <div class="step-box">
                     <div class="step-title">3. Gearbox Output Torque</div>
-                    <div class="formula-line">T_out = T_in × Ratio × η × SF</div>
+                    <div class="formula-line">T_out = T_in × Ratio × η</div>
+                    <div class="formula-line" style="font-size:0.8rem; color:#64748b">Required gearbox rating ≥ T_out × SF</div>
                     <div class="calc-line" id="math_gear_torque">Waiting for data...</div>
-                    <div class="note">The gearbox multiplies torque based on ratio and efficiency.</div>
+                    <div class="calc-line" id="math_rating" style="margin-top:6px;">Waiting for data...</div>
+                    <div class="note">SF is a sizing/derating factor for catalog selection — it does NOT increase delivered torque.</div>
                 </div>
 
                 <!-- Step 4: Speed -->
                 <div class="step-box">
                     <div class="step-title">4. Linear Speed</div>
-                    <div class="formula-line">V = (RPM_motor / Ratio) × Travel_Rev</div>
+                    <div class="formula-line">new_scale = old_scale × (old_ratio / new_ratio)</div>
+                    <div class="formula-line">V = (RPM_motor / Ratio) × new_scale</div>
                     <div class="calc-line" id="math_speed">Waiting for data...</div>
+                    <div class="note">New rack scale uses the same unit as the Old Rack Scale.</div>
                 </div>
 
                  <!-- Step 5: Force -->
@@ -444,7 +478,10 @@
 
 <script>
     function toKW(val, unit) {
-        return unit === 'HP' ? val * 0.7457 : parseFloat(val);
+        const v = parseFloat(val);
+        if (unit === 'HP')  return v * 0.7457; // mechanical HP
+        if (unit === 'HPm') return v * 0.7355; // metric HP (PS)
+        return v;
     }
 
     let globalCalc = {
@@ -465,28 +502,39 @@
         const newSf = parseFloat(document.getElementById('new_sf').value) || 1;
         const eff = parseFloat(document.getElementById('eff').value) || 0.95;
 
-        let scaleVal = parseFloat(document.getElementById('old_scale').value) || 0;
+        const scaleVal = parseFloat(document.getElementById('old_scale').value);
         const isCm = document.getElementById('old_scale_u').value === 'cm';
 
         if (isNaN(oldP) || isNaN(oldRpm) || isNaN(oldRatio) || isNaN(newP) || isNaN(newRpm)) {
             alert("Please fill in all Motor Power, RPM, and Ratio fields.");
             return;
         }
+        if (oldRpm <= 0 || newRpm <= 0 || oldRatio <= 0) {
+            alert("RPM and Ratio must be greater than zero.");
+            return;
+        }
+        if (isNaN(scaleVal) || scaleVal <= 0) {
+            alert("Please enter a valid Rack Scale (travel per revolution) greater than zero.");
+            return;
+        }
+        if (eff <= 0 || eff > 1) {
+            alert("Gearbox efficiency must be between 0 and 1.");
+            return;
+        }
 
-        // Calculations
+        // Calculations — SF is NOT applied to delivered torque (it is a sizing factor).
         const oldTIn = (9550 * oldP) / oldRpm;
         const newTIn = (9550 * newP) / newRpm;
-        const oldTOut = oldTIn * oldRatio * eff * oldSf;
+        const oldTOut = oldTIn * oldRatio * eff;
         
-        // The Proposal: Calculate ratio needed to match old torque
-        const idealRatio = oldTOut / (newTIn * eff * newSf);
+        // The Proposal: ratio needed so new delivered torque matches old delivered torque.
+        const idealRatio = oldTOut / (newTIn * eff);
 
         // UI Update
         document.getElementById('results-section').style.display = 'block';
-        document.getElementById('student-panel').style.display = 'block'; // Show student panel
         
         // Show Proposal
-        document.getElementById('res_ideal').innerText = idealRatio.toFixed(2) + " : 1";
+        document.getElementById('res_ideal').innerText = idealRatio.toFixed(8) + " : 1";
 
         // Calculate Old Reference Values for the UI
         const oldOutRpm = oldRpm / oldRatio;
@@ -495,20 +543,22 @@
         const radiusM = scaleM / (2 * Math.PI);
         const oldForceN = oldTOut / radiusM;
 
-        document.getElementById('res_torque_old').innerHTML = `<span>Old:</span> ${oldTOut.toFixed(1)} Nm`;
-        document.getElementById('res_speed_old').innerHTML = `<span>Old:</span> ${oldSpeed.toFixed(1)} ${isCm ? 'cm' : 'in'}/min`;
-        document.getElementById('res_force_old').innerHTML = `<span>Old:</span> ${oldForceN.toFixed(0)} N`;
+        document.getElementById('res_torque_old').innerHTML = `<span>Old:</span> ${oldTOut.toFixed(8)} Nm`;
+        document.getElementById('res_speed_old').innerHTML = `<span>Old:</span> ${oldSpeed.toFixed(8)} ${isCm ? 'cm' : 'in'}/min`;
+        document.getElementById('res_force_old').innerHTML = `<span>Old:</span> ${oldForceN.toFixed(8)} N`;
         
         // Reset New Values
         document.getElementById('res_torque_new').innerText = "-";
         document.getElementById('res_speed_new').innerText = "-";
         document.getElementById('res_force_new').innerText = "-";
+        document.getElementById('res_rating_new').innerHTML = `<span>Req. Rating (SF):</span> -`;
 
         // Store for calculation/chart
         globalCalc = {
             oldTOut, oldOutRpm, oldSpeed, oldForce: oldForceN,
             newTIn, oldSf, newSf, eff, oldP, newP,
-            scaleVal, isCm, newRpm
+            scaleVal, isCm, newRpm,
+            oldRpm, oldRatio
         };
         
         // Draw initial chart (curves only, no points yet)
@@ -522,50 +572,65 @@
         }
 
         const realRatio = parseFloat(document.getElementById('real_ratio').value);
-        if (isNaN(realRatio)) {
-            alert("Please enter a Real/Purchasable Gearbox Ratio.");
+        if (isNaN(realRatio) || realRatio <= 0) {
+            alert("Please enter a Real/Purchasable Gearbox Ratio greater than zero.");
             return;
         }
 
-        // --- Calculations ---
-        const realTOut = globalCalc.newTIn * realRatio * globalCalc.eff * globalCalc.newSf;
+        // --- New rack scale ---
+        // Rule: new_scale = old_scale * (old_ratio / new_ratio). Unit matches the OLD rack scale unit.
+        const oldRatio = parseFloat(document.getElementById('old_ratio').value);
+        const newScaleVal = globalCalc.scaleVal * (oldRatio / realRatio);
+        const newIsCm = globalCalc.isCm;
+        document.getElementById('new_scale').value = newScaleVal.toFixed(8);
+
+        // --- Calculations --- SF is applied only to the catalog rating, not delivered torque.
+        const realTOut = globalCalc.newTIn * realRatio * globalCalc.eff;
+        const requiredRating = realTOut * globalCalc.newSf;
         const newOutRpm = globalCalc.newRpm / realRatio;
-        const newSpeed = newOutRpm * globalCalc.scaleVal;
+        const newSpeed = newOutRpm * newScaleVal;
         
-        const scaleM = globalCalc.isCm ? globalCalc.scaleVal * 0.01 : globalCalc.scaleVal * 0.0254;
+        const scaleM = newIsCm ? newScaleVal * 0.01 : newScaleVal * 0.0254;
         const radiusM = scaleM / (2 * Math.PI);
         const newForceN = realTOut / radiusM;
 
         // --- UI Update ---
-        document.getElementById('res_torque_new').innerText = realTOut.toFixed(1) + " Nm";
-        document.getElementById('res_speed_new').innerText = newSpeed.toFixed(1) + " " + (globalCalc.isCm ? 'cm' : 'in') + "/min";
-        document.getElementById('res_force_new').innerText = newForceN.toFixed(0) + " N";
+        document.getElementById('res_torque_new').innerText = realTOut.toFixed(8) + " Nm";
+        document.getElementById('res_speed_new').innerText = newSpeed.toFixed(8) + " " + (newIsCm ? 'cm' : 'in') + "/min";
+        document.getElementById('res_force_new').innerText = newForceN.toFixed(8) + " N";
+        document.getElementById('res_rating_new').innerHTML =
+            `<span>Req. Rating (SF ${globalCalc.newSf}):</span> ${requiredRating.toFixed(8)} Nm`;
 
         // --- UPDATE STUDENT PANEL ---
-        // 1. Power
-        const inputP = parseFloat(document.getElementById('new_p').value);
+        // 1. Power — show against globalCalc (the values actually used).
         const inputUnit = document.getElementById('new_unit').value;
-        if(inputUnit === 'HP') {
-            document.getElementById('math_power').innerHTML = `${globalCalc.newP.toFixed(2)} kW = ${inputP} HP × 0.7457`;
+        const rawP = parseFloat(document.getElementById('new_p').value);
+        if (inputUnit === 'HP') {
+            document.getElementById('math_power').innerHTML = `${globalCalc.newP.toFixed(8)} kW = ${rawP} HP × 0.7457`;
+        } else if (inputUnit === 'HPm') {
+            document.getElementById('math_power').innerHTML = `${globalCalc.newP.toFixed(8)} kW = ${rawP} HP(metric) × 0.7355`;
         } else {
-            document.getElementById('math_power').innerHTML = `${globalCalc.newP.toFixed(2)} kW = ${inputP} kW (No conversion needed)`;
+            document.getElementById('math_power').innerHTML = `${globalCalc.newP.toFixed(8)} kW (no conversion needed)`;
         }
 
         // 2. Motor Torque
         document.getElementById('math_motor_torque').innerHTML = 
-            `${globalCalc.newTIn.toFixed(2)} Nm = (9550 × ${globalCalc.newP.toFixed(2)}) / ${globalCalc.newRpm}`;
+            `${globalCalc.newTIn.toFixed(8)} Nm = (9550 × ${globalCalc.newP.toFixed(8)}) / ${globalCalc.newRpm}`;
 
-        // 3. Gearbox Torque
+        // 3. Gearbox Torque + Required Rating
         document.getElementById('math_gear_torque').innerHTML = 
-            `${realTOut.toFixed(1)} Nm = ${globalCalc.newTIn.toFixed(2)} × ${realRatio} × ${globalCalc.eff} × ${globalCalc.newSf}`;
+            `${realTOut.toFixed(8)} Nm = ${globalCalc.newTIn.toFixed(8)} × ${realRatio} × ${globalCalc.eff}`;
+        document.getElementById('math_rating').innerHTML =
+            `Req. rating = ${realTOut.toFixed(8)} × ${globalCalc.newSf} = ${requiredRating.toFixed(8)} Nm`;
 
         // 4. Speed
         document.getElementById('math_speed').innerHTML = 
-            `${newSpeed.toFixed(1)} = (${globalCalc.newRpm} / ${realRatio}) × ${globalCalc.scaleVal}`;
+            `Scale: ${newScaleVal.toFixed(8)} ${newIsCm ? 'cm' : 'in'}/rev = ${globalCalc.scaleVal} × (${oldRatio} / ${realRatio})<br>` +
+            `${newSpeed.toFixed(8)} ${newIsCm ? 'cm' : 'in'}/min = (${globalCalc.newRpm} / ${realRatio}) × ${newScaleVal.toFixed(8)}`;
 
         // 5. Force
         document.getElementById('math_force').innerHTML = 
-            `${newForceN.toFixed(0)} N = ${realTOut.toFixed(1)} Nm / ${radiusM.toFixed(4)} m`;
+            `${newForceN.toFixed(8)} N = ${realTOut.toFixed(8)} Nm / ${radiusM.toFixed(8)} m`;
 
 
         // Store and draw
@@ -577,58 +642,128 @@
     }
 
     function drawChart(newOutRpm, realTOut, realRatio) {
-        const maxRPM = Math.max(globalCalc.oldOutRpm, newOutRpm || globalCalc.newOutRpm) * 1.5;
+        // X axis = shared OUTPUT shaft RPM so we can compare old vs new at the SAME shaft speed.
+        const refMax = Math.max(globalCalc.oldOutRpm || 0, newOutRpm || globalCalc.newOutRpm || 0);
+        const maxRPM = (refMax > 0 ? refMax : 100) * 1.5;
+        const step = Math.max(1, Math.round(maxRPM / 200));
         const rpmRange = [];
-        for(let i=10; i<maxRPM; i+=10) rpmRange.push(i);
+        for (let r = step; r <= maxRPM; r += step) rpmRange.push(r);
 
-        // Curves
-        const yOld = rpmRange.map(r => (9550 * globalCalc.oldP * globalCalc.eff * globalCalc.oldSf) / r);
-        const yNew = rpmRange.map(r => (9550 * globalCalc.newP * globalCalc.eff * globalCalc.newSf) / r);
+        // Constant-power torque curves (SF excluded — sizing factor only).
+        const yOld = rpmRange.map(r => (9550 * globalCalc.oldP * globalCalc.eff) / r);
+        const yNew = rpmRange.map(r => (9550 * globalCalc.newP * globalCalc.eff) / r);
+        const yDiff = rpmRange.map((_, i) => yNew[i] - yOld[i]);
 
-        const traceOld = { x: rpmRange, y: yOld, type: 'scatter', mode: 'lines', name: 'Old Setup', line: {color: '#94a3b8', width: 3, dash: 'dot'}, hoverinfo: 'skip' };
-        const traceNew = { x: rpmRange, y: yNew, type: 'scatter', mode: 'lines', name: 'New Setup', line: {color: '#3b82f6', width: 3}, hoverinfo: 'skip' };
+        // Motor RPM at each output RPM (motor = output × ratio).
+        const oldR = globalCalc.oldRatio;
+        const newR = realRatio || globalCalc.realRatio || null;
+        const oldMotor = rpmRange.map(r => r * oldR);
+        const newMotor = newR ? rpmRange.map(r => r * newR) : rpmRange.map(() => null);
 
-        const data = [traceOld, traceNew];
+        // customdata columns: [oldMotorRPM, newMotorRPM, oldTorque, newTorque, deltaTorque]
+        const cd = rpmRange.map((_, i) => [oldMotor[i], newMotor[i], yOld[i], yNew[i], yDiff[i]]);
 
-        // If we have calculated the Real Result, add the points
+        // In unified hover, each trace contributes ONE line. No duplication.
+        const hoverTplOld =
+            '<span style="color:#cbd5e1;">Old motor %{customdata[0]:.2f} RPM &nbsp;|&nbsp; ' +
+            'Torque %{y:.4f} Nm</span><extra></extra>';
+        const hoverTplNew =
+            '<span style="color:#60a5fa;">New motor %{customdata[1]:.2f} RPM &nbsp;|&nbsp; ' +
+            'Torque %{y:.4f} Nm</span><extra></extra>';
+        const hoverTplDiff =
+            '<span style="color:#f59e0b;">Δ (New − Old) %{y:.4f} Nm</span><extra></extra>';
+
+        const traceOld = {
+            x: rpmRange, y: yOld, customdata: cd,
+            type: 'scatter', mode: 'lines', name: `Old (ratio ${oldR})`,
+            line: { color: '#cbd5e1', width: 3, dash: 'dot' },
+            hovertemplate: hoverTplOld
+        };
+        const traceNew = {
+            x: rpmRange, y: yNew, customdata: cd,
+            type: 'scatter', mode: 'lines',
+            name: newR ? `New (ratio ${newR})` : 'New (ratio TBD)',
+            line: { color: '#60a5fa', width: 3 },
+            hovertemplate: hoverTplNew
+        };
+        const traceDiff = {
+            x: rpmRange, y: yDiff,
+            type: 'scatter', mode: 'lines', name: 'Δ Torque (New − Old)',
+            yaxis: 'y2',
+            line: { color: '#f59e0b', width: 2, dash: 'dash' },
+            hovertemplate: hoverTplDiff
+        };
+
+        const data = [traceOld, traceNew, traceDiff];
+
+        // Operating-point markers once a real ratio is provided.
         if (realRatio) {
-            const pointOld = {
+            data.push({
                 x: [globalCalc.oldOutRpm], y: [globalCalc.oldTOut],
                 mode: 'markers', name: 'Old Operating Point',
-                marker: {size: 12, color: '#94a3b8', symbol: 'circle', line: {width:2, color:'white'}}
-            };
-            const pointReal = {
+                marker: { size: 12, color: '#cbd5e1', symbol: 'circle', line: { width: 2, color: 'white' } },
+                hovertemplate:
+                    '<span style="color:#cbd5e1;"><b>Old Operating Point</b><br>' +
+                    `Motor: ${globalCalc.oldRpm.toFixed(2)} RPM<br>` +
+                    'Output shaft: %{x:.4f} RPM<br>' +
+                    'Torque: %{y:.4f} Nm</span><extra></extra>'
+            });
+            data.push({
                 x: [newOutRpm], y: [realTOut],
                 mode: 'markers', name: 'New Operating Point',
-                marker: {size: 12, color: '#10b981', symbol: 'star', line: {width:2, color:'white'}}
-            };
-            data.push(pointOld, pointReal);
+                marker: { size: 14, color: '#60a5fa', symbol: 'star', line: { width: 2, color: 'white' } },
+                hovertemplate:
+                    '<span style="color:#60a5fa;"><b>New Operating Point</b><br>' +
+                    `Motor: ${globalCalc.newRpm.toFixed(2)} RPM<br>` +
+                    'Output shaft: %{x:.4f} RPM<br>' +
+                    'Torque: %{y:.4f} Nm</span><extra></extra>'
+            });
         }
 
         const layout = {
-            title: { text: 'Torque vs RPM', font: {color: '#f8fafc', size: 18} },
-            xaxis: { 
-                title: 'Output RPM (Shaft)', 
+            title: { text: 'Torque vs Output Shaft RPM (hover for old vs new at same RPM)', font: { color: '#f8fafc', size: 16 } },
+            xaxis: {
+                title: 'Output Shaft RPM',
                 gridcolor: 'rgba(255,255,255,0.1)',
                 tickfont: { color: '#94a3b8', size: 11 },
-                dtick: (maxRPM / 10) > 10 ? Math.round(maxRPM / 10) : 10,
-                fixedrange: true 
+                showspikes: true,
+                spikemode: 'across',
+                spikecolor: '#f59e0b',
+                spikethickness: 1,
+                spikedash: 'solid',
+                fixedrange: true
             },
-            yaxis: { 
-                title: 'Torque (Nm)', 
+            yaxis: {
+                title: 'Torque (Nm)',
                 gridcolor: 'rgba(255,255,255,0.1)',
                 tickfont: { color: '#f8fafc', size: 12 },
                 nticks: 8,
+                fixedrange: true,
+                showspikes: true,
+                spikemode: 'across',
+                spikecolor: 'rgba(255,255,255,0.25)',
+                spikethickness: 1
+            },
+            yaxis2: {
+                title: 'Δ Torque (Nm)',
+                titlefont: { color: '#f59e0b' },
+                tickfont: { color: '#f59e0b', size: 11 },
+                overlaying: 'y',
+                side: 'right',
+                zeroline: true,
+                zerolinecolor: 'rgba(245,158,11,0.4)',
+                showgrid: false,
                 fixedrange: true
             },
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
-            legend: { font: {color: '#f8fafc', size: 12}, x: 0.01, y: 0.99 },
-            hovermode: 'closest',
-            margin: { l: 60, r: 30, b: 50, t: 50 }
+            legend: { font: { color: '#f8fafc', size: 12 }, orientation: 'h', x: 0, y: 1.12 },
+            hovermode: 'x unified',
+            hoverlabel: { bgcolor: 'rgba(15,23,42,0.95)', bordercolor: '#3b82f6', font: { color: '#f8fafc', size: 12 } },
+            margin: { l: 60, r: 60, b: 50, t: 70 }
         };
 
-        Plotly.newPlot('chart-container', data, layout, {responsive: true, displayModeBar: false});
+        Plotly.newPlot('chart-container', data, layout, { responsive: true, displayModeBar: false });
     }
 </script>
 
