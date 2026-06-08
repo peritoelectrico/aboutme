@@ -261,6 +261,7 @@
         <button class="tab active" onclick="switchTab(0)"><span class="tab-icon">📍</span>Mode 1<br>X &amp; Y</button>
         <button class="tab" onclick="switchTab(1)"><span class="tab-icon">📏</span>Mode 2<br>Slope</button>
         <button class="tab" onclick="switchTab(2)"><span class="tab-icon">📊</span>Mode 3<br>Sections</button>
+        <button class="tab" onclick="switchTab(3)"><span class="tab-icon">🎯</span>Mode 4<br>Drop Test</button>
       </div>
 
       <div class="tab-content">
@@ -271,7 +272,7 @@
             <label>Point on Line (starting from 0,0)</label>
             <div class="input-row">
               <div><label style="font-size:10px;color:var(--text-muted);">X Value</label><input type="number" id="m1_x" min="0" max="10" step="0.01" placeholder="X"></div>
-              <div><label style="font-size:10px;color:var(--text-muted);">Y Value</label><input type="number" id="m1_y" min="0" max="100" step="0.01" placeholder="Y"></div>
+              <div><label style="font-size:10px;color:var(--text-muted);">Y Value</label><input type="number" id="m1_y" step="0.01" placeholder="Y"></div>
             </div>
           </div>
           <div class="btn-row">
@@ -298,9 +299,9 @@
 
         <!-- MODE 3 -->
         <div class="tab-pane" id="tab2">
-          <div class="mode-description">Enter Y values for each X position (0–10). The system calculates the slope for each consecutive section between whole numbers.</div>
+          <div class="mode-description" id="m3_desc">Enter Y values for each X position. The system calculates the slope for each consecutive section between increments. Increment width follows the current scale (10 steps total: 1 on a 10×10 scale, 10 on a 100×100 scale).</div>
           <div class="input-group">
-            <label>Y Values at Each Whole Number X Position</label>
+            <label id="m3_label">Y Values at Each X Position</label>
             <div id="sectionInputs" style="max-height:340px;overflow-y:auto;"></div>
           </div>
           <div class="btn-row">
@@ -308,6 +309,29 @@
             <button class="btn btn-secondary" onclick="clearMode3()">Clear</button>
           </div>
           <div id="m3_results" style="margin-top:12px;"></div>
+        </div>
+
+        <!-- MODE 4 -->
+        <div class="tab-pane" id="tab3">
+          <div class="mode-description">
+            <strong>Drop Test Mode.</strong> The X axis is split into <strong>10 fixed segments</strong>
+            based on the current scale (segment width = <span id="m4_step">1</span>).
+            The test always <strong>starts at (0, 0)</strong>. For each segment, enter the
+            <strong>measured X</strong> (auto-clamped to that segment's range) and the
+            <strong>measured Y</strong>. <em>Y is optional</em> &mdash; leave blank to skip that
+            segment; missing segments are filled by <strong>linear interpolation</strong> between
+            your filled points (and extrapolation past the last one) so we always report all
+            10 segment slopes from 0 to <span id="m4_end">10</span>.
+          </div>
+          <div class="input-group">
+            <label>Drop test points (10 segments)</label>
+            <div id="m4_inputs" style="max-height:380px;overflow-y:auto;"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="calculateMode4()">Calculate Slopes</button>
+            <button class="btn btn-secondary" onclick="clearMode4()">Clear</button>
+          </div>
+          <div id="m4_results" style="margin-top:12px;"></div>
         </div>
       </div>
     </div>
@@ -317,9 +341,8 @@
         <div class="scale-controls">
           <label>Scale:</label>
           <select id="scalePreset" onchange="applyScalePreset(this.value)">
-            <option value="10x10">10 × 10</option>
+            <option value="10x10" selected>10 × 10</option>
             <option value="100x100">100 × 100</option>
-            <option value="10x100" selected>10 × 100</option>
             <option value="custom">Custom</option>
           </select>
           <input type="number" id="customScaleX" placeholder="X Max" step="1" min="1" style="width:65px; display:none;">
@@ -333,8 +356,8 @@
         <button class="tool-btn active" id="btnShowLabels" onclick="toggleLabels()">Labels</button>
         <div class="separator"></div>
         <button class="tool-btn" onclick="resetView()">🔄 Reset View</button>
-        <button class="tool-btn" onclick="fitToData()">🎯 Fit 0-10</button>
         <button class="tool-btn" onclick="exportImage()">📷 Export</button>
+        <button class="tool-btn" onclick="showAbout()">ℹ️ About</button>
         <span class="info" id="cursorInfo">X: -- Y: --</span>
       </div>
       <div class="canvas-container" id="canvasContainer">
@@ -358,7 +381,7 @@ const state = {
   mode: 0, lines: [], dataPoints: [], sectionLines: [],
   mouseX: 0, mouseY: 0, panX: 0, panY: 0, zoom: 1,
   isDragging: false, dragStartX: 0, dragStartY: 0, panStartX: 0, panStartY: 0,
-  scaleX: 10, scaleY: 100
+  scaleX: 10, scaleY: 10
 };
 
 const COLORS = {
@@ -388,19 +411,120 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 
 // ========== SECTION INPUTS GENERATION ==========
-function generateSectionInputs() {
+// Mode 3: 11 rows at X = 0, step, 2*step, ..., 10*step where step = scaleX/10.
+// On scale change, prior Y values are scaled by the Y ratio so a Y of 3.4 on 10x10
+// becomes 34 on 100x100 (the line stays in the same relative position).
+function generateSectionInputs(prevScaleX, prevScaleY) {
   const container = document.getElementById('sectionInputs');
+  if (!container) return;
+  // Capture existing Y values BEFORE rebuilding.
+  const prior = [];
+  const hadChildren = container.children.length > 0;
+  if (hadChildren) {
+    for (let i = 0; i <= 10; i++) {
+      const yEl = document.getElementById(`sec_y_${i}`);
+      prior.push(yEl ? yEl.value : '');
+    }
+  }
+  const step = state.scaleX / 10;
   let html = '';
   for (let i = 0; i <= 10; i++) {
+    const xVal = +(i * step).toFixed(4);
     html += `<div class="section-input">
-      <span class="section-label">X=${i}</span>
-      <input type="number" id="sec_y_${i}" step="0.01" placeholder="Y value" min="0" max="100">
+      <span class="section-label">X=${xVal}</span>
+      <input type="number" id="sec_y_${i}" data-x="${xVal}" step="0.01" placeholder="Y value">
       <span class="section-label" id="sec_slope_${i}" style="color:var(--text-muted);">—</span>
     </div>`;
   }
   container.innerHTML = html;
+  // Restore prior values, ratio-scaled in Y when prev scale supplied.
+  if (hadChildren) {
+    const ry = (prevScaleY != null && prevScaleY > 0) ? state.scaleY / prevScaleY : 1;
+    for (let i = 0; i <= 10; i++) {
+      const raw = prior[i];
+      if (raw === '' || raw == null) continue;
+      const oldY = parseFloat(raw);
+      if (isNaN(oldY)) continue;
+      const newY = +(oldY * ry).toFixed(4);
+      const yEl = document.getElementById(`sec_y_${i}`);
+      if (yEl) yEl.value = newY;
+    }
+  }
 }
 generateSectionInputs();
+
+// ========== MODE 4 (DROP TEST) INPUTS GENERATION ==========
+// 10 fixed segment rows. Each row's X is bounded to its segment range
+// (live-clamped on input so the user physically cannot leave an out-of-range X).
+// Y is optional: empty Y rows are skipped at calc time.
+// On scale change, prior X and Y values are ratio-scaled so the line keeps its
+// shape (3.4 on 10x10 becomes 34 on 100x100). Segment indices stay the same.
+function generateMode4Inputs(prevScaleX, prevScaleY) {
+  const container = document.getElementById('m4_inputs');
+  if (!container) return;
+  // Capture existing X and Y values BEFORE rebuilding.
+  const prior = [];
+  const hadChildren = container.children.length > 0;
+  if (hadChildren) {
+    for (let i = 0; i < 10; i++) {
+      const xEl = document.getElementById(`m4_x_${i}`);
+      const yEl = document.getElementById(`m4_y_${i}`);
+      prior.push({ x: xEl ? xEl.value : '', y: yEl ? yEl.value : '' });
+    }
+  }
+
+  const step = state.scaleX / 10;
+  const stepLabel = document.getElementById('m4_step');
+  if (stepLabel) stepLabel.textContent = step;
+  const endLabel = document.getElementById('m4_end');
+  if (endLabel) endLabel.textContent = state.scaleX;
+
+  let html = '';
+  for (let i = 0; i < 10; i++) {
+    const a = +(i * step).toFixed(4);
+    const b = +((i + 1) * step).toFixed(4);
+    const mid = +(((a + b) / 2)).toFixed(4);
+    html += `<div class="section-input" style="grid-template-columns:90px 1fr 1fr;" title="Segment ${i + 1}: X must be in [${a}, ${b}]. Y is optional.">
+      <span class="section-label">Seg ${i + 1}<br><span style="color:var(--text-muted);font-size:9px;">[${a}–${b}]</span></span>
+      <input type="number" id="m4_x_${i}" data-min="${a}" data-max="${b}" min="${a}" max="${b}" step="0.01" value="${mid}" placeholder="X (${a}–${b})" oninput="clampM4X(this)" onblur="clampM4X(this)">
+      <input type="number" id="m4_y_${i}" step="0.01" placeholder="Y (optional)">
+    </div>`;
+  }
+  container.innerHTML = html;
+
+  // Restore prior values, ratio-scaled.
+  if (hadChildren) {
+    const rx = (prevScaleX != null && prevScaleX > 0) ? state.scaleX / prevScaleX : 1;
+    const ry = (prevScaleY != null && prevScaleY > 0) ? state.scaleY / prevScaleY : 1;
+    for (let i = 0; i < 10; i++) {
+      const xEl = document.getElementById(`m4_x_${i}`);
+      const yEl = document.getElementById(`m4_y_${i}`);
+      const oldX = parseFloat(prior[i].x);
+      const oldY = parseFloat(prior[i].y);
+      if (!isNaN(oldX) && xEl) {
+        let newX = +(oldX * rx).toFixed(4);
+        const a = parseFloat(xEl.dataset.min);
+        const b = parseFloat(xEl.dataset.max);
+        if (newX < a) newX = a;
+        else if (newX > b) newX = b;
+        xEl.value = newX;
+      }
+      if (!isNaN(oldY) && yEl && prior[i].y !== '') {
+        yEl.value = +(oldY * ry).toFixed(4);
+      }
+    }
+  }
+}
+// Clamp an X cell to its segment's [min, max] range. Called on every keystroke and blur.
+function clampM4X(el) {
+  if (el.value === '' || el.value === '-' || el.value === '.') return;
+  const a = parseFloat(el.dataset.min);
+  const b = parseFloat(el.dataset.max);
+  const v = parseFloat(el.value);
+  if (isNaN(v)) return;
+  if (v < a) el.value = a;
+  else if (v > b) el.value = b;
+}
 
 // ========== TAB SWITCHING ==========
 function switchTab(index) {
@@ -408,6 +532,11 @@ function switchTab(index) {
   document.querySelectorAll('.tab-pane').forEach((p, i) => p.classList.toggle('active', i === index));
   state.mode = index;
   state.lines = []; state.dataPoints = []; state.sectionLines = [];
+  // Lazy-init Mode 4 rows the first time the user opens that tab.
+  if (index === 3) {
+    const m4 = document.getElementById('m4_inputs');
+    if (m4 && m4.children.length === 0) generateMode4Inputs();
+  }
   draw();
 }
 
@@ -418,6 +547,38 @@ function toggleDots() { state.showDots = !state.showDots; document.getElementByI
 function toggleLabels() { state.showLabels = !state.showLabels; document.getElementById('btnShowLabels').classList.toggle('active'); draw(); }
 
 // ========== SCALE MANAGEMENT ==========
+// Re-extend any computed line(s) so they span the current X range and rebuild
+// their integer-X point table for that range. Mode 3 (sectionLines) is left
+// alone because its data is intrinsically defined at integer X = 0..10.
+function rescaleLines() {
+  if (!state.lines || state.lines.length === 0) return;
+  state.lines = state.lines.map(line => {
+    if (typeof line.slope !== 'number') return line;
+    const m = line.slope;
+    const xEnd = state.scaleX;
+    const points = [];
+    // Use the same 11-point table for any scale, evenly spread 0..scaleX.
+    // Step = scaleX/10 keeps the table size readable on 10x10 and 100x100.
+    const step = xEnd / 10;
+    for (let i = 0; i <= 10; i++) {
+      const x = +(i * step).toFixed(4);
+      points.push({ x, y: Math.round(m * x * 100) / 100 });
+    }
+    return { x1: 0, y1: 0, x2: xEnd, y2: m * xEnd, points, slope: m };
+  });
+
+  // Refresh the visible results table for the active mode so it matches.
+  const m = state.lines[0].slope;
+  const html = buildSlopeDisplay(m) + buildTable(state.lines[0].points, m) + buildProperties(m, m);
+  if (state.mode === 0) {
+    const t = document.getElementById('m1_results');
+    if (t && t.innerHTML.trim() !== '') t.innerHTML = html;
+  } else if (state.mode === 1) {
+    const t = document.getElementById('m2_results');
+    if (t && t.innerHTML.trim() !== '') t.innerHTML = html;
+  }
+}
+
 function applyScalePreset(val) {
   const customX = document.getElementById('customScaleX');
   const customY = document.getElementById('customScaleY');
@@ -425,13 +586,15 @@ function applyScalePreset(val) {
   
   customX.style.display = customY.style.display = btnApply.style.display = 'none';
 
+  const prevX = state.scaleX, prevY = state.scaleY;
   if (val === '10x10') { state.scaleX = 10; state.scaleY = 10; }
   else if (val === '100x100') { state.scaleX = 100; state.scaleY = 100; }
-  else if (val === '10x100') { state.scaleX = 10; state.scaleY = 100; }
   else if (val === 'custom') {
     customX.style.display = customY.style.display = btnApply.style.display = 'inline-block';
     return;
   }
+  rescaleLines();
+  regenerateScaleDependentInputs(prevX, prevY);
   updateScaleUI();
   draw();
 }
@@ -439,10 +602,23 @@ function applyScalePreset(val) {
 function applyCustomScale() {
   const x = parseFloat(document.getElementById('customScaleX').value);
   const y = parseFloat(document.getElementById('customScaleY').value);
+  const prevX = state.scaleX, prevY = state.scaleY;
   if (x && x > 0) state.scaleX = x;
   if (y && y > 0) state.scaleY = y;
+  rescaleLines();
+  regenerateScaleDependentInputs(prevX, prevY);
   updateScaleUI();
   draw();
+}
+
+// Regenerate the Mode 3 and Mode 4 input rows because their X labels / segments
+// depend on scale. When prevScaleX/Y are supplied, existing user values are
+// ratio-scaled so the visual shape of the line is preserved across the toggle.
+function regenerateScaleDependentInputs(prevScaleX, prevScaleY) {
+  generateSectionInputs(prevScaleX, prevScaleY);
+  if (document.getElementById('m4_inputs') && document.getElementById('m4_inputs').children.length) {
+    generateMode4Inputs(prevScaleX, prevScaleY);
+  }
 }
 
 function updateScaleUI() {
@@ -450,16 +626,6 @@ function updateScaleUI() {
   if (`${state.scaleX}x${state.scaleY}` !== sel.value) {
     sel.value = 'custom';
   }
-}
-
-function fitToData() {
-  state.scaleX = 10; state.scaleY = 100;
-  document.getElementById('scalePreset').value = '10x100';
-  document.getElementById('customScaleX').style.display = 'none';
-  document.getElementById('customScaleY').style.display = 'none';
-  document.getElementById('btnApplyCustom').style.display = 'none';
-  resetView();
-  draw();
 }
 
 // ========== COORDINATE TRANSFORMS ==========
@@ -695,6 +861,38 @@ canvas.addEventListener('wheel', (e) => { e.preventDefault(); const delta = e.de
 function resetView() { state.panX = 0; state.panY = 0; draw(); }
 function exportImage() { const link = document.createElement('a'); link.download = 'slope_chart.png'; link.href = canvas.toDataURL(); link.click(); }
 
+// About modal — credit string is built from a +7-shifted byte table so it
+// doesn't appear as plain text anywhere in the source.
+function _aboutCredit() {
+  const t = [74,121,108,104,123,108,107,39,105,128,39,89,112,106,104,121,107,118,39,79,108,121,117,104,117,107,108,129,39,74,111,104,117,110];
+  let s = ''; for (let i = 0; i < t.length; i++) s += String.fromCharCode(t[i] - 7);
+  return s;
+}
+function showAbout() {
+  let overlay = document.getElementById('aboutOverlay');
+  if (overlay) { overlay.style.display = 'flex'; return; }
+  overlay = document.createElement('div');
+  overlay.id = 'aboutOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(4px);';
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.style.display = 'none'; };
+  const box = document.createElement('div');
+  box.style.cssText = 'background:rgba(15,23,42,0.95);border:1px solid rgba(148,163,184,0.25);border-radius:12px;padding:28px 36px;min-width:340px;text-align:center;color:#e2e8f0;font-family:Inter,system-ui,sans-serif;box-shadow:0 20px 60px rgba(0,0,0,0.5);';
+  const title = document.createElement('div');
+  title.textContent = 'Slope Calculator Pro';
+  title.style.cssText = 'font-size:18px;font-weight:600;margin-bottom:10px;color:#06b6d4;';
+  const credit = document.createElement('div');
+  credit.textContent = _aboutCredit();
+  credit.style.cssText = 'font-size:14px;margin:14px 0 18px;color:#cbd5e1;';
+  const close = document.createElement('button');
+  close.textContent = 'Close';
+  close.className = 'tool-btn';
+  close.style.cssText = 'margin-top:6px;padding:8px 22px;cursor:pointer;';
+  close.onclick = () => overlay.style.display = 'none';
+  box.appendChild(title); box.appendChild(credit); box.appendChild(close);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
 // ========== MODE 1 ==========
 function calculateMode1() {
   const xVal = parseFloat(document.getElementById('m1_x').value);
@@ -704,7 +902,8 @@ function calculateMode1() {
   state.lines = []; state.dataPoints = []; state.sectionLines = [];
   const points = [];
   for (let i = 0; i <= 10; i++) points.push({ x: i, y: Math.round(slope * i * 100) / 100 });
-  state.lines.push({ x1: 0, y1: 0, x2: 10, y2: Math.min(slope * 10, state.scaleY), points, slope });
+  // Render the actual endpoint so negative slopes display correctly.
+  state.lines.push({ x1: 0, y1: 0, x2: 10, y2: slope * 10, points, slope });
   let html = buildSlopeDisplay(slope) + buildTable(points, slope) + buildProperties(slope, 0);
   document.getElementById('m1_results').innerHTML = html;
   draw();
@@ -718,7 +917,8 @@ function calculateMode2() {
   state.lines = []; state.dataPoints = []; state.sectionLines = [];
   const points = [];
   for (let i = 0; i <= 10; i++) points.push({ x: i, y: Math.round(slope * i * 100) / 100 });
-  state.lines.push({ x1: 0, y1: 0, x2: 10, y2: Math.min(Math.max(slope * 10, 0), state.scaleY), points, slope });
+  // Render the actual endpoint (do not clip to 0) so negative slopes display correctly.
+  state.lines.push({ x1: 0, y1: 0, x2: 10, y2: slope * 10, points, slope });
   let html = buildSlopeDisplay(slope) + buildTable(points, slope) + buildProperties(slope, slope);
   document.getElementById('m2_results').innerHTML = html;
   draw();
@@ -728,46 +928,215 @@ function clearMode2() { document.getElementById('m2_slope').value = ''; document
 // ========== MODE 3 ==========
 function calculateMode3() {
   state.lines = []; state.dataPoints = []; state.sectionLines = [];
+  const step = state.scaleX / 10;
+  const xs = [];
   const values = [];
   for (let i = 0; i <= 10; i++) {
+    const xVal = +(i * step).toFixed(4);
     const val = parseFloat(document.getElementById(`sec_y_${i}`).value);
-    if (isNaN(val)) { alert(`Enter value for X = ${i}`); return; }
+    if (isNaN(val)) { alert(`Enter value for X = ${xVal}`); return; }
+    xs.push(xVal);
     values.push(Math.round(val * 100) / 100);
   }
   const sectionSlopes = [];
   for (let i = 0; i < 10; i++) {
     const dy = values[i + 1] - values[i];
-    sectionSlopes.push(dy);
-    state.sectionLines.push({ x1: i, y1: values[i], x2: i + 1, y2: values[i + 1] });
+    const dx = xs[i + 1] - xs[i];
+    sectionSlopes.push(dx !== 0 ? dy / dx : 0);
+    state.sectionLines.push({ x1: xs[i], y1: values[i], x2: xs[i + 1], y2: values[i + 1] });
   }
-  for (let i = 0; i <= 10; i++) state.dataPoints.push({ x: i, y: values[i] });
+  for (let i = 0; i <= 10; i++) state.dataPoints.push({ x: xs[i], y: values[i] });
   for (let i = 0; i < 10; i++) {
     const el = document.getElementById(`sec_slope_${i + 1}`);
     if (el) { const s = sectionSlopes[i]; el.innerHTML = `<span class="${s > 0 ? 'positive' : s < 0 ? 'negative' : 'zero'}">m=${s.toFixed(2)}</span>`; }
   }
   const avg = sectionSlopes.reduce((a,b)=>a+b,0)/10;
   const max = Math.max(...sectionSlopes); const min = Math.min(...sectionSlopes);
+  const overallSlope = (values[10] - values[0]) / (xs[10] - xs[0]);
   let html = `
-    <div class="slope-display"><div class="label">Section Analysis Complete</div><div class="value">10 Sections</div><div class="equation">Slopes calculated for each interval</div></div>
+    <div class="slope-display"><div class="label">Section Analysis Complete</div><div class="value">10 Sections</div><div class="equation">Slopes calculated for each interval (X step = ${step})</div></div>
     <div class="gradient-bar"></div>
     <div class="results-panel"><div class="results-header">📊 Section-by-Section Analysis</div><div class="results-body">
     <table class="section-table"><thead><tr><th>Section</th><th>Y Start</th><th>Y End</th><th>ΔY</th><th>Slope</th></tr></thead><tbody>`;
   sectionSlopes.forEach((s, i) => {
-    html += `<tr><td>${i}→${i+1}</td><td>${values[i].toFixed(2)}</td><td>${values[i+1].toFixed(2)}</td><td class="${s>=0?'positive':'negative'}">${s>=0?'+':''}${s.toFixed(2)}</td><td class="${s>0?'positive':s<0?'negative':'zero'}">${s.toFixed(4)}</td></tr>`;
+    html += `<tr><td>${xs[i]}→${xs[i+1]}</td><td>${values[i].toFixed(2)}</td><td>${values[i+1].toFixed(2)}</td><td class="${s>=0?'positive':'negative'}">${(values[i+1]-values[i])>=0?'+':''}${(values[i+1]-values[i]).toFixed(2)}</td><td class="${s>0?'positive':s<0?'negative':'zero'}">${s.toFixed(4)}</td></tr>`;
   });
   html += `</tbody></table></div></div>
     <div class="results-panel" style="margin-top:10px;"><div class="results-header">📈 Summary</div><div class="results-body">
-    <div class="result-row"><span class="result-label">Average Slope</span><span class="result-value">${avg.toFixed(4)}</span></div>
-    <div class="result-row"><span class="result-label">Max Slope</span><span class="result-value positive">${max.toFixed(4)}</span></div>
-    <div class="result-row"><span class="result-label">Min Slope</span><span class="result-value negative">${min.toFixed(4)}</span></div>
+    <div class="result-row"><span class="result-label">Average Section Slope</span><span class="result-value">${avg.toFixed(4)}</span></div>
+    <div class="result-row"><span class="result-label">Max Section Slope</span><span class="result-value positive">${max.toFixed(4)}</span></div>
+    <div class="result-row"><span class="result-label">Min Section Slope</span><span class="result-value negative">${min.toFixed(4)}</span></div>
     <div class="result-row"><span class="result-label">Overall ΔY</span><span class="result-value">${(values[10]-values[0]).toFixed(2)}</span></div>
-    <div class="result-row"><span class="result-label">Overall Slope</span><span class="result-value">${((values[10]-values[0])/10).toFixed(4)}</span></div></div></div>`;
+    <div class="result-row"><span class="result-label">Overall Slope</span><span class="result-value">${overallSlope.toFixed(4)}</span></div></div></div>`;
   document.getElementById('m3_results').innerHTML = html;
   draw();
 }
 function clearMode3() {
-  for (let i = 0; i <= 10; i++) { document.getElementById(`sec_y_${i}`).value = ''; const el = document.getElementById(`sec_slope_${i}`); if(el) el.textContent = '—'; }
+  for (let i = 0; i <= 10; i++) { const inp = document.getElementById(`sec_y_${i}`); if (inp) inp.value = ''; const el = document.getElementById(`sec_slope_${i}`); if(el) el.textContent = '—'; }
   document.getElementById('m3_results').innerHTML = ''; state.lines = []; state.dataPoints = []; state.sectionLines = []; draw();
+}
+
+// ========== MODE 4 (DROP TEST) ==========
+// The drop test ALWAYS starts at the fixed anchor (0, 0).
+// User-filled (X, Y) points are sorted by X and appended to that anchor to form a
+// polyline. Missing segment boundaries are filled by LINEAR INTERPOLATION between
+// user points, and points past the last user point are EXTRAPOLATED using the slope
+// of the final user segment. We always report slopes for all 10 segments from X=0
+// to X=scaleX. Y is optional per row; X is auto-clamped to its segment range.
+function calculateMode4() {
+  state.lines = []; state.dataPoints = []; state.sectionLines = [];
+  const step = state.scaleX / 10;
+  const filled = [];
+
+  for (let i = 0; i < 10; i++) {
+    const xEl = document.getElementById(`m4_x_${i}`);
+    const yEl = document.getElementById(`m4_y_${i}`);
+    const a = parseFloat(xEl.dataset.min);
+    const b = parseFloat(xEl.dataset.max);
+    const yRaw = yEl.value.trim();
+    if (yRaw === '') continue; // Y blank -> segment not measured.
+    const y = parseFloat(yRaw);
+    if (isNaN(y)) { alert(`Segment ${i + 1}: Y value is not a number.`); return; }
+    let x = parseFloat(xEl.value);
+    if (isNaN(x)) x = (a + b) / 2;
+    if (x < a || x > b) { x = Math.min(Math.max(x, a), b); xEl.value = x; }
+    filled.push({ seg: i + 1, x, y });
+  }
+
+  if (filled.length < 1) {
+    alert('Enter at least 1 Y value to run the drop test.');
+    return;
+  }
+
+  // Sort user points by X and prepend the fixed (0,0) anchor (unless the user
+  // already provided a point at x=0).
+  filled.sort((p, q) => p.x - q.x);
+  const poly = (filled[0].x === 0) ? filled.slice() : [{ seg: 0, x: 0, y: 0 }, ...filled];
+
+  // Linear interpolation along the polyline; extrapolate past the last user point
+  // using the slope of the final user segment.
+  function interpAt(x) {
+    if (x <= poly[0].x) return poly[0].y;
+    for (let i = 0; i < poly.length - 1; i++) {
+      if (x >= poly[i].x && x <= poly[i + 1].x) {
+        const dx = poly[i + 1].x - poly[i].x;
+        if (dx === 0) return poly[i + 1].y;
+        const t = (x - poly[i].x) / dx;
+        return poly[i].y + t * (poly[i + 1].y - poly[i].y);
+      }
+    }
+    const n = poly.length;
+    if (n >= 2) {
+      const dx = poly[n - 1].x - poly[n - 2].x;
+      const slope = dx !== 0 ? (poly[n - 1].y - poly[n - 2].y) / dx : 0;
+      return poly[n - 1].y + slope * (x - poly[n - 1].x);
+    }
+    return poly[n - 1].y;
+  }
+
+  // Compute Y at each of the 11 segment boundaries x_k = k*step, k = 0..10.
+  const xs = [], ys = [];
+  for (let k = 0; k <= 10; k++) {
+    const x = +(k * step).toFixed(4);
+    xs.push(x);
+    ys.push(+interpAt(x).toFixed(4));
+  }
+
+  // Average per-segment slopes (rise over run across the segment boundary X range).
+  // These are used for the 10-row summary table.
+  const sectionSlopes = [];
+  for (let i = 0; i < 10; i++) {
+    sectionSlopes.push((ys[i + 1] - ys[i]) / step);
+  }
+
+  // Render the ACTUAL polyline through the (0,0) anchor + user points,
+  // extended to X = scaleX using the final-segment slope. This guarantees the
+  // drawn line passes exactly through every user-supplied measurement.
+  const renderPts = poly.slice();
+  const lastX = renderPts[renderPts.length - 1].x;
+  if (lastX < state.scaleX) {
+    renderPts.push({ x: state.scaleX, y: interpAt(state.scaleX) });
+  }
+  for (let i = 0; i < renderPts.length - 1; i++) {
+    state.sectionLines.push({
+      x1: renderPts[i].x,     y1: renderPts[i].y,
+      x2: renderPts[i + 1].x, y2: renderPts[i + 1].y
+    });
+  }
+
+  // Attach the 11 boundary (X, Y) intersections to a zero-length "ghost" line so
+  // the existing showPoints + showLabels draw path renders them as labeled green
+  // dots — same behavior as Modes 1 / 2 / 3.
+  const boundaryPts = xs.map((x, k) => ({ x, y: ys[k] }));
+  state.lines.push({ x1: 0, y1: 0, x2: 0, y2: 0, points: boundaryPts });
+
+  // Plot the (0,0) anchor + user-provided points as orange dots.
+  state.dataPoints.push({ x: 0, y: 0 });
+  filled.forEach(p => { if (p.x !== 0) state.dataPoints.push({ x: p.x, y: p.y }); });
+  state.showDots = true;
+  document.getElementById('btnShowDots').classList.add('active');
+
+  const overallDx = xs[10] - xs[0];
+  const overallDy = ys[10] - ys[0];
+  const overallSlope = overallDx !== 0 ? overallDy / overallDx : 0;
+  const avg = sectionSlopes.reduce((a, b) => a + b, 0) / 10;
+  const max = Math.max(...sectionSlopes);
+  const min = Math.min(...sectionSlopes);
+
+  // Build per-segment table for ALL 10 segments; mark user-provided segments.
+  const filledSegs = new Set(filled.map(p => p.seg));
+  let rows = '';
+  for (let i = 0; i < 10; i++) {
+    const s = sectionSlopes[i];
+    const dy = ys[i + 1] - ys[i];
+    const isUser = filledSegs.has(i + 1);
+    const rowStyle = isUser ? ' style="background:rgba(245,158,11,0.06);"' : '';
+    const tag = isUser ? ' ●' : '';
+    rows += `<tr${rowStyle}><td>Seg ${i + 1}${tag}</td><td>${xs[i]} → ${xs[i + 1]}</td><td>${ys[i].toFixed(2)} → ${ys[i + 1].toFixed(2)}</td><td class="${dy >= 0 ? 'positive' : 'negative'}">${dy >= 0 ? '+' : ''}${dy.toFixed(2)}</td><td class="${s > 0 ? 'positive' : s < 0 ? 'negative' : 'zero'}">${s.toFixed(4)}</td></tr>`;
+  }
+
+  // Build intersection table: Y value of the polyline at each whole-X boundary
+  // (k * step, k = 0..10). On 10×10 this is X = 0,1,2,...,10; on 100×100 it
+  // is X = 0,10,20,...,100. Mark rows where the user actually supplied a
+  // measurement landing at that boundary.
+  const userXSet = new Set(filled.map(p => +p.x.toFixed(4)));
+  let intersectRows = '';
+  for (let k = 0; k <= 10; k++) {
+    const x = xs[k];
+    const y = ys[k];
+    const isAnchor = (k === 0);
+    const isUserPt = userXSet.has(+x.toFixed(4));
+    const rowStyle = (isAnchor || isUserPt) ? ' style="background:rgba(245,158,11,0.06);"' : '';
+    const tag = isAnchor ? ' (anchor)' : (isUserPt ? ' ●' : '');
+    intersectRows += `<tr${rowStyle}><td>(${x}, ${y.toFixed(2)})${tag}</td><td>${x}</td><td class="result-value">${y.toFixed(4)}</td></tr>`;
+  }
+
+  const html = `
+    <div class="slope-display"><div class="label">Drop Test Result (${filled.length}/10 user points + anchor at 0,0)</div><div class="value">m = ${overallSlope.toFixed(4)}</div><div class="equation">Overall 0 → ${xs[10]}: ΔY / ΔX = ${overallDy.toFixed(2)} / ${overallDx.toFixed(2)}</div></div>
+    <div class="gradient-bar"></div>
+    <div class="results-panel"><div class="results-header">📊 All 10 Segment Slopes <span style="color:var(--text-muted);font-size:10px;font-weight:normal;">(● = user-provided)</span></div><div class="results-body">
+      <table class="section-table"><thead><tr><th>Segment</th><th>X range</th><th>Y range</th><th>ΔY</th><th>Slope</th></tr></thead><tbody>${rows}</tbody></table>
+    </div></div>
+    <div class="results-panel" style="margin-top:10px;"><div class="results-header">📍 Intersection Values <span style="color:var(--text-muted);font-size:10px;font-weight:normal;">(Y at each whole-X boundary)</span></div><div class="results-body">
+      <table class="section-table"><thead><tr><th>(X, Y)</th><th>X</th><th>Y</th></tr></thead><tbody>${intersectRows}</tbody></table>
+    </div></div>
+    <div class="results-panel" style="margin-top:10px;"><div class="results-header">📈 Summary</div><div class="results-body">
+      <div class="result-row"><span class="result-label">User-filled segments</span><span class="result-value">${filled.length} / 10</span></div>
+      <div class="result-row"><span class="result-label">Average Segment Slope</span><span class="result-value">${avg.toFixed(4)}</span></div>
+      <div class="result-row"><span class="result-label">Max Segment Slope</span><span class="result-value positive">${max.toFixed(4)}</span></div>
+      <div class="result-row"><span class="result-label">Min Segment Slope</span><span class="result-value negative">${min.toFixed(4)}</span></div>
+      <div class="result-row"><span class="result-label">Total ΔX (0 → ${xs[10]})</span><span class="result-value">${overallDx.toFixed(2)}</span></div>
+      <div class="result-row"><span class="result-label">Total ΔY</span><span class="result-value">${overallDy.toFixed(2)}</span></div>
+      <div class="result-row"><span class="result-label">Overall Slope</span><span class="result-value">${overallSlope.toFixed(4)}</span></div>
+    </div></div>`;
+  document.getElementById('m4_results').innerHTML = html;
+  draw();
+}
+function clearMode4() {
+  document.getElementById('m4_results').innerHTML = '';
+  state.lines = []; state.dataPoints = []; state.sectionLines = [];
+  generateMode4Inputs();
+  draw();
 }
 
 // ========== HELPERS ==========
