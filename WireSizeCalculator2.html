@@ -174,7 +174,7 @@
 <div class="card">
     <div class="input-section">
         <h1><span>🔌</span> Wire Size Calculator</h1>
-        <p class="subtitle">NEC Table 310.16 | AC/DC | 26–4/0 AWG</p>
+        <p class="subtitle">NEC 2023 · 310.16 + 402.5 + 240.4(D) + 240.6(A) · AC/DC · 14 AWG → 2000 kcmil (+ reference data 16 AWG → 40 AWG)</p>
 
         <div class="form-row">
             <div class="form-group">
@@ -206,25 +206,36 @@
                 <label>Phase (AC Only)</label>
                 <select id="phase">
                     <option value="1">Single Phase (2-Wire)</option>
-                    <option value="3" selected>Three Phase (3-Wire)</option>
+                    <option value="3" selected>Three Phase (3 or 4-Wire)</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Conductor Material</label>
                 <select id="material">
-                    <option value="copper" selected>Copper (THHN/THWN)</option>
-                    <option value="aluminum">Aluminum (THHN/THWN)</option>
+                    <option value="copper" selected>Copper (THHN/THWN/XHHW)</option>
+                    <option value="aluminum">Aluminum (XHHW/THHN/THWN)</option>
                 </select>
             </div>
         </div>
 
-        <div class="form-group">
-            <label>Insulation Temp Rating</label>
-            <select id="tempRating">
-                <option value="60">60°C (140°F)</option>
-                <option value="75" selected>75°C (167°F)</option>
-                <option value="90">90°C (194°F)</option>
-            </select>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Conductor Insulation Rating</label>
+                <select id="tempRating">
+                    <option value="60">60°C (TW)</option>
+                    <option value="75" selected>75°C (THW/THWN/XHHW)</option>
+                    <option value="90">90°C (THHN/THHW/XHHW-2)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Termination Temp Rating <small style="text-transform:none; font-weight:normal; color:#8899a6;">[110.14(C)]</small></label>
+                <select id="termRating">
+                    <option value="auto" selected>Auto (60°C ≤100A, 75°C &gt;100A)</option>
+                    <option value="60">60°C terminals</option>
+                    <option value="75">75°C terminals</option>
+                    <option value="90">90°C terminals (rare)</option>
+                </select>
+            </div>
         </div>
 
         <div class="form-group">
@@ -240,24 +251,38 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label>Conductors in Conduit</label>
+                <label>Current-Carrying Conductors <small style="text-transform:none; font-weight:normal; color:#8899a6;">[310.15(C)(1)]</small></label>
                 <input type="number" id="conduitFill" value="3" step="1" min="1">
             </div>
              <div class="form-group">
                 <label>&nbsp;</label>
                  <div class="checkbox-group">
                     <input type="checkbox" id="continuousLoad">
-                    <label for="continuousLoad">Continuous (>3 hrs)</label>
+                    <label for="continuousLoad">Continuous (&gt;3 hrs) — 125% [210.19/215.2]</label>
                 </div>
             </div>
         </div>
 
+        <div class="form-group">
+            <label>Search Range</label>
+            <select id="rangeMode">
+                <option value="nec" selected>NEC 310.16 only (14 AWG → 2000 kcmil)</option>
+                <option value="fixture">Include NEC 402.5 fixture wire (16, 18 AWG)</option>
+                <option value="ref">Include reference data (20 AWG → 40 AWG)</option>
+            </select>
+        </div>
+
+        <div class="note">
+            <strong>Counting tip:</strong> per <code>310.15(E)/(F)</code> the neutral of a balanced wye and the equipment grounding conductor are <em>not</em> current-carrying. Count only ungrounded conductors and any neutral that carries unbalanced/harmonic current.
+        </div>
+
         <div class="edu-panel">
-            <h3>📘 Logic & Standards</h3>
+            <h3>📘 Formulas</h3>
             <ul>
-                <li><strong>AC 3-Phase:</strong> $V_d = \frac{\sqrt{3} \times K \times I \times L}{CM}$</li>
-                <li><strong>DC / 1-Phase AC:</strong> $V_d = \frac{2 \times K \times I \times L}{CM}$</li>
-                <li><strong>Full Range:</strong> 26 AWG through 4/0 AWG included.</li>
+                <li><strong>AC 3-Phase (L-L):</strong> Vd = √3 · K · I · L / CM</li>
+                <li><strong>DC / 1-Phase AC:</strong> Vd = 2 · K · I · L / CM</li>
+                <li><strong>K (resistivity, Ω·cmil/ft @ 75°C):</strong> Cu = 12.9, Al = 21.2</li>
+                <li><strong>mm² ≈ CM × 5.067 × 10⁻⁴</strong></li>
             </ul>
         </div>
     </div>
@@ -268,15 +293,15 @@
         <div class="result-card success">
             <div class="result-info">
                 <h3>Minimum Wire Size</h3>
-                <p>Based on adjusted ampacity</p>
+                <p id="resWireSource">Per NEC 310.16</p>
             </div>
             <div class="result-val" id="resWireSize">- <span class="unit">AWG</span></div>
         </div>
 
         <div class="result-card">
             <div class="result-info">
-                <h3>Metric Equivalent</h3>
-                <p>Cross-sectional area</p>
+                <h3>Cross-Section</h3>
+                <p>Computed from circular mils</p>
             </div>
             <div class="result-val" id="resMetric">- <span class="unit">mm²</span></div>
         </div>
@@ -284,9 +309,17 @@
         <div class="result-card warning">
             <div class="result-info">
                 <h3>Adjusted Ampacity</h3>
-                <p>Max current (after derating)</p>
+                <p id="resAmpacityNote">After temp × fill derating, capped by termination rating</p>
             </div>
             <div class="result-val" id="resAmpacity">- <span class="unit">A</span></div>
+        </div>
+
+        <div class="result-card" style="border-left-color: #ffb74d;">
+            <div class="result-info">
+                <h3>Required OCPD (Next Std)</h3>
+                <p>Rounded per NEC 240.6(A); respects 240.4(D)</p>
+            </div>
+            <div class="result-val" id="resOCPD">- <span class="unit">A</span></div>
         </div>
 
         <div class="result-card" style="border-left-color: #a5d6a7;">
@@ -299,135 +332,307 @@
         <div class="vd-meter"><div class="vd-fill" id="vdFill"></div></div>
         <p style="font-size: 0.8rem; text-align: center; color: #aaa;" id="vdText">Calculation pending...</p>
 
-        <div class="note">
-            <strong>⚠️ Safety:</strong> Aluminum is not commonly manufactured below 12 AWG. Copper is recommended for 18–26 AWG.
+        <div class="note" id="codeNotes" style="font-size:0.78rem; line-height:1.5;">
+            <strong>⚠️ Disclaimer:</strong> Educational reference only — does not replace a licensed Professional Engineer or AHJ review. Sizes &lt; 14 AWG (Cu) and &lt; 12 AWG (Al) come from NEC 402.5 (fixture wire) or non-NEC chassis-wiring references and must not be used for branch-circuit power without specific Code authority.
         </div>
     </div>
 </div>
 
 <script>
-    // FULL Wire Data: 26 AWG to 4/0
-    // CM = Circular Mils, Ampacities for Cu/Al at 60°C, 75°C, 90°C
-    const wireData = [
-        { awg: 26, mm2: "0.13", cm: 252,   cu: {60:3,  75:4,  90:5},  al: {60:2,  75:3,  90:4} },
-        { awg: 24, mm2: "0.21", cm: 404,   cu: {60:5,  75:6,  90:7},  al: {60:4,  75:4,  90:6} },
-        { awg: 22, mm2: "0.33", cm: 642,   cu: {60:7,  75:8,  90:10}, al: {60:6,  75:7,  90:8} },
-        { awg: 20, mm2: "0.52", cm: 1022,  cu: {60:11, 75:13,90:15}, al: {60:9,  75:11, 90:12}},
-        { awg: 18, mm2: "0.82", cm: 1624,  cu: {60:14, 75:16,90:19}, al: {60:12, 75:14, 90:16}},
-        { awg: 14, mm2: "2.0",  cm: 4110,  cu: {60:15, 75:20,90:25}, al: {60:12, 75:15, 90:20}},
-        { awg: 12, mm2: "2.5",  cm: 6530,  cu: {60:20, 75:25,90:30}, al: {60:16, 75:20, 90:25}},
-        { awg: 10, mm2: "4.0",  cm: 10380, cu: {60:30, 75:35,90:40}, al: {60:25, 75:30, 90:35}},
-        { awg: 8,  mm2: "5.5",  cm: 16510, cu: {60:40, 75:50,90:55}, al: {60:35, 75:43, 90:47}},
-        { awg: 6,  mm2: "8.0",  cm: 26240, cu: {60:55, 75:65,90:75}, al: {60:45, 75:54, 90:63}},
-        { awg: 4,  mm2: "10",   cm: 41740, cu: {60:70, 75:85,90:95}, al: {60:55, 75:70, 90:78}},
-        { awg: 2,  mm2: "16",   cm: 66360, cu: {60:95, 75:115,90:130}, al: {60:75, 75:90, 90:100}},
-        { awg: 1,  mm2: "20",   cm: 83690, cu: {60:110,75:130,90:145}, al: {60:85, 75:100,90:115}},
-        { awg: "1/0", mm2: "25", cm: 105600, cu: {60:125,75:150,90:170}, al: {60:100,75:120,90:135}},
-        { awg: "2/0", mm2: "35", cm: 133100, cu: {60:145,75:175,90:195}, al: {60:115,75:140,90:155}},
-        { awg: "3/0", mm2: "50", cm: 167800, cu: {60:165,75:200,90:225}, al: {60:135,75:160,90:175}},
-        { awg: "4/0", mm2: "70", cm: 211600, cu: {60:195,75:230,90:260}, al: {60:160,75:180,90:205}}
+    // ================================================================
+    // NEC 2023 Table 310.16 — Ampacities at 60/75/90 °C in 30 °C ambient
+    // (not more than 3 current-carrying conductors in raceway)
+    // Source: NEC 2023, Table 310.16. cmil = NEC Ch.9 Table 8.
+    // ================================================================
+    const necData = [
+        // size,      cmil,     Cu {60,75,90},                Al {60,75,90}
+        { awg: 14,     cm: 4110,    cu: {60:15,75:20,90:25},   al: null },
+        { awg: 12,     cm: 6530,    cu: {60:20,75:25,90:30},   al: {60:15,75:20,90:25} },
+        { awg: 10,     cm: 10380,   cu: {60:30,75:35,90:40},   al: {60:25,75:30,90:35} },
+        { awg: 8,      cm: 16510,   cu: {60:40,75:50,90:55},   al: {60:35,75:40,90:45} },
+        { awg: 6,      cm: 26240,   cu: {60:55,75:65,90:75},   al: {60:40,75:50,90:55} },
+        { awg: 4,      cm: 41740,   cu: {60:70,75:85,90:95},   al: {60:55,75:65,90:75} },
+        { awg: 3,      cm: 52620,   cu: {60:85,75:100,90:115}, al: {60:65,75:75,90:85} },
+        { awg: 2,      cm: 66360,   cu: {60:95,75:115,90:130}, al: {60:75,75:90,90:100} },
+        { awg: 1,      cm: 83690,   cu: {60:110,75:130,90:145},al: {60:85,75:100,90:115} },
+        { awg: "1/0",  cm: 105600,  cu: {60:125,75:150,90:170},al: {60:100,75:120,90:135} },
+        { awg: "2/0",  cm: 133100,  cu: {60:145,75:175,90:195},al: {60:115,75:135,90:150} },
+        { awg: "3/0",  cm: 167800,  cu: {60:165,75:200,90:225},al: {60:130,75:155,90:175} },
+        { awg: "4/0",  cm: 211600,  cu: {60:195,75:230,90:260},al: {60:150,75:180,90:205} },
+        { awg: "250",  cm: 250000,  cu: {60:215,75:255,90:290},al: {60:170,75:205,90:230} },
+        { awg: "300",  cm: 300000,  cu: {60:240,75:285,90:320},al: {60:195,75:230,90:260} },
+        { awg: "350",  cm: 350000,  cu: {60:260,75:310,90:350},al: {60:210,75:250,90:280} },
+        { awg: "400",  cm: 400000,  cu: {60:280,75:335,90:380},al: {60:225,75:270,90:305} },
+        { awg: "500",  cm: 500000,  cu: {60:320,75:380,90:430},al: {60:260,75:310,90:350} },
+        { awg: "600",  cm: 600000,  cu: {60:350,75:420,90:475},al: {60:285,75:340,90:385} },
+        { awg: "700",  cm: 700000,  cu: {60:385,75:460,90:520},al: {60:315,75:375,90:425} },
+        { awg: "750",  cm: 750000,  cu: {60:400,75:475,90:535},al: {60:320,75:385,90:435} },
+        { awg: "800",  cm: 800000,  cu: {60:410,75:490,90:555},al: {60:330,75:395,90:445} },
+        { awg: "900",  cm: 900000,  cu: {60:435,75:520,90:585},al: {60:355,75:425,90:480} },
+        { awg: "1000", cm: 1000000, cu: {60:455,75:545,90:615},al: {60:375,75:445,90:500} },
+        { awg: "1250", cm: 1250000, cu: {60:495,75:590,90:665},al: {60:405,75:485,90:545} },
+        { awg: "1500", cm: 1500000, cu: {60:525,75:625,90:705},al: {60:435,75:520,90:585} },
+        { awg: "1750", cm: 1750000, cu: {60:545,75:650,90:735},al: {60:455,75:545,90:615} },
+        { awg: "2000", cm: 2000000, cu: {60:555,75:665,90:750},al: {60:470,75:560,90:630} }
+    ].map(w => ({ ...w, source: 'NEC 310.16' }));
+
+    // ================================================================
+    // NEC 2023 Table 402.5 — Fixture wire ampacities (Cu only)
+    // (Single value per size — applies regardless of insulation temp.)
+    // ================================================================
+    const fixtureData = [
+        { awg: 18, cm: 1620,  cu: {60:6,75:6,90:6},   al: null, source: 'NEC 402.5' },
+        { awg: 16, cm: 2580,  cu: {60:8,75:8,90:8},   al: null, source: 'NEC 402.5' }
     ];
 
-    const tempFactors = {
-        30: {60:1.0, 75:1.0, 90:1.0},
-        35: {60:0.94, 75:0.94, 90:0.94},
-        40: {60:0.82, 75:0.82, 90:0.91},
-        45: {60:0.71, 75:0.78, 90:0.87},
-        50: {60:0.58, 75:0.75, 90:0.82},
-        55: {60:0.58, 75:0.71, 90:0.78},
-        60: {60:0.50, 75:0.67, 90:0.71}
-    };
+    // ================================================================
+    // Reference data — 20 AWG → 40 AWG (NOT NEC)
+    // Chassis-wiring ampacity per common AWG handbooks / IPC-2152.
+    // These sizes are for electronics / instrumentation only.
+    // ================================================================
+    const refData = [
+        { awg: 20, cm: 1020,  cu: {60:11,75:11,90:11} },
+        { awg: 22, cm: 642,   cu: {60:7,75:7,90:7} },
+        { awg: 24, cm: 404,   cu: {60:3.5,75:3.5,90:3.5} },
+        { awg: 26, cm: 254,   cu: {60:2.2,75:2.2,90:2.2} },
+        { awg: 28, cm: 160,   cu: {60:1.4,75:1.4,90:1.4} },
+        { awg: 30, cm: 100,   cu: {60:0.86,75:0.86,90:0.86} },
+        { awg: 32, cm: 63,    cu: {60:0.53,75:0.53,90:0.53} },
+        { awg: 34, cm: 40,    cu: {60:0.33,75:0.33,90:0.33} },
+        { awg: 36, cm: 25,    cu: {60:0.21,75:0.21,90:0.21} },
+        { awg: 38, cm: 16,    cu: {60:0.13,75:0.13,90:0.13} },
+        { awg: 40, cm: 10,    cu: {60:0.09,75:0.09,90:0.09} }
+    ].map(w => ({ ...w, al: null, source: 'Reference (non-NEC)' }));
 
-    function getAdjustmentFactor(conductors) {
-        if (conductors <= 3) return 1.0;
-        if (conductors <= 6) return 0.8;
-        if (conductors <= 9) return 0.7;
-        if (conductors <= 20) return 0.5;
-        return 0.4;
+    // Build search range based on user selector. NEC sizes go first
+    // (largest first when included with fixture/ref to keep small-first iteration valid).
+    function getSearchList(mode) {
+        // We iterate small→large to pick the smallest acceptable wire,
+        // so smallest must come first.
+        if (mode === 'ref')     return [...refData, ...fixtureData, ...necData];
+        if (mode === 'fixture') return [...fixtureData, ...necData];
+        return necData;
     }
 
-    const inputs = ['load', 'voltage', 'length', 'phase', 'material', 'tempRating', 'ambientTemp', 'conduitFill', 'systemType'];
-    inputs.forEach(id => document.getElementById(id).addEventListener('input', calculate));
+    // ================================================================
+    // NEC 2023 Table 310.15(B)(1)(1) — Ambient temperature correction
+    // (Base ambient = 30 °C). Keys: ambient °C, sub-keys: insulation rating.
+    // ================================================================
+    const tempFactors = {
+        10: {60:1.29, 75:1.20, 90:1.15},
+        15: {60:1.22, 75:1.15, 90:1.12},
+        20: {60:1.15, 75:1.11, 90:1.08},
+        25: {60:1.08, 75:1.05, 90:1.04},
+        30: {60:1.00, 75:1.00, 90:1.00},
+        35: {60:0.91, 75:0.94, 90:0.96},
+        40: {60:0.82, 75:0.88, 90:0.91},
+        45: {60:0.71, 75:0.82, 90:0.87},
+        50: {60:0.58, 75:0.75, 90:0.82},
+        55: {60:0.41, 75:0.67, 90:0.76},
+        60: {60:0.00, 75:0.58, 90:0.71},
+        65: {60:0.00, 75:0.47, 90:0.65},
+        70: {60:0.00, 75:0.33, 90:0.58},
+        75: {60:0.00, 75:0.00, 90:0.50},
+        80: {60:0.00, 75:0.00, 90:0.41},
+        85: {60:0.00, 75:0.00, 90:0.29}
+    };
+
+    // NEC 2023 Table 310.15(C)(1) — Adjustment factor for >3 CCCs
+    function getAdjustmentFactor(conductors) {
+        if (conductors <= 3) return 1.0;
+        if (conductors <= 6) return 0.80;
+        if (conductors <= 9) return 0.70;
+        if (conductors <= 20) return 0.50;
+        if (conductors <= 30) return 0.45;
+        if (conductors <= 40) return 0.40;
+        return 0.35;
+    }
+
+    // NEC 2023 240.6(A) — Standard OCPD sizes
+    const STD_OCPD = [15,20,25,30,35,40,45,50,60,70,80,90,100,110,125,150,175,
+        200,225,250,300,350,400,450,500,600,700,800,1000,1200,1600,2000,
+        2500,3000,4000,5000,6000];
+
+    // NEC 240.4(D) — Small-conductor overcurrent caps
+    function smallConductorCap(size, material) {
+        if (material === 'copper') {
+            if (size === 14)  return 15;
+            if (size === 12)  return 20;
+            if (size === 10)  return 30;
+        } else {
+            if (size === 12)  return 15;
+            if (size === 10)  return 25;
+        }
+        return Infinity;
+    }
+
+    function nextStdOCPD(amps) {
+        for (const a of STD_OCPD) if (a >= amps) return a;
+        return null;
+    }
+
+    // ================================================================
+    // Wire up inputs
+    // ================================================================
+    const inputIds = ['load','voltage','length','phase','material','tempRating',
+        'termRating','ambientTemp','conduitFill','systemType','rangeMode'];
+    inputIds.forEach(id => document.getElementById(id).addEventListener('input', calculate));
     document.getElementById('continuousLoad').addEventListener('change', calculate);
-    document.querySelectorAll('input[name="tempUnit"]').forEach(r => r.addEventListener('change', calculate));
+
+    // When user switches °C ↔ °F, convert the displayed ambient temperature value.
+    let lastTempUnit = document.querySelector('input[name="tempUnit"]:checked').value;
+    document.querySelectorAll('input[name="tempUnit"]').forEach(r => {
+        r.addEventListener('change', () => {
+            const newUnit = document.querySelector('input[name="tempUnit"]:checked').value;
+            const ambientInput = document.getElementById('ambientTemp');
+            const current = parseFloat(ambientInput.value);
+            if (!isNaN(current) && newUnit !== lastTempUnit) {
+                if (newUnit === 'F' && lastTempUnit === 'C') {
+                    ambientInput.value = Math.round((current * 9/5) + 32);
+                } else if (newUnit === 'C' && lastTempUnit === 'F') {
+                    ambientInput.value = Math.round((current - 32) * 5/9);
+                }
+            }
+            lastTempUnit = newUnit;
+            calculate();
+        });
+    });
 
     function calculate() {
-        let loadAmps = parseFloat(document.getElementById('load').value) || 0;
-        const voltage = parseFloat(document.getElementById('voltage').value) || 120;
-        const length = parseFloat(document.getElementById('length').value) || 0;
-        const phase = parseInt(document.getElementById('phase').value);
-        const materialType = document.getElementById('material').value;
-        const tempRating = parseInt(document.getElementById('tempRating').value);
-        const ambientRaw = parseFloat(document.getElementById('ambientTemp').value) || 30;
-        const conductors = parseInt(document.getElementById('conduitFill').value) || 3;
+        const loadAmps     = parseFloat(document.getElementById('load').value) || 0;
+        const voltage      = parseFloat(document.getElementById('voltage').value) || 120;
+        const length       = parseFloat(document.getElementById('length').value) || 0;
+        const phase        = parseInt(document.getElementById('phase').value);
+        const material     = document.getElementById('material').value;     // 'copper' | 'aluminum'
+        const tempRating   = parseInt(document.getElementById('tempRating').value); // 60/75/90 conductor insulation
+        const termRatingIn = document.getElementById('termRating').value;   // 'auto'|60|75|90
+        const ambientRaw   = parseFloat(document.getElementById('ambientTemp').value) || 30;
+        const ccc          = Math.max(1, parseInt(document.getElementById('conduitFill').value) || 1);
         const isContinuous = document.getElementById('continuousLoad').checked;
-        const systemType = document.getElementById('systemType').value;
+        const systemType   = document.getElementById('systemType').value;   // 'AC'|'DC'
+        const rangeMode    = document.getElementById('rangeMode').value;
 
-        const unitC = document.getElementById('unitC').checked;
-        let ambientC = unitC ? ambientRaw : (ambientRaw - 32) * 5/9;
-        ambientC = Math.round(ambientC / 5) * 5;
-        if (ambientC < 30) ambientC = 30;
-        if (ambientC > 60) ambientC = 60;
+        // Convert ambient to °C, round to nearest 5 °C row in the table (clamped).
+        const ambientC = document.getElementById('unitC').checked ? ambientRaw : (ambientRaw - 32) * 5/9;
+        const ambientRow = Math.max(10, Math.min(85, Math.round(ambientC / 5) * 5));
 
-        let targetAmps = isContinuous ? loadAmps * 1.25 : loadAmps;
+        // 125% upsize for continuous loads (210.19/215.2). Applies to ampacity sizing.
+        const targetAmps = isContinuous ? loadAmps * 1.25 : loadAmps;
 
-        const tempFactor = tempFactors[ambientC] ? tempFactors[ambientC][tempRating] : 0.67;
-        const adjustmentFactor = getAdjustmentFactor(conductors);
+        const tempFactor = (tempFactors[ambientRow] && tempFactors[ambientRow][tempRating]) || 0;
+        const adjustment = getAdjustmentFactor(ccc);
 
-        let selectedWire = null;
-        const matKey = materialType === 'copper' ? 'cu' : 'al';
+        // 110.14(C) termination temperature limit
+        let termRating;
+        if (termRatingIn === 'auto') {
+            termRating = (loadAmps <= 100) ? 60 : 75;
+        } else {
+            termRating = parseInt(termRatingIn);
+        }
+        // The effective rating column is the LOWER of insulation and termination.
+        const effRating = Math.min(tempRating, termRating);
 
-        for (let wire of wireData) {
-            const baseAmp = wire[matKey][tempRating];
-            const adjustedAmp = baseAmp * tempFactor * adjustmentFactor;
-            if (adjustedAmp >= targetAmps) {
-                selectedWire = { ...wire, adjustedAmp: adjustedAmp };
-                break;
+        const matKey = material === 'copper' ? 'cu' : 'al';
+        const list = getSearchList(rangeMode);
+
+        let chosen = null;
+        if (tempFactor > 0) {
+            for (const wire of list) {
+                if (!wire[matKey]) continue;                      // material not available in this size
+                // Derate from the INSULATION rating column (NEC 310.15(B)(2)/(C))
+                const baseForDerate = wire[matKey][tempRating];
+                if (baseForDerate === undefined) continue;
+                const deratedAmpacity = baseForDerate * tempFactor * adjustment;
+
+                // 110.14(C) — final usable ampacity cannot exceed the value at the
+                // termination temperature column (BEFORE derating).
+                const terminationCap = wire[matKey][effRating];
+                const usableAmpacity = Math.min(deratedAmpacity, terminationCap);
+
+                if (usableAmpacity >= targetAmps) {
+                    chosen = {
+                        ...wire,
+                        deratedAmpacity,
+                        terminationCap,
+                        usableAmpacity
+                    };
+                    break;
+                }
             }
         }
 
-        if (selectedWire) {
-            document.getElementById('resWireSize').innerHTML = selectedWire.awg + ' <span class="unit">AWG</span>';
-            document.getElementById('resMetric').innerHTML = selectedWire.mm2 + ' <span class="unit">mm²</span>';
-            document.getElementById('resAmpacity').innerHTML = selectedWire.adjustedAmp.toFixed(1) + ' <span class="unit">A</span>';
-            
-            const K = materialType === 'copper' ? 12.9 : 21.2;
-            let vDropVolts = 0;
-            
-            if (systemType === "DC") {
-                vDropVolts = (2 * K * loadAmps * length) / selectedWire.cm;
-            } else {
-                if (phase === 3) {
-                    vDropVolts = (Math.sqrt(3) * K * loadAmps * length) / selectedWire.cm;
-                } else {
-                    vDropVolts = (2 * K * loadAmps * length) / selectedWire.cm;
-                }
-            }
+        const elWire   = document.getElementById('resWireSize');
+        const elSrc    = document.getElementById('resWireSource');
+        const elMetric = document.getElementById('resMetric');
+        const elAmps   = document.getElementById('resAmpacity');
+        const elAmpsN  = document.getElementById('resAmpacityNote');
+        const elOCPD   = document.getElementById('resOCPD');
+        const elVD     = document.getElementById('resVD');
+        const elFill   = document.getElementById('vdFill');
+        const elVDtxt  = document.getElementById('vdText');
 
-            const vDropPercent = (vDropVolts / voltage) * 100;
-            document.getElementById('resVD').innerHTML = vDropPercent.toFixed(2) + ' <span class="unit">%</span> (' + vDropVolts.toFixed(1) + 'V)';
-            
-            const meterFill = document.getElementById('vdFill');
-            meterFill.style.width = Math.min(vDropPercent * 5, 100) + '%'; 
-            
-            const vdText = document.getElementById('vdText');
-            if (vDropPercent < 3) {
-                meterFill.style.background = 'var(--success)';
-                vdText.innerText = `✅ Good. Drop is within 3% recommendation.`;
-            } else if (vDropPercent < 5) {
-                meterFill.style.background = 'var(--accent)';
-                vdText.innerText = `⚠️ Acceptable, but consider larger wire.`;
-            } else {
-                meterFill.style.background = 'var(--danger)';
-                vdText.innerText = `❌ High Voltage Drop.`;
-            }
+        if (!chosen) {
+            const reason = tempFactor === 0
+                ? `Ambient ${ambientRow}°C exceeds usable range of a ${tempRating}°C insulation system.`
+                : 'Load exceeds the largest size in the selected search range.';
+            elWire.innerHTML = '— <span class="unit">N/A</span>';
+            elSrc.innerText  = reason;
+            elMetric.innerHTML = '— <span class="unit">mm²</span>';
+            elAmps.innerHTML = '— <span class="unit">A</span>';
+            elOCPD.innerHTML = '— <span class="unit">A</span>';
+            elVD.innerHTML   = '— <span class="unit">%</span>';
+            elFill.style.width = '0%';
+            elVDtxt.innerText = reason;
+            return;
+        }
+
+        // ---- OCPD per 240.4(D) + 240.6(A) ----
+        const smallCap = smallConductorCap(chosen.awg, material);
+        // OCPD must protect at the load (sized for continuous = 125% of load),
+        // not exceed ampacity (240.4(B) allows next-std-up if ≤800 A).
+        let ocpd = nextStdOCPD(targetAmps);
+        // Cannot exceed small-conductor cap.
+        if (smallCap !== Infinity && ocpd > smallCap) ocpd = smallCap;
+        // Cannot exceed the conductor's usable ampacity rounded down to next std (above 800 A rule).
+        const ampRounded = nextStdOCPD(chosen.usableAmpacity);
+        if (chosen.usableAmpacity <= 800 && ocpd > ampRounded) ocpd = ampRounded;
+
+        // ---- Display: wire size & source ----
+        elWire.innerHTML = chosen.awg + (typeof chosen.awg === 'number' ? '' : '') + ' <span class="unit">AWG</span>';
+        if (typeof chosen.awg === 'string' && /^\d{3,}$/.test(chosen.awg)) {
+            elWire.innerHTML = chosen.awg + ' <span class="unit">kcmil</span>';
+        }
+        elSrc.innerHTML = `${chosen.source} · ${material[0].toUpperCase() + material.slice(1)} · derated from ${tempRating}°C col, capped at ${effRating}°C term.`;
+
+        const mm2 = chosen.cm * 0.0005067;
+        elMetric.innerHTML = mm2.toFixed(mm2 < 1 ? 3 : (mm2 < 10 ? 2 : 1)) + ' <span class="unit">mm²</span>';
+
+        elAmps.innerHTML = chosen.usableAmpacity.toFixed(1) + ' <span class="unit">A</span>';
+        elAmpsN.innerHTML = `Raw 30°C @ ${tempRating}°C: ${chosen[matKey][tempRating]} A · derate ×${tempFactor.toFixed(2)} (temp) ×${adjustment.toFixed(2)} (fill) = ${chosen.deratedAmpacity.toFixed(1)} A · 110.14(C) cap @ ${effRating}°C: ${chosen.terminationCap} A`;
+
+        elOCPD.innerHTML = (ocpd ? ocpd : 'N/A') + ' <span class="unit">A</span>';
+
+        // ---- Voltage drop (informational; NEC Inf. Note to 210.19(A) suggests ≤3% branch) ----
+        const K = material === 'copper' ? 12.9 : 21.2;
+        let vDropVolts;
+        if (systemType === 'DC' || phase === 1) {
+            vDropVolts = (2 * K * loadAmps * length) / chosen.cm;
         } else {
-            document.getElementById('resWireSize').innerHTML = '>4/0 <span class="unit">AWG</span>';
-            document.getElementById('resMetric').innerHTML = '>70 <span class="unit">mm²</span>';
-            document.getElementById('resAmpacity').innerHTML = 'Calc <span class="unit">Needed</span>';
-            document.getElementById('resVD').innerHTML = '- <span class="unit">%</span>';
-            document.getElementById('vdFill').style.width = '0%';
-            document.getElementById('vdText').innerText = "Wire size exceeded table limits.";
+            vDropVolts = (Math.sqrt(3) * K * loadAmps * length) / chosen.cm;
+        }
+        const vDropPercent = voltage > 0 ? (vDropVolts / voltage) * 100 : 0;
+        elVD.innerHTML = vDropPercent.toFixed(2) + ' <span class="unit">% (' + vDropVolts.toFixed(1) + ' V)</span>';
+
+        elFill.style.width = Math.min(vDropPercent * 20, 100) + '%'; // 5% = 100% bar
+        if (vDropPercent < 3) {
+            elFill.style.background = 'var(--success)';
+            elVDtxt.innerText = '✅ Within 3% recommended branch-circuit drop (NEC 210.19 IN).';
+        } else if (vDropPercent < 5) {
+            elFill.style.background = 'var(--accent)';
+            elVDtxt.innerText = '⚠️ 3–5% — acceptable for feeders (NEC 215.2 IN), but consider upsizing.';
+        } else {
+            elFill.style.background = 'var(--danger)';
+            elVDtxt.innerText = '❌ Exceeds 5% — upsize the conductor.';
         }
     }
 
