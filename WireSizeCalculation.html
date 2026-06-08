@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEC Voltage Drop Calculator</title>
+  <title>NEC Voltage Drop Calculator (Ch.9 Table 8)</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
   <style>
     :root {
       --bg: #0f172a;
@@ -36,7 +37,7 @@
     /* 3D Canvas */
     #canvas-container {
       width: 100%;
-      height: 300px;
+      height: 360px;
       background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
       border-radius: 16px;
       margin-bottom: 20px;
@@ -55,6 +56,63 @@
       font-size: 0.8rem;
       pointer-events: none;
       user-select: none;
+    }
+
+    /* In-canvas info HUD with wire dimensions */
+    .hud-3d {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(148,163,184,0.2);
+      font-size: 0.72rem;
+      color: var(--text);
+      pointer-events: none;
+      user-select: none;
+      min-width: 180px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.45;
+    }
+    .hud-3d .hud-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+      border-bottom: 1px solid rgba(148,163,184,0.2);
+      padding-bottom: 4px;
+    }
+    .hud-3d .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .hud-3d .row span:first-child { color: var(--text-dim); }
+    .hud-3d .row span:last-child { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    /* Legend bottom-left */
+    .legend-3d {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.5);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+    .legend-3d .swatch {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      vertical-align: middle;
+      margin-right: 4px;
+      border: 1px solid rgba(255,255,255,0.2);
     }
 
     /* Layout */
@@ -156,7 +214,21 @@
 <body>
 
   <div id="canvas-container">
-    <div class="label-3d">3D Visualization (Drag to Rotate)</div>
+    <div class="label-3d">3D Wire (Drag to Rotate &middot; Scroll to Zoom)</div>
+    <div class="hud-3d" id="hud3d">
+      <div class="hud-title" id="hudTitle">—</div>
+      <div class="row"><span>Conductor &Oslash;</span><span id="hudCondOD">—</span></div>
+      <div class="row"><span>Insul. &Oslash; (THHN)</span><span id="hudInsulOD">—</span></div>
+      <div class="row"><span>Area</span><span id="hudArea">—</span></div>
+      <div class="row"><span>Circular mils</span><span id="hudCM">—</span></div>
+      <div class="row"><span>Material</span><span id="hudMat">—</span></div>
+      <div class="row"><span>R (DC, 1 kft)</span><span id="hudR">—</span></div>
+      <div class="row"><span>Run length</span><span id="hudLen">—</span></div>
+    </div>
+    <div class="legend-3d">
+      <span class="swatch" id="swCond" style="background:#B87333;"></span>Conductor
+      <span class="swatch" id="swIns" style="background:#1e293b;margin-left:10px;"></span>THHN Insulation
+    </div>
   </div>
 
   <div class="container">
@@ -202,28 +274,59 @@
           <select id="awg"></select>
         </div>
         <div class="input-group">
-          <label>Power Factor (AC)</label>
-          <input type="number" id="pf" value="0.85" min="0" max="1" step="0.01">
+          <label>Termination Temp [110.14(C)]</label>
+          <select id="termRating">
+            <option value="auto" selected>Auto (60&deg;C &le;100A, 75&deg;C &gt;100A)</option>
+            <option value="60">60&deg;C</option>
+            <option value="75">75&deg;C</option>
+            <option value="90">90&deg;C (rare — dry only)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Continuous Load (&gt;3 hrs)</label>
+          <label style="display:flex; align-items:center; gap:8px; padding:10px 0;">
+            <input type="checkbox" id="continuousLoad" style="width:auto; margin:0;">
+            <span style="font-size:0.85rem; color:var(--text-dim);">Apply 125% [210.19/215.2]</span>
+          </label>
         </div>
       </div>
-      <p class="note">Values update automatically. Based on NEC Table 8 K-factors [6], [7].</p>
+      <p class="note">Voltage drop uses the actual current per NEC Ch.9 Table 8 (K = 12.9 Cu / 21.2 Al &Omega;&middot;cmil/ft @ 75&deg;C, uncoated). Ampacity sizing follows NEC 310.16 + 110.14(C) + 240.4(D). For inductive loads (low PF) use NEC Ch.9 Table 9 (R &amp; X).</p>
+
+      <div style="background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.20); border-radius: 8px; padding: 12px 14px; margin-top: 14px; font-size: 0.82rem; color: var(--text-dim); line-height: 1.55;">
+        <div style="font-weight:700; color:var(--primary); margin-bottom:6px;">Why this tool targets 3% only</div>
+        NEC 210.19(A) IN 4 and 215.2(A)(1) IN 2 recommend
+        <strong style="color:var(--text);">&le;3% on the branch circuit OR feeder</strong>, and
+        <strong style="color:var(--text);">&le;5% combined (feeder + branch)</strong>. These are
+        <em>informational</em>, not mandatory. This tool sizes to the conservative 3% target so the result is
+        safe whether the run is a feeder or a branch. The 5% dashed line on the chart is shown only as the
+        absolute upper limit of the combined system &mdash; do not design to it.
+        <div style="font-weight:700; color:var(--primary); margin-top:10px; margin-bottom:6px;">AC 3-phase motors</div>
+        3% at running FLA is the standard target (NEMA MG-1 / IEEE 141). Motor
+        <em>starting</em> inrush (LRA, typically 6&ndash;8&times; FLA) is a separate analysis and may briefly exceed
+        10% &mdash; if a soft-starter / VFD is not used, verify motor terminal voltage stays &ge;90% of nameplate
+        during start. This calculator addresses running current only.
+      </div>
     </div>
 
     <!-- Results Panel -->
     <div class="panel">
       <h2>Calculation Results</h2>
+
+      <div style="background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.25); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 0.8rem; color: var(--text-dim);">
+        Voltage-drop numbers below are for the <strong style="color:var(--primary);" id="selectedLabel">selected</strong> wire size in the input panel.
+      </div>
       
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <div class="result-box">
-          <div class="metric">Voltage Drop</div>
+          <div class="metric">Voltage Drop <span style="color:var(--primary);">(selected)</span></div>
           <div class="value primary" id="resVD">0.00 V</div>
         </div>
         <div class="result-box">
-          <div class="metric">Percent Drop</div>
+          <div class="metric">Percent Drop <span style="color:var(--primary);">(selected)</span></div>
           <div class="value" id="resPercent">0.00 %</div>
         </div>
         <div class="result-box">
-          <div class="metric">Voltage at Load</div>
+          <div class="metric">Voltage at Load <span style="color:var(--primary);">(selected)</span></div>
           <div class="value" id="resLoadV">480.00 V</div>
         </div>
         <div class="result-box">
@@ -242,30 +345,83 @@
       </div>
 
       <div class="min-wire">
-        <h3>Min Recommended Wire Size</h3>
+        <h3>Min Size — Voltage Drop (3%)</h3>
         <div class="size" id="minWireSize">-</div>
-        <div style="font-size:0.8rem; color:var(--text-dim); margin-top:5px;">Based on 3% Voltage Drop Limit</div>
+        <div style="font-size:0.8rem; color:var(--text-dim); margin-top:5px;" id="minWireSizeNote">Smallest wire that keeps VD &le; 3%.</div>
+      </div>
+
+      <div class="min-wire" style="background: linear-gradient(135deg, rgba(234,179,8,0.10), rgba(251,146,60,0.10)); border-color: rgba(234,179,8,0.30); margin-top: 12px;">
+        <h3 style="color: var(--warning);">Min Size — Ampacity [NEC 310.16]</h3>
+        <div class="size" id="minWireAmp">-</div>
+        <div style="font-size:0.8rem; color:var(--text-dim); margin-top:5px;" id="minWireAmpNote">Smallest wire whose 75&deg;C ampacity ≥ load.</div>
+      </div>
+
+      <div class="min-wire" style="background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(56,189,248,0.12)); border-color: rgba(34,197,94,0.40); margin-top: 12px;">
+        <h3 style="color: var(--success);">✅ Governing Wire (use this)</h3>
+        <div class="size" id="governWire">-</div>
+        <div style="font-size:0.8rem; color:var(--text-dim); margin-top:5px;" id="governWireNote">Larger of VD and ampacity requirements.</div>
       </div>
 
     </div>
   </div>
 
+  <!-- Voltage Drop vs Distance chart (full width below the two panels) -->
+  <div class="container" style="margin-top: 20px; grid-template-columns: 1fr;">
+    <div class="panel">
+      <h2>Voltage Drop vs. Distance <span style="font-size:0.85rem; color:var(--text-dim); font-weight:400;">(for selected wire, X extended to 2&times; input)</span></h2>
+      <div id="vdChart" style="width:100%; height:340px;"></div>
+      <p class="note">Hover the chart to read VD at any distance. Dashed lines mark NEC informational limits (3% recommended, 5% maximum). Diamond marker is your current input distance.</p>
+    </div>
+  </div>
+
   <script>
     // --- Data & Setup ---
-    // Wire Data: AWG, Circular Mils (CM), Radius (inches approx for 3D scaling)
+    // Wire Data: NEC Ch.9 Table 8 sizes (14 AWG -> 2000 kcmil) + NEC 310.16 ampacities
+    // ampacities at 30 deg C ambient, not more than 3 CCCs in raceway.
+    // null = size not listed for that material in 310.16.
     const wireData = [
-      { label: "14 AWG", cm: 4110, r: 0.050 }, { label: "12 AWG", cm: 6530, r: 0.064 },
-      { label: "10 AWG", cm: 10380, r: 0.081 }, { label: "8 AWG", cm: 16510, r: 0.104 },
-      { label: "6 AWG", cm: 26240, r: 0.130 }, { label: "4 AWG", cm: 41740, r: 0.164 },
-      { label: "3 AWG", cm: 52620, r: 0.183 }, { label: "2 AWG", cm: 66360, r: 0.205 },
-      { label: "1 AWG", cm: 83690, r: 0.230 }, { label: "1/0 AWG", cm: 105600, r: 0.259 },
-      { label: "2/0 AWG", cm: 133100, r: 0.290 }, { label: "3/0 AWG", cm: 167800, r: 0.325 },
-      { label: "4/0 AWG", cm: 211600, r: 0.364 }, { label: "250 kcmil", cm: 250000, r: 0.399 },
-      { label: "300 kcmil", cm: 300000, r: 0.436 }, { label: "350 kcmil", cm: 350000, r: 0.469 },
-      { label: "400 kcmil", cm: 400000, r: 0.503 }, { label: "500 kcmil", cm: 500000, r: 0.562 },
-      { label: "600 kcmil", cm: 600000, r: 0.617 }, { label: "750 kcmil", cm: 750000, r: 0.687 },
-      { label: "1000 kcmil", cm: 1000000, r: 0.775 }
-    ];
+      { label: "14 AWG",     cm: 4110,    cu:{60:15, 75:20, 90:25},   al:null },
+      { label: "12 AWG",     cm: 6530,    cu:{60:20, 75:25, 90:30},   al:{60:15, 75:20, 90:25} },
+      { label: "10 AWG",     cm: 10380,   cu:{60:30, 75:35, 90:40},   al:{60:25, 75:30, 90:35} },
+      { label: "8 AWG",      cm: 16510,   cu:{60:40, 75:50, 90:55},   al:{60:35, 75:40, 90:45} },
+      { label: "6 AWG",      cm: 26240,   cu:{60:55, 75:65, 90:75},   al:{60:40, 75:50, 90:55} },
+      { label: "4 AWG",      cm: 41740,   cu:{60:70, 75:85, 90:95},   al:{60:55, 75:65, 90:75} },
+      { label: "3 AWG",      cm: 52620,   cu:{60:85, 75:100,90:115},  al:{60:65, 75:75, 90:85} },
+      { label: "2 AWG",      cm: 66360,   cu:{60:95, 75:115,90:130},  al:{60:75, 75:90, 90:100} },
+      { label: "1 AWG",      cm: 83690,   cu:{60:110,75:130,90:145},  al:{60:85, 75:100,90:115} },
+      { label: "1/0 AWG",    cm: 105600,  cu:{60:125,75:150,90:170},  al:{60:100,75:120,90:135} },
+      { label: "2/0 AWG",    cm: 133100,  cu:{60:145,75:175,90:195},  al:{60:115,75:135,90:150} },
+      { label: "3/0 AWG",    cm: 167800,  cu:{60:165,75:200,90:225},  al:{60:130,75:155,90:175} },
+      { label: "4/0 AWG",    cm: 211600,  cu:{60:195,75:230,90:260},  al:{60:150,75:180,90:205} },
+      { label: "250 kcmil",  cm: 250000,  cu:{60:215,75:255,90:290},  al:{60:170,75:205,90:230} },
+      { label: "300 kcmil",  cm: 300000,  cu:{60:240,75:285,90:320},  al:{60:195,75:230,90:260} },
+      { label: "350 kcmil",  cm: 350000,  cu:{60:260,75:310,90:350},  al:{60:210,75:250,90:280} },
+      { label: "400 kcmil",  cm: 400000,  cu:{60:280,75:335,90:380},  al:{60:225,75:270,90:305} },
+      { label: "500 kcmil",  cm: 500000,  cu:{60:320,75:380,90:430},  al:{60:260,75:310,90:350} },
+      { label: "600 kcmil",  cm: 600000,  cu:{60:350,75:420,90:475},  al:{60:285,75:340,90:385} },
+      { label: "700 kcmil",  cm: 700000,  cu:{60:385,75:460,90:520},  al:{60:315,75:375,90:425} },
+      { label: "750 kcmil",  cm: 750000,  cu:{60:400,75:475,90:535},  al:{60:320,75:385,90:435} },
+      { label: "800 kcmil",  cm: 800000,  cu:{60:410,75:490,90:555},  al:{60:330,75:395,90:445} },
+      { label: "900 kcmil",  cm: 900000,  cu:{60:435,75:520,90:585},  al:{60:355,75:425,90:480} },
+      { label: "1000 kcmil", cm: 1000000, cu:{60:455,75:545,90:615},  al:{60:375,75:445,90:500} },
+      { label: "1250 kcmil", cm: 1250000, cu:{60:495,75:590,90:665},  al:{60:405,75:485,90:545} },
+      { label: "1500 kcmil", cm: 1500000, cu:{60:525,75:625,90:705},  al:{60:435,75:520,90:585} },
+      { label: "1750 kcmil", cm: 1750000, cu:{60:545,75:650,90:735},  al:{60:455,75:545,90:615} },
+      { label: "2000 kcmil", cm: 2000000, cu:{60:555,75:665,90:750},  al:{60:470,75:560,90:630} }
+    ].map(w => ({ ...w, r: 0.0008 * Math.sqrt(w.cm) }));
+
+    // NEC 240.4(D) small-conductor OCPD caps (also functionally caps ampacity for sizing purposes)
+    function smallConductorCap(label, material) {
+      if (material === 'Cu') {
+        if (label === '14 AWG') return 15;
+        if (label === '12 AWG') return 20;
+        if (label === '10 AWG') return 30;
+      } else {
+        if (label === '12 AWG') return 15;
+        if (label === '10 AWG') return 25;
+      }
+      return Infinity;
+    }
 
     const awgSelect = document.getElementById('awg');
     wireData.forEach(w => {
@@ -287,7 +443,9 @@
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(0, 2, 6);
+    // Default isometric view: equal components on X/Y/Z so the wire reads as 3D from the start.
+    camera.position.set(6, 5, 6);
+    camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
@@ -306,17 +464,53 @@
     dirLight.position.set(5, 10, 7);
     scene.add(dirLight);
 
-    // Wire Mesh
-    const wireGeo = new THREE.CylinderGeometry(1, 1, 10, 32);
-    const wireMat = new THREE.MeshPhysicalMaterial({
-      color: 0xB87333, // Default Copper
-      metalness: 0.8,
-      roughness: 0.3,
-      clearcoat: 0.5
+    // Wire Mesh: conductor + insulation sleeve grouped together.
+    // Cylinder is oriented along Y in three.js; we rotate the group so the
+    // wire runs along the X axis.
+    const WIRE_LEN = 10;            // 3D units (constant length)
+    const SEG = 48;                 // radial segments
+
+    // Base radius = 1 unit; we scale X/Z (radial) via group.scale to grow/shrink
+    const conductorGeo = new THREE.CylinderGeometry(1, 1, WIRE_LEN, SEG);
+    const conductorMat = new THREE.MeshPhysicalMaterial({
+      color: 0xB87333,             // copper default
+      metalness: 0.92,
+      roughness: 0.28,
+      clearcoat: 0.6,
+      clearcoatRoughness: 0.15
     });
-    const wireMesh = new THREE.Mesh(wireGeo, wireMat);
-    wireMesh.rotation.z = Math.PI / 2;
-    scene.add(wireMesh);
+    const conductorMesh = new THREE.Mesh(conductorGeo, conductorMat);
+
+    // Sleeve = insulation (THHN PVC + nylon). Slightly larger radius, end caps open so the copper shows.
+    const sleeveGeo = new THREE.CylinderGeometry(1.25, 1.25, WIRE_LEN * 0.94, SEG, 1, true);
+    const sleeveMat = new THREE.MeshPhysicalMaterial({
+      color: 0x111827,             // black THHN by default
+      metalness: 0.05,
+      roughness: 0.55,
+      clearcoat: 0.35,
+      clearcoatRoughness: 0.35,
+      side: THREE.DoubleSide
+    });
+    const sleeveMesh = new THREE.Mesh(sleeveGeo, sleeveMat);
+
+    // Rim rings to suggest cut insulation edges (cleaner cutaway look)
+    const rimGeo = new THREE.TorusGeometry(1.25, 0.045, 8, SEG);
+    const rimMat = new THREE.MeshStandardMaterial({ color: 0x0b1220, roughness: 0.6, metalness: 0.1 });
+    const rimA = new THREE.Mesh(rimGeo, rimMat);
+    const rimB = new THREE.Mesh(rimGeo, rimMat);
+    rimA.rotation.x = Math.PI / 2;
+    rimB.rotation.x = Math.PI / 2;
+    rimA.position.y =  WIRE_LEN * 0.47;
+    rimB.position.y = -WIRE_LEN * 0.47;
+
+    // Group so both conductor + sleeve scale and rotate together
+    const wireGroup = new THREE.Group();
+    wireGroup.add(conductorMesh);
+    wireGroup.add(sleeveMesh);
+    wireGroup.add(rimA);
+    wireGroup.add(rimB);
+    wireGroup.rotation.z = Math.PI / 2; // lay along X
+    scene.add(wireGroup);
 
     // Grid Helper
     const grid = new THREE.GridHelper(20, 20, 0x334155, 0x1e293b);
@@ -333,45 +527,107 @@
       const distance = parseFloat(document.getElementById('distance').value) || 0;
       const material = document.getElementById('material').value;
       const awgLabel = awgSelect.value;
-      const pf = parseFloat(document.getElementById('pf').value) || 1;
+      const isContinuous = document.getElementById('continuousLoad').checked;
+      const termRatingIn = document.getElementById('termRating').value;
 
       if (voltage === 0 || current === 0 || distance === 0) return;
 
+      // NEC 110.14(C) termination temperature rule
+      // Auto: 60 deg C for loads <= 100 A, 75 deg C for loads > 100 A.
+      // Conductor ampacity used for sizing cannot exceed the value in this column.
+      let termRating;
+      if (termRatingIn === 'auto') {
+        termRating = (current <= 100) ? 60 : 75;
+      } else {
+        termRating = parseInt(termRatingIn);
+      }
+
+      // Continuous load: 125% [NEC 210.19(A)/215.2(A)] applies to AMPACITY sizing only,
+      // NOT to the voltage drop calculation (VD uses actual running current).
+      const ampacityTarget = isContinuous ? current * 1.25 : current;
+
       // Constants
-      const K = material === 'Cu' ? 12.9 : 21.2; // NEC Table 8 75C [6], [7]
-      
+      const K = material === 'Cu' ? 12.9 : 21.2; // NEC Ch.9 Table 8 effective Z @ 75 deg C, uncoated
+      const matKey = material === 'Cu' ? 'cu' : 'al';
+
       // Find selected wire data
       const selectedWire = wireData.find(w => w.label === awgLabel);
       if (!selectedWire) return;
 
-      // Phase Factor: 2 for 1-Phase/DC, sqrt(3) for 3-Phase [5]
-      const factor = (is3Phase && isAC) ? 1.732 : 2;
+      // Phase Factor: 2 for 1-Phase / DC, sqrt(3) for 3-Phase line-to-line
+      const factor = (is3Phase && isAC) ? Math.sqrt(3) : 2;
 
-      // Calculate Voltage Drop
-      // Formula: VD = (PhaseFactor * K * I * L) / CM [5]
+      // ---- Voltage Drop (uses ACTUAL current) ----
       const VD = (factor * K * current * distance) / selectedWire.cm;
       const VD_Pct = (VD / voltage) * 100;
       const V_Load = voltage - VD;
 
-      // Calculate Minimum Required Wire Size for 3% Drop
+      // ---- Min wire size by Voltage Drop (3% target) ----
       const TargetVD = voltage * 0.03;
       const CM_Required = (factor * K * current * distance) / TargetVD;
-      
-      // Find smallest wire with CM >= CM_Required
-      let minWire = wireData.find(w => w.cm >= CM_Required);
-      let minWireLabel = minWire ? minWire.label : "Oversized";
+      const minWireVD = wireData.find(w => w.cm >= CM_Required);
 
-      // Update UI
+      // ---- Min wire size by Ampacity [NEC 310.16 + 110.14(C) + 240.4(D)] ----
+      const minWireAmp = wireData.find(w => {
+        if (!w[matKey]) return false;                  // size not listed for material
+        const ampAtTerm = w[matKey][termRating];       // ampacity in termination column
+        const cap = smallConductorCap(w.label, material);
+        const usable = Math.min(ampAtTerm, cap);       // 240.4(D) caps small conductors
+        return usable >= ampacityTarget;
+      });
+
+      // ---- Governing size (larger of the two) ----
+      const idxVD  = minWireVD  ? wireData.indexOf(minWireVD)  : -1;
+      const idxAmp = minWireAmp ? wireData.indexOf(minWireAmp) : -1;
+      let governWire = null;
+      let governReason = '';
+      if (idxVD === -1 && idxAmp === -1) {
+        governReason = 'Required size exceeds 2000 kcmil \u2014 use parallel runs.';
+      } else if (idxVD > idxAmp) {
+        governWire = wireData[idxVD];
+        governReason = 'Voltage drop governs.';
+      } else if (idxAmp > idxVD) {
+        governWire = wireData[idxAmp];
+        governReason = 'Ampacity governs.';
+      } else {
+        governWire = wireData[idxVD];
+        governReason = 'VD and ampacity match.';
+      }
+
+      // ---- Update UI ----
+      const systemLabel = isAC ? (is3Phase ? 'AC 3-Phase' : 'AC 1-Phase') : 'DC';
+      document.getElementById('selectedLabel').textContent =
+          selectedWire.label + ' \u00b7 ' + (material === 'Cu' ? 'Copper' : 'Aluminum') + ' \u00b7 ' + systemLabel;
       document.getElementById('resVD').textContent = VD.toFixed(2) + ' V';
       document.getElementById('resPercent').textContent = VD_Pct.toFixed(2) + ' %';
       document.getElementById('resLoadV').textContent = V_Load.toFixed(2) + ' V';
       document.getElementById('resMaxVD').textContent = TargetVD.toFixed(2) + ' V';
-      document.getElementById('minWireSize').textContent = minWireLabel;
+
+      document.getElementById('minWireSize').textContent = minWireVD ? minWireVD.label : 'Oversized';
+      document.getElementById('minWireSizeNote').textContent =
+        'CM required: ' + Math.round(CM_Required).toLocaleString() + '  \u2014  keeps VD \u2264 3%.';
+
+      if (minWireAmp) {
+        const usable = Math.min(minWireAmp[matKey][termRating],
+                                smallConductorCap(minWireAmp.label, material));
+        document.getElementById('minWireAmp').textContent = minWireAmp.label;
+        document.getElementById('minWireAmpNote').textContent =
+          'Target ' + ampacityTarget.toFixed(1) + ' A '
+          + (isContinuous ? '(125% of ' + current + ' A)' : '')
+          + '  \u2014  ' + termRating + '\u00b0C col ampacity: ' + usable + ' A.';
+      } else {
+        document.getElementById('minWireAmp').textContent = 'Oversized';
+        document.getElementById('minWireAmpNote').textContent =
+          'Required ampacity ' + ampacityTarget.toFixed(1) + ' A exceeds 2000 kcmil.';
+      }
+
+      document.getElementById('governWire').textContent = governWire ? governWire.label : '\u2014';
+      document.getElementById('governWireNote').textContent = governReason;
 
       // Color Logic for Results
       const pctEl = document.getElementById('resPercent');
       const barEl = document.getElementById('vdBar');
-      
+
       if (VD_Pct <= 3) {
         pctEl.className = 'value success';
         barEl.style.backgroundColor = 'var(--success)';
@@ -386,21 +642,170 @@
       barEl.style.width = Math.min((VD_Pct / 5) * 100, 100) + '%';
 
       // Update 3D
-      update3D(selectedWire, material);
+      update3D(selectedWire, material, distance);
+
+      // Update chart
+      renderVDChart(selectedWire, material, voltage, current, distance, factor, K);
     }
 
-    function update3D(wire, material) {
-      // Update Wire Thickness
-      // Scale radius: Real inches * 50 for visual clarity in 3D units
-      const radius = wire.r * 5; 
-      wireMesh.scale.set(1, radius, 1); 
+    // --- Voltage Drop vs. Distance chart (Plotly) ---
+    let vdChartInit = false;
+    function renderVDChart(wire, material, voltage, current, distance, factor, K) {
+      if (!window.Plotly) return;
 
-      // Update Color
-      if (material === 'Cu') {
-        wireMat.color.setHex(0xB87333); // Copper
-      } else {
-        wireMat.color.setHex(0xA8A9AD); // Aluminum
+      // Extend X axis to 2x the user's distance (min 20 ft so chart is meaningful at small inputs).
+      const xMax = Math.max(20, distance * 2);
+      const N = 80;
+      const xs = [];
+      const ys = [];          // VD in volts
+      const ysPct = [];       // VD as % of source voltage
+      for (let i = 0; i <= N; i++) {
+        const L = (xMax * i) / N;
+        const vd = (factor * K * current * L) / wire.cm;
+        xs.push(L);
+        ys.push(vd);
+        ysPct.push(voltage > 0 ? (vd / voltage) * 100 : 0);
       }
+
+      // VD at the user's actual input distance (diamond marker)
+      const vdAtInput = (factor * K * current * distance) / wire.cm;
+      const pctAtInput = voltage > 0 ? (vdAtInput / voltage) * 100 : 0;
+
+      // NEC informational limits as horizontal reference lines (in volts)
+      const vd3 = voltage * 0.03;
+      const vd5 = voltage * 0.05;
+
+      const traces = [
+        {
+          x: xs, y: ys,
+          customdata: ysPct,
+          type: 'scatter', mode: 'lines',
+          name: wire.label + ' (' + (material === 'Cu' ? 'Cu' : 'Al') + ')',
+          line: { color: '#38bdf8', width: 3 },
+          hovertemplate:
+            '<b>Distance:</b> %{x:.1f} ft<br>' +
+            '<b>Voltage Drop:</b> %{y:.2f} V<br>' +
+            '<b>Percent Drop:</b> %{customdata:.2f} %<extra></extra>'
+        },
+        {
+          x: [distance], y: [vdAtInput],
+          customdata: [pctAtInput],
+          type: 'scatter', mode: 'markers',
+          name: 'Your input',
+          marker: { symbol: 'diamond', size: 14, color: '#22c55e',
+                    line: { color: '#fff', width: 2 } },
+          hovertemplate:
+            '<b>Your input</b><br>' +
+            'Distance: %{x:.0f} ft<br>' +
+            'VD: %{y:.2f} V (%{customdata:.2f} %)<extra></extra>'
+        }
+      ];
+
+      const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor:  'rgba(0,0,0,0)',
+        font: { color: '#f1f5f9', family: 'Segoe UI, system-ui, sans-serif' },
+        margin: { l: 60, r: 30, t: 20, b: 50 },
+        xaxis: {
+          title: 'One-way distance (ft)',
+          gridcolor: 'rgba(148,163,184,0.15)',
+          zerolinecolor: 'rgba(148,163,184,0.3)',
+          range: [0, xMax]
+        },
+        yaxis: {
+          title: 'Voltage drop (V)',
+          gridcolor: 'rgba(148,163,184,0.15)',
+          zerolinecolor: 'rgba(148,163,184,0.3)',
+          rangemode: 'tozero'
+        },
+        hovermode: 'closest',
+        legend: { orientation: 'h', y: -0.2, font: { size: 11 } },
+        shapes: [
+          { type: 'line', xref: 'paper', x0: 0, x1: 1, y0: vd3, y1: vd3,
+            line: { color: '#22c55e', width: 1.5, dash: 'dash' } },
+          { type: 'line', xref: 'paper', x0: 0, x1: 1, y0: vd5, y1: vd5,
+            line: { color: '#ef4444', width: 1.5, dash: 'dash' } }
+        ],
+        annotations: [
+          { xref: 'paper', x: 1, xanchor: 'right', y: vd3, yanchor: 'bottom',
+            text: '3% = ' + vd3.toFixed(1) + ' V', showarrow: false,
+            font: { color: '#22c55e', size: 10 } },
+          { xref: 'paper', x: 1, xanchor: 'right', y: vd5, yanchor: 'bottom',
+            text: '5% = ' + vd5.toFixed(1) + ' V', showarrow: false,
+            font: { color: '#ef4444', size: 10 } }
+        ]
+      };
+
+      const config = { displayModeBar: false, responsive: true };
+
+      if (!vdChartInit) {
+        Plotly.newPlot('vdChart', traces, layout, config);
+        vdChartInit = true;
+      } else {
+        Plotly.react('vdChart', traces, layout, config);
+      }
+    }
+
+    function update3D(wire, material, lengthFt) {
+      // --- Real-world dimensions (NEC Ch.9 Table 8 nominal) ---
+      // Conductor solid-equivalent diameter from circular mils:
+      //   d_mils = sqrt(cmil), so d_in = sqrt(cmil) / 1000
+      const condDiamIn = Math.sqrt(wire.cm) / 1000;
+      const condDiamMm = condDiamIn * 25.4;
+      const areaMm2    = wire.cm * 0.0005067;
+
+      // THHN insulation thickness (NEC Ch.9 Table 5 approx + ~4 mil nylon jacket)
+      const insThkMils = thhnInsulationThicknessMils(wire.cm);
+      const insOdIn    = condDiamIn + 2 * (insThkMils / 1000);
+      const insOdMm    = insOdIn * 25.4;
+
+      // DC resistance per 1000 ft = K / cmil (K from Ch.9 Table 8 effective Z)
+      const K = material === 'Cu' ? 12.9 : 21.2;
+      const r1kft = (K * 1000) / wire.cm;
+
+      // --- 3D scaling ---
+      // Visual radial scale: log so the smallest and largest sizes both look reasonable.
+      // baseRadius=1 unit, insulation outer = baseRadius * (insOd/condOd)
+      const conductorRadiusUnits = 0.25 + 0.55 * Math.log10(wire.cm / 1000); // ~0.25..1.8
+      const sleeveScale = insOdIn / condDiamIn;
+
+      // Conductor: scale X/Z to set radius
+      conductorMesh.scale.set(conductorRadiusUnits, 1, conductorRadiusUnits);
+      // Sleeve: scale on top of conductor (sleeve base radius = 1.25 * conductorRadiusUnits / 1.25)
+      const sleeveOuterUnits = conductorRadiusUnits * sleeveScale;
+      sleeveMesh.scale.set(sleeveOuterUnits / 1.25, 1, sleeveOuterUnits / 1.25);
+      rimA.scale.set(sleeveOuterUnits / 1.25, sleeveOuterUnits / 1.25, 1);
+      rimB.scale.set(sleeveOuterUnits / 1.25, sleeveOuterUnits / 1.25, 1);
+
+      // Colors
+      const condHex = material === 'Cu' ? 0xB87333 : 0xA8A9AD;
+      conductorMat.color.setHex(condHex);
+      document.getElementById('swCond').style.background = '#' + condHex.toString(16).padStart(6, '0');
+
+      // --- HUD ---
+      document.getElementById('hudTitle').textContent = wire.label;
+      document.getElementById('hudCondOD').textContent =
+          condDiamIn.toFixed(condDiamIn < 0.1 ? 4 : 3) + ' in  /  ' + condDiamMm.toFixed(2) + ' mm';
+      document.getElementById('hudInsulOD').textContent =
+          insOdIn.toFixed(3) + ' in  /  ' + insOdMm.toFixed(2) + ' mm';
+      document.getElementById('hudArea').textContent =
+          areaMm2.toFixed(areaMm2 < 1 ? 3 : (areaMm2 < 10 ? 2 : 1)) + ' mm²';
+      document.getElementById('hudCM').textContent = wire.cm.toLocaleString();
+      document.getElementById('hudMat').textContent = (material === 'Cu') ? 'Copper' : 'Aluminum';
+      document.getElementById('hudR').textContent = r1kft.toFixed(3) + ' Ω/kft';
+      document.getElementById('hudLen').textContent = lengthFt.toLocaleString() + ' ft (one-way)';
+    }
+
+    // Approx THHN/THWN-2 insulation thickness (mils) per NEC Ch.9 Table 5
+    // (includes ~4 mil nylon jacket bundled into the value)
+    function thhnInsulationThicknessMils(cm) {
+      if (cm <= 6530)    return 15 + 4;   // 14, 12 AWG
+      if (cm <= 10380)   return 20 + 4;   // 10 AWG
+      if (cm <= 26240)   return 30 + 4;   // 8, 6 AWG
+      if (cm <= 66360)   return 40 + 5;   // 4, 3, 2 AWG
+      if (cm <= 211600)  return 50 + 5;   // 1, 1/0..4/0
+      if (cm <= 500000)  return 60 + 5;   // 250..500 kcmil
+      return 70 + 5;                       // 501..2000 kcmil
     }
 
     // --- Event Listeners ---
@@ -409,13 +814,26 @@
       input.addEventListener('change', calculate);
     });
 
-    sysType.addEventListener('change', () => {
-      // Disable 3-phase for DC
+    // Keep the Phase dropdown coherent with System Type.
+    // - DC: force single-phase and disable the dropdown (phase is meaningless for DC).
+    // - AC: re-enable the dropdown.
+    function syncPhaseToSysType() {
       if (sysType.value === 'DC') {
         phase.value = '1';
+        phase.disabled = true;
+        phase.style.opacity = '0.5';
+        phase.style.cursor = 'not-allowed';
+      } else {
+        phase.disabled = false;
+        phase.style.opacity = '';
+        phase.style.cursor = '';
       }
+    }
+    sysType.addEventListener('change', () => {
+      syncPhaseToSysType();
       calculate();
     });
+    syncPhaseToSysType(); // initial sync
 
     // Handle Window Resize
     window.addEventListener('resize', () => {
