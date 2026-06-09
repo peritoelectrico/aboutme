@@ -9,6 +9,6 @@
   { "title": "Power Factor Tool",                 "url": "PowerFactorTool.html",                 "icon": "fa-plug",      "category": "Calculator"   },
   { "title": "KVA to KW to HP Calculation",       "url": "KVAtoKW.html",                         "icon": "fa-bolt",      "category": "Calculator"   },
   { "title": "Slope Calculator",                  "url": "SlopeCalculatorPro.html",              "icon": "fa-chart-line","category": "Calculator"   },
-  { "title": "VFD - Motor - Gearbox",             "url": "VFD-Motor_Gearbox.html",               "icon": "fa-chart-line","category": "Engineering"  },
+  { "title": "VFD - Motor - Gearbox",             "url": "VFD-Motor-Gearbox.html",               "icon": "fa-chart-line","category": "Engineering"  },
   { "title": "Motor & Gearbox Replacement",       "url": "Motor_Gearbox_Replace.html",           "icon": "fa-cogs",      "category": "Engineering"  }
 ]
