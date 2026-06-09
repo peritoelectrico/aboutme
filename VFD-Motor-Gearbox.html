@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VFD & Induction Motor Simulator – 120 Hz Split Fixed</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+:root{
+  --primary:#00d4ff;
+  --secondary:#0088ff;
+  --bg-dark:#050508;
+  --glass-panel:rgba(10,15,25,0.9);
+  --border-color:rgba(0,212,255,0.3);
+  --grid-line:rgba(0,212,255,0.1);
+  --warning:#ffaa00;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Segoe UI',sans-serif;
+  background:var(--bg-dark);
+  color:#e0e0e0;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+.bg-layer{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:
+    radial-gradient(circle at 30% 20%,rgba(0,50,100,.3)0%,transparent40%),
+    radial-gradient(circle at 80% 80%,rgba(50,0,100,.3)0%,transparent40%),
+    url('https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=1920&q=80');
+  background-size:cover;z-index:-1;
+}
+.container{max-width:1400px;margin:auto;padding:20px}
+header{text-align:center;padding:20px 0 30px}
+h1{
+  font-family:'Orbitron';
+  font-size:2.5rem;
+  color:var(--primary);
+  text-shadow:0 0 20px rgba(0,212,255,.4);
+  letter-spacing:2px;
+}
+.subtitle{
+  font-family:'Share Tech Mono';
+  color:#aaa;
+  letter-spacing:2px;
+  margin-top:10px;
+}
+.card{
+  background:var(--glass-panel);
+  backdrop-filter:blur(15px);
+  border:1px solid var(--border-color);
+  border-radius:12px;
+  padding:25px;
+  margin-bottom:25px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
+}
+.card-header{
+  font-family:'Orbitron';
+  color:var(--primary);
+  font-size:1.2rem;
+  margin-bottom:20px;
+  border-bottom:1px solid var(--border-color);
+  padding-bottom:10px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.input-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:20px;
+  margin-bottom:20px;
+}
+.form-group{margin-bottom:10px}
+label{
+  display:block;
+  font-family:'Share Tech Mono';
+  font-size:.75rem;
+  color:var(--primary);
+  margin-bottom:6px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
+input,select{
+  width:100%;
+  background:rgba(0,0,0,.6);
+  border:1px solid #333;
+  color:#fff;
+  padding:10px 12px;
+  border-radius:6px;
+  font-family:'Share Tech Mono';
+  font-size:1rem;
+  transition:.3s;
+}
+input:focus,select:focus{
+  outline:none;
+  border-color:var(--primary);
+  box-shadow:0 0 10px rgba(0,212,255,.2);
+}
+input[readonly],input:disabled{
+  color:var(--primary);
+  background:rgba(0,40,80,.3);
+  border-color:#333;
+  cursor:not-allowed;
+}
+input:not([disabled]):hover{
+  border-color:var(--primary);
+}
+.slider-container{
+  background:rgba(0,0,0,.4);
+  padding:20px;
+  border-radius:8px;
+  border:1px solid rgba(0,212,255,.1);
+  margin:10px 0;
+}
+.slider-label{
+  display:flex;
+  justify-content:space-between;
+  color:#fff;
+  font-family:'Share Tech Mono';
+  margin-bottom:10px;
+  font-size:.9rem;
+}
+input[type=range]{
+  -webkit-appearance:none;
+  width:100%;
+  height:6px;
+  background:linear-gradient(to right,var(--secondary)0%,var(--primary)100%);
+  border-radius:3px;
+  outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:20px;height:20px;
+  border-radius:50%;
+  background:#fff;
+  cursor:pointer;
+  box-shadow:0 0 15px var(--primary);
+  transition:transform .1s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2)}
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+  margin-top:20px;
+}
+.stat-box{
+  background:rgba(0,100,200,.1);
+  border:1px solid var(--border-color);
+  padding:15px;
+  border-radius:8px;
+  text-align:center;
+}
+.stat-val{
+  font-family:'Orbitron';
+  font-size:1.6rem;
+  color:#fff;
+  display:block;
+  margin-bottom:5px;
+}
+.stat-unit{
+  font-size:.7rem;
+  color:var(--primary);
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
+.graph-wrapper{
+  position:relative;
+  width:100%;
+  height:450px;
+  background:#000;
+  border-radius:8px;
+  overflow:hidden;
+  border:1px solid var(--border-color);
+  cursor:crosshair;
+}
+/* Gear graph gets extra height to separate RPM curves */
+#gearGraphWrapper{
+  height:520px;
+}
+canvas{width:100%;height:100%;display:block}
+.overlay-cursor{
+  position:absolute;
+  top:0;left:0;
+  width:100%;height:100%;
+  z-index:10;
+  pointer-events:auto;
+}
+.cursor-line{
+  position:absolute;
+  background:rgba(255,255,255,.4);
+  pointer-events:none;
+  z-index:11;
+}
+.cursor-line.h{
+  height:1px;
+  width:100%;
+  border-top:1px dashed rgba(0,255,255,.6);
+}
+.cursor-line.v{
+  width:1px;
+  height:100%;
+  border-left:1px dashed rgba(0,255,255,.6);
+}
+#tooltip, #tooltipGear{
+  position:absolute;
+  z-index:20;
+  background:rgba(10,20,30,.95);
+  border:1px solid var(--primary);
+  padding:15px;
+  border-radius:8px;
+  font-family:'Share Tech Mono';
+  font-size:.85rem;
+  color:#fff;
+  box-shadow:0 10px 30px rgba(0,0,0,.8);
+  display:none;
+  pointer-events:none;
+  min-width:220px;
+}
+#ttHeader, #ttHeaderGear{
+  color:var(--primary);
+  margin-bottom:10px;
+  font-size:1rem;
+  border-bottom:1px solid var(--border-color);
+  padding-bottom:5px;
+  text-transform:uppercase;
+}
+.data-row{
+  display:flex;
+  justify-content:space-between;
+  margin:5px 0;
+}
+.data-label{color:#aaa}
+.data-val{color:#fff;font-weight:bold}
+.mode-switch{display:flex;gap:15px;margin-bottom:20px}
+.mode-btn{
+  flex:1;
+  padding:12px;
+  background:rgba(255,255,255,.05);
+  border:1px solid #444;
+  color:#aaa;
+  cursor:pointer;
+  border-radius:6px;
+  font-family:'Share Tech Mono';
+  transition:.3s;
+}
+.mode-btn.active{
+  background:rgba(0,212,255,.2);
+  border-color:var(--primary);
+  color:var(--primary);
+  box-shadow:0 0 10px rgba(0,212,255,.1);
+}
+.legend{
+  display:flex;
+  justify-content:center;
+  gap:25px;
+  margin-top:15px;
+  flex-wrap:wrap;
+}
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:'Share Tech Mono';
+  font-size:.85rem;
+}
+.legend-dot{
+  width:10px;height:10px;
+  border-radius:50%;
+  box-shadow:0 0 5px currentColor;
+}
+.warning-box{
+  background:rgba(255,170,0,.15);
+  border:1px solid var(--warning);
+  color:var(--warning);
+  padding:15px;
+  border-radius:8px;
+  margin-top:10px;
+  font-size:.85rem;
+  font-family:'Share Tech Mono';
+}
+.warning-box strong{display:block;margin-bottom:5px}
+.formula-section {margin-top: 30px;}
+.formula-card {
+  background: rgba(0, 20, 40, 0.7);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 15px;
+}
+.formula-card h3 {
+  font-family: 'Orbitron';
+  color: var(--primary);
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+.formula-item {
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.formula-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.formula-name {
+  font-family: 'Share Tech Mono';
+  color: #fff;
+  font-size: 0.95rem;
+  margin-bottom: 5px;
+}
+.formula-equation {
+  font-family: 'Share Tech Mono';
+  color: var(--primary);
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+.formula-live {
+  font-family: 'Share Tech Mono';
+  color: #aaa;
+  font-size: 0.85rem;
+}
+.formula-live span {
+  color: #fff;
+  font-weight: bold;
+}
+.about-box {
+  background: var(--glass-panel);
+  backdrop-filter: blur(15px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-top: 20px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.about-header {
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-family: 'Share Tech Mono';
+  color: var(--primary);
+  font-size: 0.9rem;
+  user-select: none;
+}
+.about-header:hover {
+  background: rgba(0, 212, 255, 0.05);
+}
+.about-dots {
+  letter-spacing: 2px;
+}
+.about-toggle {
+  transition: transform 0.3s ease;
+  font-size: 0.8rem;
+}
+.about-box.open .about-toggle {
+  transform: rotate(180deg);
+}
+.about-content {
+  padding: 0 20px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+.about-box.open .about-content {
+  max-height: 200px;
+  padding: 0 20px 20px;
+}
+#aboutText {
+  font-family: 'Share Tech Mono';
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+.gear-note {
+  font-family: 'Share Tech Mono';
+  color: #aaa;
+  font-size: 0.75rem;
+  margin-top: 5px;
+  font-style: italic;
+}
+</style>
+</head>
+<body>
+<div class="bg-layer"></div>
+<div class="container">
+  <header>
+    <h1>VFD & INDUCTION MOTOR SIMULATOR</h1>
+    <div class="subtitle">VOLTAGE / HERTZ & FIELD WEAKENING ANALYSIS + GEARBOX OUTPUT</div>
+  </header>
+  <!-- ==================== CONFIGURATION ==================== -->
+  <div class="card">
+    <div class="card-header"><span>Motor Configuration</span></div>
+    <div class="mode-switch">
+      <button class="mode-btn active" id="btnStandard" onclick="setMode('standard')">
+        Standard 480 V (VFD Control)
+      </button>
+      <button class="mode-btn" id="btnSplit" onclick="setMode('split')">
+        120 Hz Split (480 V Motor Rewired 240 V)
+      </button>
+    </div>
+    <div class="input-grid">
+      <div class="form-group"><label>Input Voltage (V)</label><input type="number" id="voltage" value="480" disabled></div>
+      <div class="form-group"><label>FLA (Amps)</label><input type="number" id="fla" value="18.7" oninput="runSimulation()" onblur="runSimulation()"></div>
+      <div class="form-group"><label>Power Factor (PF)</label><input type="number" id="pf" value="0.88" step="0.01" oninput="runSimulation()" onblur="runSimulation()"></div>
+      <div class="form-group"><label>Efficiency (%)</label><input type="number" id="eff" value="91.5" step="0.1" oninput="runSimulation()" onblur="runSimulation()"></div>
+    </div>
+    <hr style="border:0;border-top:1px solid rgba(255,255,255,.1);margin:20px 0;">
+    <div class="input-grid">
+      <div class="form-group"><label>Pole Count (Standard Catalog)</label>
+        <select id="poles" onchange="runSimulation()">
+          <option value="2">2 Poles (3600 RPM @ 60 Hz)</option>
+          <option value="4" selected>4 Poles (1800 RPM @ 60 Hz)</option>
+          <option value="6">6 Poles (1200 RPM @ 60 Hz)</option>
+          <option value="8">8 Poles (900 RPM @ 60 Hz)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Rated Speed (RPM)</label><input type="number" id="rpm" value="1765" oninput="runSimulation()" onblur="runSimulation()"></div>
+      <div class="form-group"><label>Calculated Slip (RPM)</label><input type="number" id="slipRpm" readonly></div>
+      <div class="form-group"><label>Slip (%)</label><input type="text" id="slipPct" readonly></div>
+      <div class="form-group"><label>Synchronous Speed (RPM)</label><input type="number" id="syncSpeed" readonly></div>
+    </div>
+    <div class="slider-container">
+      <div class="slider-label">
+        <span>Max Simulation Frequency (Standard: 60‑120 Hz | Split: 120 Hz)</span>
+        <span id="maxFreqDisplay" style="color:var(--primary);font-weight:bold">75 Hz</span>
+      </div>
+      <input type="range" id="maxFreq" min="60" max="120" value="75" step="1"
+             oninput="updateFreqDisplay(); runSimulation()" onchange="runSimulation()">
+    </div>
+    <div id="modeWarning" class="warning-box" style="display:none">
+      <strong>⚠ ENGINEERING WARNING: 120 Hz OPERATION</strong>
+      Operating a standard motor at 120 Hz doubles the mechanical stress on the rotor and bearings. Ensure the motor is rated for high‑speed operation to prevent mechanical failure.
+    </div>
+  </div>
+  <!-- ==================== BASE PERFORMANCE ==================== -->
+  <div class="card">
+    <div class="card-header"><span>Base Performance (Nameplate / Motor Output)</span></div>
+    <div class="stats-grid">
+      <div class="stat-box"><span class="stat-val" id="dispHp">--</span><span class="stat-unit">Horsepower (HP)</span></div>
+      <div class="stat-box"><span class="stat-val" id="dispTorque">--</span><span class="stat-unit">Torque (lb‑ft)</span></div>
+      <div class="stat-box"><span class="stat-val" id="dispVhz">--</span><span class="stat-unit">V/Hz Ratio</span></div>
+      <div class="stat-box"><span class="stat-val" id="dispMaxRpm">--</span><span class="stat-unit">Max Speed (<span id="maxSpeedFreq">75</span> Hz)</span></div>
+    </div>
+  </div>
+  <!-- ==================== MOTOR GRAPH ==================== -->
+  <div class="card">
+    <div class="card-header">
+      <span>VFD Motor Operating Envelope & Performance</span>
+      <span style="font-size:0.8rem;color:#aaa;">Hover for Cross‑Hair & Data</span>
+    </div>
+    <div class="graph-wrapper" id="graphWrapper">
+      <canvas id="motorGraph"></canvas>
+      <div class="overlay-cursor" id="overlayCursor"
+           onmousemove="handleMouseOver(event)" onmouseleave="handleMouseLeave()">
+        <div id="cursorH" class="cursor-line h"></div>
+        <div id="cursorV" class="cursor-line v"></div>
+      </div>
+      <div id="tooltip">
+        <h4 id="ttHeader">Data Point</h4>
+        <div class="data-row"><span class="data-label">Frequency:</span> <span class="data-val" id="ttFreq">--</span></div>
+        <div class="data-row"><span class="data-label">Voltage:</span> <span class="data-val" id="ttVolt">--</span></div>
+        <div class="data-row"><span class="data-label">RPM:</span> <span class="data-val" id="ttRpm">--</span></div>
+        <div class="data-row"><span class="data-label">Torque:</span> <span class="data-val" id="ttTorque">--</span></div>
+        <div class="data-row"><span class="data-label">HP:</span> <span class="data-val" id="ttHp">--</span></div>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#00d4ff;color:#00d4ff"></div>Induction Torque (lb‑ft)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff6644;color:#ff6644"></div>Horsepower</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#aa66ff;color:#aa66ff"></div>VFD Voltage (V)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#44dd88;color:#44dd88"></div>Frequency (Hz)</div>
+    </div>
+  </div>
+  <!-- ==================== GEARBOX SECTION ==================== -->
+  <div class="card">
+    <div class="card-header"><span>Gearbox Output Performance</span></div>
+    <p style="color:#aaa; margin-bottom:15px; font-family:'Share Tech Mono'; font-size:0.9rem;">
+      Configure your gearbox to see output performance correlated directly with the motor simulation above.
+    </p>
+    <div class="input-grid">
+      <div class="form-group">
+        <label>Gear Ratio (Input:Output)</label>
+        <input type="number" id="gearRatio" value="10" step="0.1" min="0.1" oninput="runSimulation()" onblur="runSimulation()">
+      </div>
+      <div class="form-group">
+        <label>Gearbox Efficiency (%)</label>
+        <input type="number" id="gearEff" value="96.5" step="0.1" min="0" max="100" oninput="runSimulation()" onblur="runSimulation()">
+        <div class="gear-note">* Locked to preset value. Select "Custom" to enter your own efficiency.</div>
+      </div>
+      <div class="form-group">
+        <label>Gearbox Type (Preset)</label>
+        <select id="gearType" onchange="updateGearEff()">
+          <option value="helical" selected>Helical</option>
+          <option value="planetary">Planetary</option>
+          <option value="bevel">Bevel Helical</option>
+          <option value="worm">Worm Gear</option>
+          <option value="cycloidal">Cycloidal</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+    </div>
+    <div id="gearWarning" class="warning-box" style="display:none">
+      <strong>⚠ GEARBOX INPUT WARNING</strong>
+      <span id="gearWarningText">Invalid gearbox parameters. Check gear ratio (>0) and efficiency (0-100%).</span>
+    </div>
+    <!-- Gearbox Base Stats -->
+    <div class="stats-grid">
+      <div class="stat-box"><span class="stat-val" id="dispOutHp">--</span><span class="stat-unit">Output HP</span></div>
+      <div class="stat-box"><span class="stat-val" id="dispOutTorque">--</span><span class="stat-unit">Output Torque (lb‑ft)</span></div>
+      <div class="stat-box"><span class="stat-val" id="dispOutRpm">--</span><span class="stat-unit">Output RPM @ 60Hz</span></div>
+      <div class="stat-box"><span class="stat-val" id="dispMaxOutRpm">--</span><span class="stat-unit">Max Output RPM (<span id="maxOutSpeedFreq">75</span> Hz)</span></div>
+    </div>
+    <!-- Gearbox Graph — extra height to separate RPM curves -->
+    <div class="graph-wrapper" id="gearGraphWrapper" style="margin-top: 20px;">
+      <canvas id="gearGraph"></canvas>
+      <div class="overlay-cursor" id="overlayCursorGear"
+           onmousemove="handleMouseOverGear(event)" onmouseleave="handleMouseLeaveGear()">
+        <div id="cursorHGear" class="cursor-line h"></div>
+        <div id="cursorVGear" class="cursor-line v"></div>
+      </div>
+      <div id="tooltipGear">
+        <h4 id="ttHeaderGear">Data Point</h4>
+        <div class="data-row"><span class="data-label">Frequency:</span> <span class="data-val" id="ttFreqGear">--</span></div>
+        <div class="data-row"><span class="data-label">Output RPM:</span> <span class="data-val" id="ttRpmGear">--</span></div>
+        <div class="data-row"><span class="data-label">Output Torque:</span> <span class="data-val" id="ttTorqueGear">--</span></div>
+        <div class="data-row"><span class="data-label">Output HP:</span> <span class="data-val" id="ttHpGear">--</span></div>
+        <div class="data-row"><span class="data-label">Input Motor Torque:</span> <span class="data-val" id="ttInTorqueGear">--</span></div>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#00d4ff;color:#00d4ff"></div>Output Torque (lb‑ft)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff6644;color:#ff6644"></div>Output Horsepower</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#44dd88;color:#44dd88"></div>Output RPM</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#aa66ff;color:#aa66ff"></div>Input Motor RPM (Reference)</div>
+    </div>
+  </div>
+  <!-- ==================== STUDENT FORMULA SECTION ==================== -->
+  <div class="card formula-section">
+    <div class="card-header"><span>Student Reference: Core Formulas & Live Calculation</span></div>
+    <p style="color:#aaa; margin-bottom:20px; font-family:'Share Tech Mono'; font-size:0.9rem;">
+      All values below update automatically as you change input parameters. Formulas are standard for 3-phase induction motor analysis.
+    </p>
+    <div class="formula-card">
+      <h3>1. Synchronous Speed (RPM)</h3>
+      <div class="formula-item">
+        <div class="formula-name">Synchronous speed is the theoretical speed of the motor's magnetic field</div>
+        <div class="formula-equation">\( n_s = \frac{120 \times f_{base}}{P} \)</div>
+        <div class="formula-live">Where \( f_{base} = 60Hz \) (base supply frequency), \( P = \) pole count<br>
+        Live Calculation: \( \frac{120 \times 60}{<span id="formulaPoles">4</span>} = <span id="formulaSyncSpeed">1800.0</span> \, \text{RPM} \)</div>
+      </div>
+    </div>
+    <div class="formula-card">
+      <h3>2. Slip (RPM & Percentage)</h3>
+      <div class="formula-item">
+        <div class="formula-name">Slip is the difference between synchronous speed and actual rated speed, caused by load</div>
+        <div class="formula-equation">\( s_{RPM} = n_s - n_{rated} \)<br>\( s_{\%} = \left( \frac{s_{RPM}}{n_s} \right) \times 100 \)</div>
+        <div class="formula-live">Live Calculation: \( <span id="formulaSyncSpeed2">1800.0</span> - <span id="formulaRpm">1765</span> = <span id="formulaSlipRpm">35.0</span> \, \text{RPM} \, (<span id="formulaSlipPct">1.94</span>\%) \)</div>
+      </div>
+    </div>
+    <div class="formula-card">
+      <h3>3. Input Power (kVA)</h3>
+      <div class="formula-item">
+        <div class="formula-name">Total apparent power input to the motor (3-phase)</div>
+        <div class="formula-equation">\( kVA = \frac{\sqrt{3} \times V \times I_{FLA}}{1000} \)</div>
+        <div class="formula-live">Where \( \sqrt{3} \approx 1.732 \), \( V = \) input voltage, \( I_{FLA} = \) full load amps<br>
+        Live Calculation: \( \frac{1.732 \times <span id="formulaVoltage">480</span> \times <span id="formulaFla">18.7</span>}{1000} = <span id="formulaKva">15.55</span> \, \text{kVA} \)</div>
+      </div>
+    </div>
+    <div class="formula-card">
+      <h3>4. Output Power (HP & kW)</h3>
+      <div class="formula-item">
+        <div class="formula-name">Actual mechanical power output of the motor, accounting for losses</div>
+        <div class="formula-equation">\( HP = kVA \times PF \times Efficiency \times 1.341 \)<br>(1 kW = 1.341 HP)</div>
+        <div class="formula-live">Live Calculation: \( <span id="formulaKva2">15.55</span> \times <span id="formulaPf">0.88</span> \times <span id="formulaEff">0.915</span> \times 1.341 = <span id="formulaHp">17.7</span> \, \text{HP} \)</div>
+      </div>
+    </div>
+    <div class="formula-card">
+      <h3>5. Rated Torque (lb-ft)</h3>
+      <div class="formula-item">
+        <div class="formula-name">Rotational force produced at rated speed</div>
+        <div class="formula-equation">\( T = \frac{HP \times 5252}{n_{rated}} \)</div>
+        <div class="formula-live">Live Calculation: \( \frac{<span id="formulaHp2">17.7</span> \times 5252}{<span id="formulaRpm2">1765</span>} = <span id="formulaTorque">52.7</span> \, \text{lb-ft} \)</div>
+      </div>
+    </div>
+    <div class="formula-card">
+      <h3>6. V/Hz Ratio</h3>
+      <div class="formula-item">
+        <div class="formula-name">Volts per Hertz ratio required to maintain constant magnetic flux in the motor</div>
+        <div class="formula-equation">Standard Mode: \( \frac{V_{input}}{60Hz} \)<br>Split Mode: \( \frac{V_{input}/2}{60Hz} \) (motor rewired to see half input voltage)</div>
+        <div class="formula-live">Live Calculation (Standard): \( \frac{480}{60} = <span id="formulaVHz">8.0</span> \, \text{V/Hz} \)<br>
+        Live Calculation (Split): \( \frac{240}{60} = 4.0 \, \text{V/Hz} \)</div>
+      </div>
+    </div>
+    <div class="formula-card">
+      <h3>7. Maximum Speed at 120Hz</h3>
+      <div class="formula-item">
+        <div class="formula-name">Maximum achievable speed at full 120Hz operation, accounting for constant slip</div>
+        <div class="formula-equation">\( n_{max} = \frac{120 \times 120}{P} - s_{RPM} \)</div>
+        <div class="formula-live">Live Calculation: \( \frac{14400}{<span id="formulaPoles2">4</span>} - <span id="formulaSlipRpm2">35.0</span> = <span id="formulaMaxSpeed">3565</span> \, \text{RPM} \)</div>
+      </div>
+    </div>
+    <div class="formula-card">
+      <h3>8. Torque Above Base Speed (Field Weakening)</h3>
+      <div class="formula-item">
+        <div class="formula-name">Above base speed (60Hz standard / ~118Hz split), voltage is capped, so torque drops to maintain constant HP</div>
+        <div class="formula-equation">\( T = \frac{HP \times 5252}{n_{actual}} \)</div>
+        <div class="formula-live">Live Calculation at 75Hz (standard mode): \( \frac{<span id="formulaHp3">17.7</span> \times 5252}{<span id="formulaActRpm">2214</span>} = <span id="formulaTorque75">42.0</span> \, \text{lb-ft} \)</div>
+      </div>
+    </div>
+  </div>
+  <!-- ==================== ABOUT BOX ==================== -->
+  <div class="about-box" id="aboutBox">
+    <div class="about-header" onclick="toggleAbout()">
+      <span class="about-dots">••••••••</span>
+      <span class="about-toggle">▼</span>
+    </div>
+    <div class="about-content" id="aboutContent" style="display: none;">
+      <p id="aboutText"></p>
+    </div>
+  </div>
+</div>
+<script>
+/* -------------------------------------------------
+   GLOBAL STATE
+------------------------------------------------- */
+let currentMode = 'standard';
+let simulationData = [];
+let gearSimulationData = [];
+let baseStats = {};
+/* -------------------------------------------------
+   INITIALISATION
+------------------------------------------------- */
+window.onload = () => {
+  syncCalculatedFields();
+  recalculateBaseStats();
+  runSimulation();
+  updateGearEff();
+};
+/* -------------------------------------------------
+   UI / MODE HANDLING
+------------------------------------------------- */
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('btnStandard').classList.toggle('active', mode === 'standard');
+  document.getElementById('btnSplit').classList.toggle('active', mode === 'split');
+  const slider  = document.getElementById('maxFreq');
+  const display = document.getElementById('maxFreqDisplay');
+  const warning = document.getElementById('modeWarning');
+  if (mode === 'standard') {
+    slider.disabled = false;
+    slider.min = 60;
+    slider.max = 120;
+    slider.value = 75;
+    display.innerText = slider.value + " Hz";
+    warning.style.display = 'none';
+  } else {
+    slider.disabled = true;
+    slider.value = 120;
+    display.innerText = "120 Hz (Fixed)";
+    warning.style.display = 'block';
+  }
+  runSimulation();
+}
+function updateFreqDisplay() {
+  document.getElementById('maxFreqDisplay').innerText = document.getElementById('maxFreq').value + " Hz";
+}
+/* -------------------------------------------------
+   GEARBOX PRESET HANDLING
+   — Lock efficiency for presets; only "Custom" allows editing
+------------------------------------------------- */
+function updateGearEff() {
+  const gearType = document.getElementById('gearType').value;
+  const effInput = document.getElementById('gearEff');
+  const typicalEfficiencies = {
+    helical: 96.5,
+    planetary: 96.0,
+    bevel: 95.5,
+    worm: 70.0,
+    cycloidal: 90.0
+  };
+  if (gearType !== 'custom') {
+    // Preset selected: set efficiency and lock the input
+    effInput.value = typicalEfficiencies[gearType];
+    effInput.disabled = true;
+  } else {
+    // Custom selected: unlock the input so user can type freely
+    effInput.disabled = false;
+  }
+  runSimulation();
+}
+/* -------------------------------------------------
+   CALCULATE BASE STATISTICS
+------------------------------------------------- */
+function syncCalculatedFields() {
+  const poles   = parseInt(document.getElementById('poles').value);
+  const baseHz  = 60;
+  const syncSpd = (120 * baseHz) / poles;
+  document.getElementById('syncSpeed').value = syncSpd.toFixed(1);
+  const rpmFld = document.getElementById('rpm');
+  if (!rpmFld.value || rpmFld.value <= 0) {
+    rpmFld.value = (syncSpd * 0.98).toFixed(1);
+  }
+  recalculateBaseStats();
+}
+function recalculateBaseStats() {
+  const poles   = parseInt(document.getElementById('poles').value);
+  const voltage = parseFloat(document.getElementById('voltage').value);
+  const fla     = parseFloat(document.getElementById('fla').value) || 0;
+  const pf      = parseFloat(document.getElementById('pf').value)  || 0;
+  const eff     = (parseFloat(document.getElementById('eff').value) || 0) / 100;
+  const rpm     = parseFloat(document.getElementById('rpm').value);
+  const syncSpd = parseFloat(document.getElementById('syncSpeed').value);
+  if (fla === 0 || pf === 0 || rpm === 0) {
+    document.getElementById('dispHp').innerText      = '--';
+    document.getElementById('dispTorque').innerText = '--';
+    return;
+  }
+  const kVA = (Math.sqrt(3) * voltage * fla) / 1000;
+  const kWout = kVA * pf * eff;
+  const hp    = kWout * 1.341;
+  const torque = (hp * 5252) / rpm;
+  const slipRpm = syncSpd - rpm;
+  const slipPct = (slipRpm / syncSpd) * 100;
+  const vHzRatio = (currentMode === 'standard')
+    ? voltage / 60
+    : (voltage / 2) / 60;
+  const currentMaxFreq = parseInt(document.getElementById('maxFreq').value);
+  const syncMax = (120 * currentMaxFreq) / poles;
+  const maxSpeed = syncMax - slipRpm;
+  baseStats = { hp, torque, vHzRatio, syncSpeed: syncSpd, rpm, poles, slipRpm, slipPct };
+  document.getElementById('dispHp').innerText      = hp.toFixed(1);
+  document.getElementById('dispTorque').innerText = torque.toFixed(1);
+  document.getElementById('dispVhz').innerText    = vHzRatio.toFixed(2);
+  document.getElementById('maxSpeedFreq').innerText = currentMaxFreq;
+  document.getElementById('dispMaxRpm').innerText = Math.round(maxSpeed);
+  document.getElementById('slipRpm').value        = slipRpm.toFixed(2);
+  document.getElementById('slipPct').value        = slipPct.toFixed(2) + ' %';
+  document.getElementById('formulaPoles').innerText = poles;
+  document.getElementById('formulaSyncSpeed').innerText = syncSpd.toFixed(1);
+  document.getElementById('formulaSyncSpeed2').innerText = syncSpd.toFixed(1);
+  document.getElementById('formulaRpm').innerText = rpm;
+  document.getElementById('formulaRpm2').innerText = rpm;
+  document.getElementById('formulaSlipRpm').innerText = slipRpm.toFixed(1);
+  document.getElementById('formulaSlipRpm2').innerText = slipRpm.toFixed(1);
+  document.getElementById('formulaSlipPct').innerText = slipPct.toFixed(2);
+  document.getElementById('formulaVoltage').innerText = voltage;
+  document.getElementById('formulaFla').innerText = fla;
+  document.getElementById('formulaKva').innerText = kVA.toFixed(2);
+  document.getElementById('formulaKva2').innerText = kVA.toFixed(2);
+  document.getElementById('formulaPf').innerText = pf;
+  document.getElementById('formulaEff').innerText = eff;
+  document.getElementById('formulaHp').innerText = hp.toFixed(1);
+  document.getElementById('formulaHp2').innerText = hp.toFixed(1);
+  document.getElementById('formulaHp3').innerText = hp.toFixed(1);
+  document.getElementById('formulaTorque').innerText = torque.toFixed(1);
+  document.getElementById('formulaPoles2').innerText = poles;
+  document.getElementById('formulaVHz').innerText = vHzRatio.toFixed(1);
+  document.getElementById('formulaMaxSpeed').innerText = Math.round(maxSpeed);
+  const currentFreq = parseFloat(document.getElementById('maxFreq').value);
+  const syncRpmCurrent = (120 * currentFreq) / poles;
+  const actRpmCurrent = currentMode === 'split' ? syncRpmCurrent - slipRpm : syncRpmCurrent * (1 - slipRpm / syncSpd);
+  const torqueCurrent = currentFreq <= 60 || currentMode === 'split' && currentFreq <= (rpm * 2 + slipRpm) / (120/poles)
+    ? torque
+    : (hp * 5252) / Math.max(actRpmCurrent, 1);
+  document.getElementById('formulaActRpm').innerText = Math.round(actRpmCurrent);
+  document.getElementById('formulaTorque75').innerText = torqueCurrent.toFixed(1);
+}
+/* -------------------------------------------------
+   SIMULATION ENGINE
+------------------------------------------------- */
+function runSimulation() {
+  recalculateBaseStats();
+  if (!baseStats.hp) {
+    alert('Please ensure FLA, PF and RPM are valid numbers.');
+    return;
+  }
+  const maxFreq = parseInt(document.getElementById('maxFreq').value);
+  const maxVolt = parseFloat(document.getElementById('voltage').value);
+  const steps   = 200;
+  simulationData = [];
+  const vHzSlope = currentMode === 'standard' ? baseStats.vHzRatio : maxVolt / 120;
+  for (let i = 0; i <= steps; i++) {
+    const f = (i / steps) * maxFreq;
+    const Vout = Math.min(f * vHzSlope, maxVolt);
+    const syncRpm = (120 * f) / baseStats.poles;
+    const actRpm = currentMode === 'split'
+      ? syncRpm - baseStats.slipRpm
+      : syncRpm * (1 - baseStats.slipRpm / baseStats.syncSpeed);
+    let torque;
+    if (f < 2) {
+      torque = baseStats.torque * (f / 2);
+    } else if (currentMode === 'standard') {
+      if (f <= 60) torque = baseStats.torque;
+      else torque = (baseStats.hp * 5252) / Math.max(actRpm, 1);
+    } else {
+      const splitBaseFreq = (baseStats.rpm * 2 + baseStats.slipRpm) / (120 / baseStats.poles);
+      if (f <= splitBaseFreq) torque = baseStats.torque;
+      else torque = (baseStats.hp * 5252) / Math.max(actRpm, 1);
+    }
+    const hp = (torque * actRpm) / 5252;
+    simulationData.push({freq:f, volt:Vout, rpm:actRpm, torque, hp});
+  }
+  // ---- GEARBOX CALCULATIONS ----
+  const gearRatio = parseFloat(document.getElementById('gearRatio').value) || 1;
+  const gearEff = parseFloat(document.getElementById('gearEff').value) || 100;
+  const gearEffDecimal = Math.min(Math.max(gearEff / 100, 0), 1);
+  let gearValid = true;
+  const gearWarning = document.getElementById('gearWarning');
+  if (gearRatio <= 0) {
+    gearWarning.style.display = 'block';
+    document.getElementById('gearWarningText').innerText = "Gear ratio must be greater than 0.";
+    gearValid = false;
+  }
+  if (gearEff < 0 || gearEff > 100) {
+    gearWarning.style.display = 'block';
+    document.getElementById('gearWarningText').innerText = "Efficiency must be between 0% and 100%.";
+    gearValid = false;
+  }
+  if (gearValid) {
+    gearWarning.style.display = 'none';
+    gearSimulationData = simulationData.map(d => {
+      const outRpm = d.rpm / gearRatio;
+      const outTorque = d.torque * gearRatio * gearEffDecimal;
+      const outHp = d.hp * gearEffDecimal;
+      return { freq: d.freq, outRpm, outTorque, outHp, inTorque: d.torque, inRpm: d.rpm };
+    });
+    const baseGearData = gearSimulationData.find(d => Math.abs(d.freq - 60) < 0.1);
+    const maxFreq = parseInt(document.getElementById('maxFreq').value);
+    const maxGearData = gearSimulationData[gearSimulationData.length - 1];
+    document.getElementById('dispOutHp').innerText = baseGearData.outHp.toFixed(1);
+    document.getElementById('dispOutTorque').innerText = baseGearData.outTorque.toFixed(1);
+    document.getElementById('dispOutRpm').innerText = Math.round(baseGearData.outRpm);
+    document.getElementById('maxOutSpeedFreq').innerText = maxFreq;
+    document.getElementById('dispMaxOutRpm').innerText = Math.round(maxGearData.outRpm);
+    drawGearGraph();
+  } else {
+    document.getElementById('dispOutHp').innerText = '--';
+    document.getElementById('dispOutTorque').innerText = '--';
+    document.getElementById('dispOutRpm').innerText = '--';
+    document.getElementById('dispMaxOutRpm').innerText = '--';
+    const canvas = document.getElementById('gearGraph');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+    gearSimulationData = [];
+  }
+  drawGraph();
+}
+/* -------------------------------------------------
+   CANVAS DRAWING (MOTOR GRAPH)
+------------------------------------------------- */
+function drawGraph() {
+  const canvas  = document.getElementById('motorGraph');
+  const ctx     = canvas.getContext('2d');
+  const wrapper = document.getElementById('graphWrapper');
+  const dpr     = window.devicePixelRatio || 1;
+  const w       = wrapper.clientWidth;
+  const h       = wrapper.clientHeight;
+  canvas.width  = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width  = w + 'px';
+  canvas.style.height = h + 'px';
+  ctx.scale(dpr, dpr);
+  const padL = 60, padR = 50, padT = 40, padB = 50;
+  const gw = w - padL - padR;
+  const gh = h - padT - padB;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle = 'rgba(0,212,255,0.1)';
+  ctx.lineWidth = 1;
+  for (let i=0;i<=5;i++) {
+    const y = padT + (gh/5)*i;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke();
+  }
+  const maxFreq = simulationData[simulationData.length-1].freq;
+  for (let i=0;i<=6;i++) {
+    const x = padL + (gw/6)*i;
+    ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,padT+gh); ctx.stroke();
+    ctx.fillStyle = '#888';
+    ctx.font = '10px "Share Tech Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText((i/6*maxFreq).toFixed(0), x, h-20);
+  }
+  const maxTorque = Math.max(...simulationData.map(d=>d.torque))*1.1;
+  const maxHp     = Math.max(...simulationData.map(d=>d.hp))*1.1;
+  const maxVolt   = Math.max(...simulationData.map(d=>d.volt))*1.1;
+  const maxRpm    = Math.max(...simulationData.map(d=>d.rpm))*1.1;
+  const mapX = f => padL + (f/maxFreq)*gw;
+  const mapY = (val,maxVal) => padT + gh - (val/maxVal)*gh;
+  function drawCurve(key, colour, maxVal, lineW) {
+    ctx.beginPath();
+    ctx.strokeStyle = colour;
+    ctx.lineWidth   = lineW;
+    ctx.shadowColor = colour;
+    ctx.shadowBlur  = 5;
+    simulationData.forEach((d,i) => {
+      const x = mapX(d.freq);
+      const y = mapY(d[key], maxVal);
+      if (i===0) ctx.moveTo(x,y);
+      else       ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+  drawCurve('volt',   '#aa66ff', maxVolt,   2.5);
+  drawCurve('rpm',    '#44dd88', maxRpm,    1.5);
+  drawCurve('torque', '#00d4ff', maxTorque, 3);
+  drawCurve('hp',     '#ff6644', maxHp,     3);
+  const x60 = mapX(60);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(x60,padT); ctx.lineTo(x60,padT+gh); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#aaa';
+  ctx.font = '11px "Orbitron"';
+  ctx.textAlign = 'center';
+  ctx.fillText('Frequency (Hz)', w/2, h-5);
+  ctx.save();
+  ctx.translate(10, h/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#aaa';
+  ctx.font = '11px "Share Tech Mono"';
+  ctx.fillText('Multi-Scale Output (Torque / HP / Voltage / RPM)', 0, 0);
+  ctx.restore();
+  ctx.fillStyle = currentMode === 'standard' ? '#00d4ff' : '#ff6644';
+  ctx.font = '12px "Orbitron"';
+  ctx.textAlign = 'left';
+  ctx.fillText(
+    currentMode === 'standard' ? 'STANDARD 480 V' : '120 Hz SPLIT (240 V WIRING)',
+    padL, padT-15
+  );
+}
+/* -------------------------------------------------
+   CANVAS DRAWING (GEARBOX GRAPH)
+   — Separate Y-scales for output RPM and input RPM to avoid overlap
+------------------------------------------------- */
+function drawGearGraph() {
+  const canvas = document.getElementById('gearGraph');
+  const ctx = canvas.getContext('2d');
+  const wrapper = document.getElementById('gearGraphWrapper');
+  const dpr = window.devicePixelRatio || 1;
+  const w = wrapper.clientWidth;
+  const h = wrapper.clientHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  ctx.scale(dpr, dpr);
+
+  const padL = 65, padR = 65, padT = 45, padB = 55;
+  const gw = w - padL - padR;
+  const gh = h - padT - padB;
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,w,h);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(0,212,255,0.1)';
+  ctx.lineWidth = 1;
+  for (let i=0;i<=5;i++) {
+    const y = padT + (gh/5)*i;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke();
+  }
+
+  const maxFreq = gearSimulationData[gearSimulationData.length-1].freq;
+  for (let i=0;i<=6;i++) {
+    const x = padL + (gw/6)*i;
+    ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,padT+gh); ctx.stroke();
+    ctx.fillStyle = '#888';
+    ctx.font = '10px "Share Tech Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText((i/6*maxFreq).toFixed(0), x, h-20);
+  }
+
+  // Scaling helpers — use separate scales for RPM values to avoid overlap
+  const maxOutTorque = Math.max(...gearSimulationData.map(d=>d.outTorque))*1.15;
+  const maxOutHp = Math.max(...gearSimulationData.map(d=>d.outHp))*1.15;
+  const maxOutRpm = Math.max(...gearSimulationData.map(d=>d.outRpm))*1.15;
+  const maxInRpm = Math.max(...gearSimulationData.map(d=>d.inRpm))*1.15;
+
+  const mapX = f => padL + (f/maxFreq)*gw;
+  const mapY = (val,maxVal) => padT + gh - (val/maxVal)*gh;
+
+  // Draw curves
+  function drawCurve(key, colour, maxVal, lineW) {
+    ctx.beginPath();
+    ctx.strokeStyle = colour;
+    ctx.lineWidth = lineW;
+    ctx.shadowColor = colour;
+    ctx.shadowBlur = 5;
+    gearSimulationData.forEach((d,i) => {
+      const x = mapX(d.freq);
+      const y = mapY(d[key], maxVal);
+      if (i===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  drawCurve('outTorque', '#00d4ff', maxOutTorque, 3);
+  drawCurve('outHp', '#ff6644', maxOutHp, 3);
+  drawCurve('outRpm', '#44dd88', maxOutRpm, 2);
+  drawCurve('inRpm', '#aa66ff', maxInRpm, 1.5);
+
+  // Draw Y-axis value labels for RPM on the right side
+  ctx.fillStyle = '#44dd88';
+  ctx.font = '9px "Share Tech Mono"';
+  ctx.textAlign = 'left';
+  ctx.fillText('OutRPM: ' + Math.round(maxOutRpm), w - padR + 5, padT + 12);
+  ctx.fillStyle = '#aa66ff';
+  ctx.fillText('InRPM:  ' + Math.round(maxInRpm), w - padR + 5, padT + 26);
+
+  // 60Hz reference
+  const x60 = mapX(60);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.setLineDash([6,4]);
+  ctx.beginPath(); ctx.moveTo(x60,padT); ctx.lineTo(x60,padT+gh); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Axis labels
+  ctx.fillStyle = '#aaa';
+  ctx.font = '11px "Orbitron"';
+  ctx.textAlign = 'center';
+  ctx.fillText('Frequency (Hz)', w/2, h-5);
+  ctx.save();
+  ctx.translate(10, h/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#aaa';
+  ctx.font = '11px "Share Tech Mono"';
+  ctx.fillText('Gearbox Output Multi-Scale (Torque / HP / RPM)', 0, 0);
+  ctx.restore();
+
+  ctx.fillStyle = currentMode === 'standard' ? '#00d4ff' : '#ff6644';
+  ctx.font = '12px "Orbitron"';
+  ctx.textAlign = 'left';
+  ctx.fillText(
+    currentMode === 'standard' ? 'STANDARD 480 V' : '120 Hz SPLIT (240 V WIRING)',
+    padL, padT-15
+  );
+}
+/* -------------------------------------------------
+   INTERACTIVE CURSOR & TOOLTIP (MOTOR GRAPH)
+------------------------------------------------- */
+function handleMouseOver(e) {
+  const wrapper = document.getElementById('graphWrapper');
+  const rect    = wrapper.getBoundingClientRect();
+  const x       = e.clientX - rect.left;
+  const y       = e.clientY - rect.top;
+  const cursorH = document.getElementById('cursorH');
+  const cursorV = document.getElementById('cursorV');
+  const tooltip = document.getElementById('tooltip');
+  cursorH.style.display = 'block';
+  cursorV.style.display = 'block';
+  cursorH.style.top = y + 'px';
+  cursorV.style.left = x + 'px';
+  if (!simulationData.length) return;
+  const padL = 60;
+  const gw   = wrapper.clientWidth - padL - 50;
+  let pct = (x - padL) / gw;
+  pct = Math.max(0, Math.min(1, pct));
+  const idx = Math.round(pct * (simulationData.length-1));
+  const d   = simulationData[idx];
+  if (!d) return;
+  tooltip.style.display = 'block';
+  const tooltipWidth = 220;
+  const tooltipHeight = 150;
+  const tooltipX = (x + 15 + tooltipWidth) > wrapper.clientWidth ? x - tooltipWidth -15 : x +15;
+  const tooltipY = (y + tooltipHeight) > wrapper.clientHeight ? y - tooltipHeight : y -20;
+  tooltip.style.left = tooltipX + 'px';
+  tooltip.style.top  = tooltipY + 'px';
+  document.getElementById('ttFreq').innerText   = d.freq.toFixed(1) + ' Hz';
+  document.getElementById('ttVolt').innerText   = d.volt.toFixed(1) + ' V';
+  document.getElementById('ttRpm').innerText    = Math.round(d.rpm) + ' RPM';
+  document.getElementById('ttTorque').innerText = d.torque.toFixed(2) + ' lb‑ft';
+  document.getElementById('ttHp').innerText     = d.hp.toFixed(2) + ' HP';
+  const region = currentMode === 'split'
+    ? 'Constant Torque (split‑voltage trick)'
+    : (d.freq <= 60 ? 'Constant Torque' : 'Field Weakening');
+  document.getElementById('ttHeader').innerText =
+    `Freq: ${d.freq.toFixed(1)} Hz (${region})`;
+}
+function handleMouseLeave() {
+  document.getElementById('cursorH').style.display = 'none';
+  document.getElementById('cursorV').style.display = 'none';
+  document.getElementById('tooltip').style.display = 'none';
+}
+/* -------------------------------------------------
+   INTERACTIVE CURSOR & TOOLTIP (GEARBOX GRAPH)
+------------------------------------------------- */
+function handleMouseOverGear(e) {
+  const wrapper = document.getElementById('gearGraphWrapper');
+  const rect = wrapper.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const cursorH = document.getElementById('cursorHGear');
+  const cursorV = document.getElementById('cursorVGear');
+  const tooltip = document.getElementById('tooltipGear');
+  cursorH.style.display = 'block';
+  cursorV.style.display = 'block';
+  cursorH.style.top = y + 'px';
+  cursorV.style.left = x + 'px';
+  if (!gearSimulationData.length) return;
+  const padL = 65;
+  const gw = wrapper.clientWidth - padL - 65;
+  let pct = (x - padL) / gw;
+  pct = Math.max(0, Math.min(1, pct));
+  const idx = Math.round(pct * (gearSimulationData.length-1));
+  const d = gearSimulationData[idx];
+  if (!d) return;
+  tooltip.style.display = 'block';
+  const tooltipWidth = 220;
+  const tooltipHeight = 150;
+  const tooltipX = (x + 15 + tooltipWidth) > wrapper.clientWidth ? x - tooltipWidth -15 : x +15;
+  const tooltipY = (y + tooltipHeight) > wrapper.clientHeight ? y - tooltipHeight : y -20;
+  tooltip.style.left = tooltipX + 'px';
+  tooltip.style.top = tooltipY + 'px';
+  document.getElementById('ttFreqGear').innerText = d.freq.toFixed(1) + ' Hz';
+  document.getElementById('ttRpmGear').innerText = Math.round(d.outRpm) + ' RPM';
+  document.getElementById('ttTorqueGear').innerText = d.outTorque.toFixed(2) + ' lb‑ft';
+  document.getElementById('ttHpGear').innerText = d.outHp.toFixed(2) + ' HP';
+  document.getElementById('ttInTorqueGear').innerText = d.inTorque.toFixed(2) + ' lb‑ft';
+  const region = currentMode === 'split'
+    ? 'Constant Torque (split‑voltage trick)'
+    : (d.freq <= 60 ? 'Constant Torque' : 'Field Weakening');
+  document.getElementById('ttHeaderGear').innerText =
+    `Freq: ${d.freq.toFixed(1)} Hz (${region})`;
+}
+function handleMouseLeaveGear() {
+  document.getElementById('cursorHGear').style.display = 'none';
+  document.getElementById('cursorVGear').style.display = 'none';
+  document.getElementById('tooltipGear').style.display = 'none';
+}
+/* -------------------------------------------------
+Ricardo Hernandez-Chang
+------------------------------------------------- */
+// "Jylhalk'if'Ypjhykv'Olyuhuklg'Johun"
+//   = Created by Ricardo Hernandez Chang
+const scrambledName = "Jylhalk'if'Ypjhykv'Olyuhuklg'Johun";
+function decodeScrambled(scrambled) {
+  return scrambled.split('').map(char => {
+    const code = char.charCodeAt(0);
+    if (code >= 65 && code <= 90) {
+      return String.fromCharCode(((code - 65 - 7) % 26 + 26) % 26 + 65);
+    } else if (code >= 97 && code <= 122) {
+      return String.fromCharCode(((code - 97 - 7) % 26 + 26) % 26 + 97);
+    } else {
+      return String.fromCharCode((code - 7 + 128) % 128);
+    }
+  }).join('');
+}
+function toggleAbout() {
+  const aboutBox = document.getElementById('aboutBox');
+  const aboutContent = document.getElementById('aboutContent');
+  const aboutText = document.getElementById('aboutText');
+  if (aboutBox.classList.contains('open')) {
+    aboutBox.classList.remove('open');
+    aboutContent.style.display = 'none';
+  } else {
+    aboutBox.classList.add('open');
+    aboutContent.style.display = 'block';
+    aboutText.innerText = decodeScrambled(scrambledName);
+  }
+}
+/* -------------------------------------------------
+   RESIZE HANDLER
+------------------------------------------------- */
+window.addEventListener('resize', () => {
+  clearTimeout(window.resizeTimer);
+  window.resizeTimer = setTimeout(() => {
+    drawGraph();
+    if (gearSimulationData.length) drawGearGraph();
+  }, 200);
+});
+</script>
+</body>
+</html>
