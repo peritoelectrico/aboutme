@@ -591,8 +591,8 @@ canvas{width:100%;height:100%;display:block}
       <div class="formula-item">
         <div class="formula-name">Volts per Hertz ratio required to maintain constant magnetic flux in the motor</div>
         <div class="formula-equation">Standard Mode: \( \frac{V_{input}}{60Hz} \)<br>Split Mode: \( \frac{V_{input}/2}{60Hz} \) (motor rewired to see half input voltage)</div>
-        <div class="formula-live">Live Calculation (Standard): \( \frac{480}{60} = <span id="formulaVHz">8.0</span> \, \text{V/Hz} \)<br>
-        Live Calculation (Split): \( \frac{240}{60} = 4.0 \, \text{V/Hz} \)</div>
+        <div class="formula-live">Live Calculation (Standard): \( \frac{<span id="formulaVoltageHz">480</span>}{60} = <span id="formulaVHz">8.0</span> \, \text{V/Hz} \)<br>
+        Live Calculation (Split): \( \frac{<span id="formulaVHzSplitVolt">240</span>}{60} = <span id="formulaVHzSplit">4.0</span> \, \text{V/Hz} \)</div>
       </div>
     </div>
     <div class="formula-card">
@@ -608,7 +608,7 @@ canvas{width:100%;height:100%;display:block}
       <div class="formula-item">
         <div class="formula-name">Above base speed (60Hz standard / ~118Hz split), voltage is capped, so torque drops to maintain constant HP</div>
         <div class="formula-equation">\( T = \frac{HP \times 5252}{n_{actual}} \)</div>
-        <div class="formula-live">Live Calculation at 75Hz (standard mode): \( \frac{<span id="formulaHp3">17.7</span> \times 5252}{<span id="formulaActRpm">2214</span>} = <span id="formulaTorque75">42.0</span> \, \text{lb-ft} \)</div>
+        <div class="formula-live">Live Calculation at <span id="formulaFreqLabel">75</span>Hz: \( \frac{<span id="formulaHp3">17.7</span> \times 5252}{<span id="formulaActRpm">2214</span>} = <span id="formulaTorque75">42.0</span> \, \text{lb-ft} \)</div>
       </div>
     </div>
   </div>
@@ -759,6 +759,9 @@ function recalculateBaseStats() {
   document.getElementById('formulaTorque').innerText = torque.toFixed(1);
   document.getElementById('formulaPoles2').innerText = poles;
   document.getElementById('formulaVHz').innerText = vHzRatio.toFixed(1);
+  document.getElementById('formulaVoltageHz').innerText = voltage;
+  document.getElementById('formulaVHzSplitVolt').innerText = (voltage / 2).toFixed(0);
+  document.getElementById('formulaVHzSplit').innerText = ((voltage / 2) / 60).toFixed(1);
   document.getElementById('formulaMaxSpeed').innerText = Math.round(maxSpeed);
   const currentFreq = parseFloat(document.getElementById('maxFreq').value);
   const syncRpmCurrent = (120 * currentFreq) / poles;
@@ -768,6 +771,7 @@ function recalculateBaseStats() {
     : (hp * 5252) / Math.max(actRpmCurrent, 1);
   document.getElementById('formulaActRpm').innerText = Math.round(actRpmCurrent);
   document.getElementById('formulaTorque75').innerText = torqueCurrent.toFixed(1);
+  document.getElementById('formulaFreqLabel').innerText = Math.round(currentFreq);
 }
 /* -------------------------------------------------
    SIMULATION ENGINE
