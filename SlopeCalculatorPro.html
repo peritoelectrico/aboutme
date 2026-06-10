@@ -343,11 +343,7 @@
           <select id="scalePreset" onchange="applyScalePreset(this.value)">
             <option value="10x10" selected>10 × 10</option>
             <option value="100x100">100 × 100</option>
-            <option value="custom">Custom</option>
           </select>
-          <input type="number" id="customScaleX" placeholder="X Max" step="1" min="1" style="width:65px; display:none;">
-          <input type="number" id="customScaleY" placeholder="Y Max" step="1" min="1" style="width:65px; display:none;">
-          <button class="tool-btn" onclick="applyCustomScale()" id="btnApplyCustom" style="display:none;">Apply</button>
         </div>
         <div class="separator"></div>
         <button class="tool-btn active" id="btnShowGrid" onclick="toggleGrid()">Grid</button>
@@ -550,10 +546,32 @@ function toggleLabels() { state.showLabels = !state.showLabels; document.getElem
 // Re-extend any computed line(s) so they span the current X range and rebuild
 // their integer-X point table for that range. Mode 3 (sectionLines) is left
 // alone because its data is intrinsically defined at integer X = 0..10.
-function rescaleLines() {
+function rescaleLines(prevScaleX, prevScaleY) {
+  const rx = (prevScaleX != null && prevScaleX > 0) ? state.scaleX / prevScaleX : 1;
+  const ry = (prevScaleY != null && prevScaleY > 0) ? state.scaleY / prevScaleY : 1;
+
+  // Rescale sectionLines and dataPoints (Modes 3 & 4) by ratio.
+  if (state.sectionLines.length > 0) {
+    state.sectionLines = state.sectionLines.map(sl => ({
+      x1: +(sl.x1 * rx).toFixed(4), y1: +(sl.y1 * ry).toFixed(4),
+      x2: +(sl.x2 * rx).toFixed(4), y2: +(sl.y2 * ry).toFixed(4)
+    }));
+  }
+  if (state.dataPoints.length > 0) {
+    state.dataPoints = state.dataPoints.map(dp => ({
+      x: +(dp.x * rx).toFixed(4), y: +(dp.y * ry).toFixed(4)
+    }));
+  }
+
   if (!state.lines || state.lines.length === 0) return;
   state.lines = state.lines.map(line => {
-    if (typeof line.slope !== 'number') return line;
+    if (typeof line.slope !== 'number') {
+      // Mode 4 ghost line: ratio-scale its boundary points.
+      const scaledPoints = line.points ? line.points.map(p => ({
+        x: +(p.x * rx).toFixed(4), y: +(p.y * ry).toFixed(4)
+      })) : [];
+      return { ...line, points: scaledPoints };
+    }
     const m = line.slope;
     const xEnd = state.scaleX;
     const points = [];
@@ -567,47 +585,28 @@ function rescaleLines() {
     return { x1: 0, y1: 0, x2: xEnd, y2: m * xEnd, points, slope: m };
   });
 
-  // Refresh the visible results table for the active mode so it matches.
-  const m = state.lines[0].slope;
-  const html = buildSlopeDisplay(m) + buildTable(state.lines[0].points, m) + buildProperties(m, m);
-  if (state.mode === 0) {
-    const t = document.getElementById('m1_results');
-    if (t && t.innerHTML.trim() !== '') t.innerHTML = html;
-  } else if (state.mode === 1) {
-    const t = document.getElementById('m2_results');
-    if (t && t.innerHTML.trim() !== '') t.innerHTML = html;
+  // Refresh the visible results table for Modes 1 & 2 only.
+  if (typeof state.lines[0].slope === 'number') {
+    const m = state.lines[0].slope;
+    const html = buildSlopeDisplay(m) + buildTable(state.lines[0].points, m) + buildProperties(m, m);
+    if (state.mode === 0) {
+      const t = document.getElementById('m1_results');
+      if (t && t.innerHTML.trim() !== '') t.innerHTML = html;
+    } else if (state.mode === 1) {
+      const t = document.getElementById('m2_results');
+      if (t && t.innerHTML.trim() !== '') t.innerHTML = html;
+    }
   }
 }
 
 function applyScalePreset(val) {
-  const customX = document.getElementById('customScaleX');
-  const customY = document.getElementById('customScaleY');
-  const btnApply = document.getElementById('btnApplyCustom');
-  
-  customX.style.display = customY.style.display = btnApply.style.display = 'none';
-
   const prevX = state.scaleX, prevY = state.scaleY;
   if (val === '10x10') { state.scaleX = 10; state.scaleY = 10; }
   else if (val === '100x100') { state.scaleX = 100; state.scaleY = 100; }
-  else if (val === 'custom') {
-    customX.style.display = customY.style.display = btnApply.style.display = 'inline-block';
-    return;
-  }
-  rescaleLines();
+  else return;
+  document.getElementById('m1_x').max = state.scaleX;
+  rescaleLines(prevX, prevY);
   regenerateScaleDependentInputs(prevX, prevY);
-  updateScaleUI();
-  draw();
-}
-
-function applyCustomScale() {
-  const x = parseFloat(document.getElementById('customScaleX').value);
-  const y = parseFloat(document.getElementById('customScaleY').value);
-  const prevX = state.scaleX, prevY = state.scaleY;
-  if (x && x > 0) state.scaleX = x;
-  if (y && y > 0) state.scaleY = y;
-  rescaleLines();
-  regenerateScaleDependentInputs(prevX, prevY);
-  updateScaleUI();
   draw();
 }
 
@@ -621,12 +620,6 @@ function regenerateScaleDependentInputs(prevScaleX, prevScaleY) {
   }
 }
 
-function updateScaleUI() {
-  const sel = document.getElementById('scalePreset');
-  if (`${state.scaleX}x${state.scaleY}` !== sel.value) {
-    sel.value = 'custom';
-  }
-}
 
 // ========== COORDINATE TRANSFORMS ==========
 function getGraphArea() {
@@ -901,10 +894,11 @@ function calculateMode1() {
   const slope = yVal / xVal;
   state.lines = []; state.dataPoints = []; state.sectionLines = [];
   const points = [];
-  for (let i = 0; i <= 10; i++) points.push({ x: i, y: Math.round(slope * i * 100) / 100 });
+  const step1 = state.scaleX / 10;
+  for (let i = 0; i <= 10; i++) { const x = +(i * step1).toFixed(4); points.push({ x, y: Math.round(slope * x * 100) / 100 }); }
   // Render the actual endpoint so negative slopes display correctly.
-  state.lines.push({ x1: 0, y1: 0, x2: 10, y2: slope * 10, points, slope });
-  let html = buildSlopeDisplay(slope) + buildTable(points, slope) + buildProperties(slope, 0);
+  state.lines.push({ x1: 0, y1: 0, x2: state.scaleX, y2: slope * state.scaleX, points, slope });
+  let html = buildSlopeDisplay(slope) + buildTable(points, slope) + buildProperties(slope, slope);
   document.getElementById('m1_results').innerHTML = html;
   draw();
 }
@@ -916,9 +910,10 @@ function calculateMode2() {
   if (isNaN(slope)) { alert('Enter a valid slope value.'); return; }
   state.lines = []; state.dataPoints = []; state.sectionLines = [];
   const points = [];
-  for (let i = 0; i <= 10; i++) points.push({ x: i, y: Math.round(slope * i * 100) / 100 });
+  const step2 = state.scaleX / 10;
+  for (let i = 0; i <= 10; i++) { const x = +(i * step2).toFixed(4); points.push({ x, y: Math.round(slope * x * 100) / 100 }); }
   // Render the actual endpoint (do not clip to 0) so negative slopes display correctly.
-  state.lines.push({ x1: 0, y1: 0, x2: 10, y2: slope * 10, points, slope });
+  state.lines.push({ x1: 0, y1: 0, x2: state.scaleX, y2: slope * state.scaleX, points, slope });
   let html = buildSlopeDisplay(slope) + buildTable(points, slope) + buildProperties(slope, slope);
   document.getElementById('m2_results').innerHTML = html;
   draw();
@@ -1144,7 +1139,7 @@ function buildSlopeDisplay(slope) {
   return `<div class="slope-display"><div class="label">Calculated Slope</div><div class="value">${slope.toFixed(4)}</div><div class="equation">y = ${slope.toFixed(4)} × x</div></div><div class="gradient-bar"></div>`;
 }
 function buildTable(points, slope) {
-  let h = `<div class="results-panel"><div class="results-header">📊 Complete Table (X: 0–10)</div><div class="results-body"><table class="section-table"><thead><tr><th>X</th><th>Y</th><th>Y (exact)</th></tr></thead><tbody>`;
+  let h = `<div class="results-panel"><div class="results-header">📊 Complete Table (X: 0–${state.scaleX})</div><div class="results-body"><table class="section-table"><thead><tr><th>X</th><th>Y</th><th>Y (exact)</th></tr></thead><tbody>`;
   points.forEach(p => h += `<tr><td>${p.x.toFixed(1)}</td><td class="result-value">${p.y.toFixed(2)}</td><td style="color:var(--text-muted);font-size:11px;">${(slope*p.x).toFixed(4)}</td></tr>`);
   h += `</tbody></table></div></div>`;
   return h;
@@ -1155,7 +1150,7 @@ function buildProperties(slope, m) {
   return `<div class="results-panel" style="margin-top:10px;"><div class="results-header">📐 Line Properties</div><div class="results-body">
     <div class="result-row"><span class="result-label">Slope (m)</span><span class="result-value">${slope.toFixed(4)}</span></div>
     <div class="result-row"><span class="result-label">Angle</span><span class="result-value">${(Math.atan(Math.abs(slope))*180/Math.PI).toFixed(2)}°</span></div>
-    <div class="result-row"><span class="result-label">Y at X=10</span><span class="result-value">${(slope*10).toFixed(2)}</span></div>
+    <div class="result-row"><span class="result-label">Y at X=${state.scaleX}</span><span class="result-value">${(slope*state.scaleX).toFixed(2)}</span></div>
     <div class="result-row"><span class="result-label">Type</span><span class="result-value ${cls}">${type}</span></div></div></div>`;
 }
 
