@@ -1,0 +1,665 @@
+<!DOCTYPE HTML>
+<!--
+	Profile by Ricardo Hernandez
+	hernandezchang.com | @Ricardo
+	Free for personal and commercial use
+-->
+<html lang="en">
+	<head>
+		<title>Ricardo Hernandez · Sr. Process Control Engineer</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<meta name="description" content="Portfolio and interactive engineering lab of Ricardo Hernandez, Senior Process Control Engineer." />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="stylesheet" href="assets/css/lightbox.css" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+		<style>
+			/* ============================================================
+			   MODERN DARK UI — overrides on top of main.css
+			   ============================================================ */
+			:root {
+				--bg-0: #05070d;
+				--bg-1: #0b1020;
+				--bg-2: #111a33;
+				--surface: rgba(17, 26, 51, 0.55);
+				--surface-strong: rgba(15, 23, 42, 0.85);
+				--border: rgba(148, 163, 184, 0.18);
+				--text: #e2e8f0;
+				--text-dim: #94a3b8;
+				--accent: #38bdf8;     /* cyan */
+				--accent-2: #a855f7;   /* purple */
+				--accent-3: #22d3ee;
+				--success: #10b981;
+				--shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.7);
+				--radius: 16px;
+			}
+
+			html, body {
+				background: var(--bg-0) !important;
+				color: var(--text) !important;
+				font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+				-webkit-font-smoothing: antialiased;
+				scroll-behavior: smooth;
+			}
+
+			/* Animated aurora background */
+			body::before {
+				content: "";
+				position: fixed;
+				inset: 0;
+				z-index: -2;
+				background:
+					radial-gradient(1200px 600px at 10% -10%, rgba(56, 189, 248, 0.18), transparent 60%),
+					radial-gradient(900px 500px at 110% 10%, rgba(168, 85, 247, 0.18), transparent 60%),
+					radial-gradient(900px 500px at 50% 120%, rgba(34, 211, 238, 0.12), transparent 60%),
+					linear-gradient(180deg, #05070d 0%, #0b1020 50%, #05070d 100%);
+				animation: auroraShift 22s ease-in-out infinite alternate;
+			}
+			body::after {
+				content: "";
+				position: fixed;
+				inset: 0;
+				z-index: -1;
+				pointer-events: none;
+				background-image:
+					linear-gradient(rgba(148,163,184,0.04) 1px, transparent 1px),
+					linear-gradient(90deg, rgba(148,163,184,0.04) 1px, transparent 1px);
+				background-size: 48px 48px;
+				mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.9), transparent 75%);
+				-webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.9), transparent 75%);
+			}
+
+			@keyframes auroraShift {
+				0%   { filter: hue-rotate(0deg);   transform: translate3d(0,0,0); }
+				50%  { filter: hue-rotate(20deg); }
+				100% { filter: hue-rotate(-15deg); transform: translate3d(0,-2%,0); }
+			}
+
+			/* ============== NAV ============== */
+			#nav {
+				background: rgba(8, 12, 24, 0.65) !important;
+				backdrop-filter: blur(14px) saturate(140%);
+				-webkit-backdrop-filter: blur(14px) saturate(140%);
+				border-right: 1px solid var(--border) !important;
+				box-shadow: var(--shadow);
+			}
+			#nav a {
+				color: var(--text-dim) !important;
+				transition: color .25s ease, transform .25s ease, background .25s ease;
+			}
+			#nav a:hover, #nav a.active {
+				color: var(--accent) !important;
+				background: rgba(56,189,248,0.08) !important;
+				transform: translateX(2px);
+			}
+			#nav a span {
+				background: var(--surface-strong) !important;
+				border: 1px solid var(--border) !important;
+				color: var(--text) !important;
+			}
+
+			/* ============== PANELS ============== */
+			#main .panel {
+				background: var(--surface) !important;
+				backdrop-filter: blur(18px) saturate(140%);
+				-webkit-backdrop-filter: blur(18px) saturate(140%);
+				border: 1px solid var(--border);
+				border-radius: var(--radius);
+				box-shadow: var(--shadow);
+				margin-bottom: 1.5rem;
+				padding: 2.5rem !important;
+				animation: fadeUp .6s ease both;
+			}
+			#main .panel.intro {
+				background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(168,85,247,0.10)) !important;
+				border: 1px solid rgba(56,189,248,0.25);
+			}
+
+			@keyframes fadeUp {
+				from { opacity: 0; transform: translateY(24px); }
+				to   { opacity: 1; transform: translateY(0); }
+			}
+
+			/* Headings */
+			.panel header h1, .panel header h2 {
+				color: var(--text) !important;
+				font-weight: 700;
+				letter-spacing: -0.02em;
+			}
+			.panel header h1 {
+				font-size: clamp(2.2rem, 4vw, 3.4rem);
+				background: linear-gradient(120deg, #e2e8f0 0%, var(--accent) 50%, var(--accent-2) 100%);
+				-webkit-background-clip: text;
+				background-clip: text;
+				color: transparent !important;
+				animation: gradientShift 8s ease infinite;
+				background-size: 200% 200%;
+			}
+			.panel header h2 {
+				font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+				position: relative;
+				display: inline-block;
+				padding-bottom: 0.5rem;
+				text-transform: capitalize;
+			}
+			.panel header h2::after {
+				content: "";
+				position: absolute;
+				left: 0; bottom: 0;
+				width: 60%;
+				height: 3px;
+				border-radius: 3px;
+				background: linear-gradient(90deg, var(--accent), var(--accent-2));
+			}
+			.panel header p {
+				color: var(--text-dim) !important;
+				font-size: 1.1rem;
+				font-weight: 400;
+				margin-top: .5rem;
+			}
+			@keyframes gradientShift {
+				0%, 100% { background-position: 0% 50%; }
+				50%      { background-position: 100% 50%; }
+			}
+
+			.panel p {
+				color: var(--text) !important;
+				line-height: 1.75;
+				font-size: 1rem;
+			}
+
+			/* ============== INTRO ============== */
+			#home .pic {
+				position: relative;
+				display: block;
+				border-radius: var(--radius);
+				overflow: hidden;
+				margin-top: 1.5rem;
+				box-shadow: var(--shadow);
+				transition: transform .4s ease;
+			}
+			#home .pic:hover { transform: translateY(-4px) scale(1.01); }
+			#home .pic img {
+				width: 100%;
+				display: block;
+				filter: brightness(.95) saturate(1.1);
+				transition: filter .4s ease, transform .6s ease;
+			}
+			#home .pic:hover img { filter: brightness(1.05) saturate(1.2); transform: scale(1.03); }
+			#home .pic .arrow {
+				position: absolute;
+				right: 1.25rem; bottom: 1.25rem;
+				width: 56px; height: 56px;
+				display: inline-flex; align-items: center; justify-content: center;
+				background: linear-gradient(135deg, var(--accent), var(--accent-2));
+				color: white !important;
+				border-radius: 50%;
+				box-shadow: 0 10px 30px rgba(56,189,248,0.4);
+				animation: pulse 2.4s ease-in-out infinite;
+			}
+			@keyframes pulse {
+				0%, 100% { transform: scale(1);   box-shadow: 0 10px 30px rgba(56,189,248,0.4); }
+				50%      { transform: scale(1.08); box-shadow: 0 14px 40px rgba(168,85,247,0.55); }
+			}
+
+			/* ============== ABOUT IMAGE GRID ============== */
+			#work .row { row-gap: 1rem; }
+			#work .image.fit {
+				display: block;
+				border-radius: 12px;
+				overflow: hidden;
+				position: relative;
+				box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+				transition: transform .35s ease, box-shadow .35s ease;
+			}
+			#work .image.fit::after {
+				content: "";
+				position: absolute; inset: 0;
+				background: linear-gradient(180deg, transparent 55%, rgba(5,7,13,0.55) 100%);
+				opacity: 0; transition: opacity .3s ease;
+			}
+			#work .image.fit:hover {
+				transform: translateY(-4px) scale(1.02);
+				box-shadow: 0 14px 40px rgba(56,189,248,0.25);
+			}
+			#work .image.fit:hover::after { opacity: 1; }
+			#work .image.fit img {
+				width: 100%;
+				display: block;
+				transition: transform .5s ease, filter .35s ease;
+				filter: brightness(.9) saturate(1.05);
+			}
+			#work .image.fit:hover img { transform: scale(1.06); filter: brightness(1.05) saturate(1.15); }
+
+			/* ============== CONTACT FORM ============== */
+			#contact-form input,
+			#contact-form textarea {
+				background: rgba(5, 7, 13, 0.6) !important;
+				border: 1px solid var(--border) !important;
+				color: var(--text) !important;
+				border-radius: 10px !important;
+				padding: 14px 16px !important;
+				font-size: 0.95rem;
+				transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
+			}
+			#contact-form input::placeholder,
+			#contact-form textarea::placeholder { color: var(--text-dim) !important; }
+			#contact-form input:focus,
+			#contact-form textarea:focus {
+				border-color: var(--accent) !important;
+				background: rgba(5,7,13,0.85) !important;
+				box-shadow: 0 0 0 4px rgba(56,189,248,0.15) !important;
+				outline: none;
+			}
+			#contact-form button[type="submit"] {
+				background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important;
+				border: none !important;
+				color: white !important;
+				font-weight: 600 !important;
+				letter-spacing: 0.5px;
+				padding: 14px 28px !important;
+				border-radius: 10px !important;
+				cursor: pointer;
+				box-shadow: 0 10px 25px rgba(56,189,248,0.35);
+				transition: transform .25s ease, box-shadow .25s ease;
+			}
+			#contact-form button[type="submit"]:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 16px 35px rgba(168,85,247,0.45);
+			}
+			#form-success {
+				margin-top: 1rem;
+				padding: 1rem 1.25rem;
+				background: rgba(16,185,129,0.12);
+				border-left: 3px solid var(--success);
+				border-radius: 8px;
+				color: var(--text);
+			}
+			.hidden { display: none; }
+
+			/* ============== LAB GRID (dynamic) ============== */
+			#ailab .lab-intro {
+				color: var(--text-dim);
+				font-size: 1rem;
+				margin-bottom: 2rem;
+				max-width: 720px;
+				line-height: 1.7;
+			}
+			.lab-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+				gap: 1.1rem;
+			}
+			.lab-card {
+				--c1: var(--accent);
+				--c2: var(--accent-2);
+				position: relative;
+				display: flex;
+				flex-direction: column;
+				gap: 0.85rem;
+				padding: 1.4rem 1.25rem 1.25rem;
+				background: linear-gradient(160deg, rgba(17,26,51,0.85), rgba(11,16,32,0.85));
+				border: 1px solid var(--border);
+				border-radius: 14px;
+				color: var(--text) !important;
+				text-decoration: none !important;
+				overflow: hidden;
+				transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+				opacity: 0;
+				transform: translateY(14px);
+				animation: cardIn .55s ease forwards;
+			}
+			.lab-card::before {
+				content: "";
+				position: absolute;
+				inset: 0;
+				background: radial-gradient(400px circle at var(--mx, 50%) var(--my, 0%),
+					rgba(56,189,248,0.18), transparent 45%);
+				opacity: 0;
+				transition: opacity .4s ease;
+				pointer-events: none;
+			}
+			.lab-card:hover::before { opacity: 1; }
+			.lab-card:hover {
+				transform: translateY(-4px);
+				border-color: rgba(56,189,248,0.55);
+				box-shadow: 0 18px 40px -10px rgba(56,189,248,0.35);
+			}
+			.lab-card .lab-icon {
+				width: 44px; height: 44px;
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 12px;
+				background: linear-gradient(135deg, var(--c1), var(--c2));
+				color: white;
+				font-size: 1.1rem;
+				box-shadow: 0 8px 20px rgba(56,189,248,0.3);
+			}
+			.lab-card .lab-title {
+				font-weight: 600;
+				font-size: 1rem;
+				letter-spacing: -0.01em;
+				color: var(--text);
+			}
+			.lab-card .lab-cat {
+				font-family: 'JetBrains Mono', monospace;
+				font-size: 0.72rem;
+				color: var(--text-dim);
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+			}
+			.lab-card .lab-arrow {
+				margin-top: auto;
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4rem;
+				font-size: 0.82rem;
+				color: var(--accent);
+				font-weight: 500;
+				transition: gap .25s ease;
+			}
+			.lab-card:hover .lab-arrow { gap: 0.7rem; }
+
+			@keyframes cardIn {
+				to { opacity: 1; transform: translateY(0); }
+			}
+
+			.lab-empty, .lab-error {
+				grid-column: 1 / -1;
+				padding: 1.5rem;
+				border: 1px dashed var(--border);
+				border-radius: 12px;
+				text-align: center;
+				color: var(--text-dim);
+				background: rgba(0,0,0,0.25);
+			}
+			.lab-error { color: #fca5a5; border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); }
+
+			/* ============== FOOTER ============== */
+			#footer { padding: 2rem 0 1.5rem; }
+			#footer .copyright {
+				color: var(--text-dim) !important;
+				font-size: 0.8rem;
+			}
+			#footer .copyright a { color: var(--accent) !important; }
+
+			/* ============== LOADING SKELETONS ============== */
+			.skeleton {
+				display: block;
+				background: linear-gradient(90deg, rgba(148,163,184,0.08), rgba(148,163,184,0.18), rgba(148,163,184,0.08));
+				background-size: 200% 100%;
+				animation: shimmer 1.4s ease-in-out infinite;
+				border-radius: 6px;
+				height: 1em;
+				margin: 0.4em 0;
+			}
+			.skeleton.short { width: 70%; }
+			@keyframes shimmer {
+				0%   { background-position: 100% 0; }
+				100% { background-position: -100% 0; }
+			}
+
+			/* Scrollbar */
+			::-webkit-scrollbar { width: 10px; height: 10px; }
+			::-webkit-scrollbar-track { background: var(--bg-0); }
+			::-webkit-scrollbar-thumb {
+				background: linear-gradient(180deg, var(--accent), var(--accent-2));
+				border-radius: 10px;
+			}
+
+			@media (max-width: 768px) {
+				#main .panel { padding: 1.6rem !important; }
+				.lab-grid { grid-template-columns: 1fr; }
+			}
+		</style>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper-->
+			<div id="wrapper">
+
+				<!-- Nav -->
+					<nav id="nav">
+						<a href="#" class="icon solid fa-home"><span>Home</span></a>
+						<a href="#work" class="icon solid fa-folder"><span>Work</span></a>
+						<a href="#ailab" class="icon solid fa-flask"><span>AI Lab</span></a>
+						<a href="#contact" class="icon solid fa-envelope"><span>Contact</span></a>
+						<a href="https://www.linkedin.com/in/ricardo-hernandez-ch" class="icon brands fa-linkedin"><span>Linkedin</span></a>
+					</nav>
+
+				<!-- Main -->
+					<div id="main">
+
+						<!-- Me -->
+							<article id="home" class="panel intro">
+								<header>
+									<h1>Ricardo Hernandez</h1>
+									<p>Senior Process Control Engineer</p>
+								</header>
+								<a href="#work" class="jumplink pic">
+									<span class="arrow icon solid fa-chevron-right"><span>See my work</span></span>
+									<img src="images/pic00.jpg" alt="" />
+								</a>
+							</article>
+
+						<!-- Work -->
+							<article id="work" class="panel">
+								<header>
+									<h2>about</h2>
+								</header>
+								<p id="header-text">
+									<span class="skeleton"></span>
+									<span class="skeleton"></span>
+									<span class="skeleton short"></span>
+								</p>
+								<section>
+									<div class="row">
+										<div class="col-4 col-6-medium col-12-small">
+											<a href="#" class="image fit"><img src="images/pic01.jpg" alt=""></a>
+										</div>
+										<div class="col-4 col-6-medium col-12-small">
+											<a href="#" class="image fit"><img src="images/pic02.jpg" alt=""></a>
+										</div>
+										<div class="col-4 col-6-medium col-12-small">
+											<a href="#" class="image fit"><img src="images/pic03.jpg" alt=""></a>
+										</div>
+										<div class="col-4 col-6-medium col-12-small">
+											<a href="#" class="image fit"><img src="images/pic04.jpg" alt=""></a>
+										</div>
+										<div class="col-4 col-6-medium col-12-small">
+											<a href="#" class="image fit"><img src="images/pic05.jpg" alt=""></a>
+										</div>
+										<div class="col-4 col-6-medium col-12-small">
+											<a href="#" class="image fit"><img src="images/pic06.jpg" alt=""></a>
+										</div>
+										<div class="col-4 col-6-medium col-12-small">
+											<a href="#" class="image fit"><img src="images/pic07.jpg" alt=""></a>
+										</div>
+										<div class="col-4 col-6-medium col-12-small">
+											<a href="#" class="image fit"><img src="images/pic08.jpg" alt=""></a>
+										</div>
+										<div class="col-4 col-6-medium col-12-small">
+											<a href="#" class="image fit"><img src="images/pic09.jpg" alt=""></a>
+										</div>
+										<div class="col-4 col-6-medium col-12-small">
+											<a href="#" class="image fit"><img src="images/pic10.jpg" alt=""></a>
+										</div>
+										<div class="col-4 col-6-medium col-12-small">
+											<a href="#" class="image fit"><img src="images/pic11.jpg" alt=""></a>
+										</div>
+										<div class="col-4 col-6-medium col-12-small">
+											<a href="#" class="image fit"><img src="images/pic12.jpg" alt=""></a>
+										</div>
+									</div>
+								</section>
+								<p id="profile-text">
+									<span class="skeleton"></span>
+									<span class="skeleton"></span>
+									<span class="skeleton"></span>
+									<span class="skeleton short"></span>
+								</p>
+							</article>
+
+						<!-- Contact -->
+							<article id="contact" class="panel">
+								<header>
+									<h2>Contact Me</h2>
+								</header>
+								<!-- Contact Form - No External Services -->
+								<div id="contact-form-container">
+									<form id="contact-form">
+										<div>
+											<div class="row">
+												<div class="col-6 col-12-medium">
+													<input type="text" id="name" name="name" placeholder="Name" required />
+												</div>
+												<div class="col-6 col-12-medium">
+													<input type="email" id="email" name="email" placeholder="Email" required />
+												</div>
+												<div class="col-12">
+													<input type="text" id="subject" name="subject" placeholder="Subject" required />
+												</div>
+												<div class="col-12">
+													<textarea id="message" name="message" placeholder="Message" rows="6" required></textarea>
+												</div>
+												<div class="col-12">
+													<button type="submit">Send</button>
+												</div>
+											</div>
+										</div>
+									</form>
+									<div id="form-success" class="hidden">
+										<p>✅ Opening your email client... The form will be pre-filled. Simply click Send in your email app.</p>
+									</div>
+								</div>
+						</article>
+
+						<!-- AI Lab -->
+							<article id="ailab" class="panel">
+								<header>
+									<h2>The Lab</h2>
+								</header>
+								<p class="lab-intro">
+								Interactive Engineering Tools &amp; Demos.
+                                Explore a collection of custom-built interactive applications,
+								ranging from electrical engineering calculators and industrial motor simulations
+								to dynamic physics demos and classic games. Built to demonstrate responsive web
+								development and practical mathematical modeling.
+								</p>
+								<section>
+									<div id="lab-grid" class="lab-grid" aria-live="polite">
+										<div class="lab-empty">Loading lab modules…</div>
+									</div>
+								</section>
+							</article>
+
+					</div>
+					<!-- /#main -->
+
+				<!-- Footer -->
+					<div id="footer">
+						<ul class="copyright">
+							<li>&copy; Ricardo Hernandez.</li><li>Design: <a href="https://ricardo.hernandezchang.com">https://ricardo.hernandezchang.com</a></li>
+						</ul>
+					</div>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+		<script src="assets/js/main.js"></script>
+		<script src="assets/js/lightbox.js"></script>
+		<script src="assets/js/contact-form.js"></script>
+
+		<!-- Dynamic content loaders -->
+		<script>
+			(function () {
+				'use strict';
+
+				const escapeHTML = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+					'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+				}[c]));
+
+				// Convert plain-text paragraphs (blank-line separated) to safe HTML.
+				function textToHTML(text) {
+					const blocks = text.replace(/\r\n/g, '\n').split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+					if (blocks.length === 0) return '';
+					return blocks.map(b => escapeHTML(b).replace(/\n/g, '<br>')).join('</p><p>');
+				}
+
+				async function loadText(url, targetId) {
+					const el = document.getElementById(targetId);
+					if (!el) return;
+					try {
+						const res = await fetch(url, { cache: 'no-cache' });
+						if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+						const txt = await res.text();
+						el.innerHTML = textToHTML(txt) || '<em>(empty)</em>';
+					} catch (err) {
+						el.innerHTML = `<em style="color:#fca5a5;">Unable to load ${escapeHTML(url)} (${escapeHTML(err.message)}). If you opened this file directly, run a local web server so fetch() can read the file.</em>`;
+						console.error('Load failed for', url, err);
+					}
+				}
+
+				async function loadLab() {
+					const grid = document.getElementById('lab-grid');
+					if (!grid) return;
+					try {
+						const res = await fetch('lab.json', { cache: 'no-cache' });
+						if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+						const items = await res.json();
+						if (!Array.isArray(items) || items.length === 0) {
+							grid.innerHTML = '<div class="lab-empty">No lab modules defined in lab.json.</div>';
+							return;
+						}
+						grid.innerHTML = '';
+						items.forEach((it, idx) => {
+							if (!it || !it.title || !it.url) return;
+							const a = document.createElement('a');
+							a.className = 'lab-card';
+							a.href = it.url;
+							a.target = '_blank';
+							a.rel = 'noopener';
+							a.style.animationDelay = `${Math.min(idx * 60, 600)}ms`;
+
+							const iconClass = (it.icon && /^fa-/.test(it.icon)) ? it.icon : 'fa-bullseye';
+							const cat = it.category ? escapeHTML(it.category) : 'Tool';
+
+							a.innerHTML =
+								`<span class="lab-icon"><i class="fa-solid ${escapeHTML(iconClass)}"></i></span>` +
+								`<span class="lab-cat">${cat}</span>` +
+								`<span class="lab-title">${escapeHTML(it.title)}</span>` +
+								`<span class="lab-arrow">Open <i class="fa-solid fa-arrow-right"></i></span>`;
+
+							// Pointer-tracked glow
+							a.addEventListener('pointermove', (e) => {
+								const r = a.getBoundingClientRect();
+								a.style.setProperty('--mx', `${e.clientX - r.left}px`);
+								a.style.setProperty('--my', `${e.clientY - r.top}px`);
+							});
+							grid.appendChild(a);
+						});
+					} catch (err) {
+						grid.innerHTML = `<div class="lab-error">Unable to load <code>lab.json</code> (${escapeHTML(err.message)}). If you opened this file directly, run a local web server so fetch() can read the file.</div>`;
+						console.error('lab.json load failed:', err);
+					}
+				}
+
+				document.addEventListener('DOMContentLoaded', () => {
+					loadText('header.txt',  'header-text');
+					loadText('profile.txt', 'profile-text');
+					loadLab();
+				});
+			})();
+		</script>
+
+	</body>
+</html>
