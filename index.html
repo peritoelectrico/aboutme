@@ -79,6 +79,24 @@
 				100% { filter: hue-rotate(-15deg); transform: translate3d(0,-2%,0); }
 			}
 
+			/* ============== WRAPPER / MAIN — kill template white box ============== */
+			#wrapper {
+				background: transparent !important;
+				box-shadow: none !important;
+				border: none !important;
+				position: relative;
+				z-index: 1;
+			}
+			#main {
+				background: transparent !important;
+				box-shadow: none !important;
+				border: none !important;
+			}
+			#footer {
+				background: transparent !important;
+				border: none !important;
+			}
+
 			/* ============== NAV ============== */
 			#nav {
 				background: rgba(8, 12, 24, 0.65) !important;
@@ -102,21 +120,108 @@
 				color: var(--text) !important;
 			}
 
-			/* ============== PANELS ============== */
+			/* ============== PANELS — glass + shine ============== */
 			#main .panel {
-				background: var(--surface) !important;
-				backdrop-filter: blur(18px) saturate(140%);
-				-webkit-backdrop-filter: blur(18px) saturate(140%);
-				border: 1px solid var(--border);
+				position: relative;
+				overflow: hidden;
+
+				/* Glass fill */
+				background:
+					linear-gradient(
+						135deg,
+						rgba(255,255,255,0.07) 0%,
+						rgba(255,255,255,0.03) 40%,
+						rgba(56,189,248,0.05)  70%,
+						rgba(168,85,247,0.05)  100%
+					) !important;
+				backdrop-filter: blur(24px) saturate(160%) brightness(1.08);
+				-webkit-backdrop-filter: blur(24px) saturate(160%) brightness(1.08);
+
+				/* Border: bright top-left edge, dim bottom-right */
+				border: 1px solid transparent !important;
 				border-radius: var(--radius);
-				box-shadow: var(--shadow);
+				background-clip: padding-box !important;
+				box-shadow:
+					/* outer glow */
+					0 24px 64px -12px rgba(0,0,0,0.65),
+					/* inner top-left highlight */
+					inset 0 1px 0 rgba(255,255,255,0.18),
+					inset 1px 0 0 rgba(255,255,255,0.10),
+					/* inner bottom-right shadow */
+					inset 0 -1px 0 rgba(0,0,0,0.25),
+					/* subtle cyan rim */
+					0 0 0 1px rgba(56,189,248,0.14);
+
 				margin-bottom: 1.5rem;
 				padding: 2.5rem !important;
 				animation: fadeUp .6s ease both;
 			}
+
+			/* Static diagonal shine streak */
+			#main .panel::before {
+				content: "";
+				position: absolute;
+				top: -60%;
+				left: -35%;
+				width: 55%;
+				height: 200%;
+				background: linear-gradient(
+					105deg,
+					transparent 30%,
+					rgba(255,255,255,0.055) 48%,
+					rgba(255,255,255,0.10)  50%,
+					rgba(255,255,255,0.055) 52%,
+					transparent 70%
+				);
+				transform: rotate(0deg);
+				pointer-events: none;
+				z-index: 0;
+				border-radius: inherit;
+			}
+
+			/* Sweep shine on hover */
+			#main .panel::after {
+				content: "";
+				position: absolute;
+				inset: 0;
+				background: linear-gradient(
+					115deg,
+					transparent 25%,
+					rgba(255,255,255,0.0)  40%,
+					rgba(255,255,255,0.12) 50%,
+					rgba(255,255,255,0.0)  60%,
+					transparent 75%
+				);
+				transform: translateX(-120%);
+				transition: transform 0.75s ease;
+				pointer-events: none;
+				z-index: 0;
+				border-radius: inherit;
+			}
+			#main .panel:hover::after {
+				transform: translateX(120%);
+			}
+
+			/* Keep all real content above the pseudo-element layers */
+			#main .panel > * {
+				position: relative;
+				z-index: 1;
+			}
+
 			#main .panel.intro {
-				background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(168,85,247,0.10)) !important;
-				border: 1px solid rgba(56,189,248,0.25);
+				background:
+					linear-gradient(
+						135deg,
+						rgba(56,189,248,0.13) 0%,
+						rgba(255,255,255,0.06) 40%,
+						rgba(168,85,247,0.12) 100%
+					) !important;
+				box-shadow:
+					0 24px 64px -12px rgba(0,0,0,0.65),
+					inset 0 1px 0 rgba(255,255,255,0.22),
+					inset 1px 0 0 rgba(255,255,255,0.12),
+					inset 0 -1px 0 rgba(0,0,0,0.2),
+					0 0 0 1px rgba(56,189,248,0.22);
 			}
 
 			@keyframes fadeUp {
@@ -380,6 +485,27 @@
 			}
 			.lab-error { color: #fca5a5; border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); }
 
+			/* ============== CONTACT PANEL BACKGROUND ============== */
+			#contact.panel {
+				position: relative;
+				overflow: hidden;
+			}
+			#contact.panel::before {
+				content: "";
+				position: absolute;
+				inset: 0;
+				background:
+					linear-gradient(rgba(5,7,13,0.72), rgba(5,7,13,0.72)),
+					url('images/perito-electricista.jpg') center center / cover no-repeat;
+				border-radius: inherit;
+				z-index: 0;
+				pointer-events: none;
+			}
+			#contact.panel > * {
+				position: relative;
+				z-index: 1;
+			}
+
 			/* ============== FOOTER ============== */
 			#footer { padding: 2rem 0 1.5rem; }
 			#footer .copyright {
@@ -416,20 +542,161 @@
 				#main .panel { padding: 1.6rem !important; }
 				.lab-grid { grid-template-columns: 1fr; }
 			}
+
+			/* ============================================================
+			   3D Z-DEPTH STAGE
+			   ============================================================ */
+
+			/* Perspective container */
+			#main {
+				perspective: 1100px !important;
+				perspective-origin: 50% 32% !important;
+				overflow: visible !important;
+				/* height is controlled by active panel (position:relative) */
+			}
+
+			/* All panels share the same 3D slot */
+			#main .panel {
+				position: absolute !important;
+				top: 0 !important;
+				left: 0 !important;
+				width: 100% !important;
+				margin-bottom: 0 !important;
+				backface-visibility: hidden;
+				-webkit-backface-visibility: hidden;
+				animation: none !important;       /* kill old fadeUp */
+				will-change: transform, opacity;
+				/* Fast default — used for cursor tilt */
+				transition:
+					transform  0.12s ease,
+					opacity    0.72s ease,
+					filter     0.72s ease !important;
+				pointer-events: none !important;
+				opacity: 0 !important;
+				filter: blur(5px) brightness(0.55) !important;
+				transform: translateZ(-680px) scale(0.87) !important;
+			}
+
+			/* Slow dramatic transition during panel change */
+			#main.p3d--nav .panel {
+				transition:
+					transform  0.85s cubic-bezier(0.16, 1, 0.3, 1),
+					opacity    0.65s ease,
+					filter     0.8s  ease !important;
+			}
+
+			/* ACTIVE — sits at the front, defines container height */
+			#main .panel.p3d--active {
+				position: relative !important;   /* defines #main height */
+				opacity: 1 !important;
+				pointer-events: auto !important;
+				filter: none !important;
+				transform: none !important;      /* inline style handles tilt */
+				z-index: 10;
+			}
+
+			/* BEHIND — panels already visited */
+			#main .panel.p3d--back {
+				transform: translateZ(-680px) rotateX(-7deg) scale(0.87) !important;
+				opacity: 0 !important;
+				filter: blur(5px) brightness(0.55) !important;
+			}
+
+			/* AHEAD — panels not yet visited */
+			#main .panel.p3d--front {
+				transform: translateZ(-680px) rotateX(7deg) scale(0.87) !important;
+				opacity: 0 !important;
+				filter: blur(5px) brightness(0.55) !important;
+			}
+
+			/* ---- Page-position indicator dots ---- */
+			.p3d-dots {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				gap: 10px;
+				padding: 20px 0 8px;
+			}
+			.p3d-dot {
+				width: 7px; height: 7px;
+				border-radius: 50%;
+				background: rgba(148,163,184,0.25);
+				border: 1px solid rgba(148,163,184,0.18);
+				cursor: pointer;
+				transition:
+					background 0.3s ease,
+					width      0.38s cubic-bezier(0.34,1.56,0.64,1),
+					border-radius 0.38s ease;
+				padding: 0;
+				outline: none;
+			}
+			.p3d-dot:hover { background: rgba(148,163,184,0.5); }
+			.p3d-dot.p3d--dot-active {
+				width: 24px;
+				border-radius: 4px;
+				background: var(--accent);
+				border-color: var(--accent);
+				box-shadow: 0 0 12px rgba(56,189,248,0.6);
+			}
+
+			/* ---- Swipe hint (mobile only) ---- */
+			.p3d-hint {
+				display: none;
+				text-align: center;
+				font-family: 'JetBrains Mono', monospace;
+				font-size: 0.7rem;
+				color: var(--text-dim);
+				opacity: 0.45;
+				padding-bottom: 12px;
+				letter-spacing: 0.07em;
+			}
+
+			/* ---- Mobile adjustments ---- */
+			@media (max-width: 767px) {
+				#main { perspective: none !important; }
+				.p3d-hint { display: block; }
+				#main .panel.p3d--back,
+				#main .panel.p3d--front {
+					transform: translateY(36px) scale(0.96) !important;
+					filter: blur(2px) brightness(0.65) !important;
+				}
+			}
+
+			/* ---- Reduced-motion fallback ---- */
+			@media (prefers-reduced-motion: reduce) {
+				#main .panel,
+				#main.p3d--nav .panel {
+					transition: opacity 0.35s ease !important;
+					transform: none !important;
+					filter: none !important;
+				}
+				#main .panel.p3d--back,
+				#main .panel.p3d--front {
+					transform: none !important;
+					opacity: 0 !important;
+				}
+				#main .panel.p3d--active {
+					transform: none !important;
+					opacity: 1 !important;
+				}
+			}
 		</style>
 	</head>
 	<body class="is-preload">
+
+		<!-- Electrical symbols background -->
+		<canvas id="elec-bg" aria-hidden="true" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
 
 		<!-- Wrapper-->
 			<div id="wrapper">
 
 				<!-- Nav -->
 					<nav id="nav">
-						<a href="#" class="icon solid fa-home"><span>Home</span></a>
+						<a href="#home" class="icon solid fa-home"><span>Home</span></a>
 						<a href="#work" class="icon solid fa-folder"><span>Work</span></a>
 						<a href="#ailab" class="icon solid fa-flask"><span>AI Lab</span></a>
 						<a href="#contact" class="icon solid fa-envelope"><span>Contact</span></a>
-						<a href="https://www.linkedin.com/in/ricardo-hernandez-ch" class="icon brands fa-linkedin"><span>Linkedin</span></a>
+						<a href="https://www.linkedin.com/in/ricardo-hernandez-ch" class="icon brands fa-linkedin" target="_blank" rel="noopener"><span>Linkedin</span></a>
 					</nav>
 
 				<!-- Main -->
@@ -441,10 +708,9 @@
 									<h1>Ricardo Hernandez</h1>
 									<p>Senior Process Control Engineer</p>
 								</header>
-								<a href="#work" class="jumplink pic">
-									<span class="arrow icon solid fa-chevron-right"><span>See my work</span></span>
+								<div class="pic">
 									<img src="images/pic00.jpg" alt="" />
-								</a>
+								</div>
 							</article>
 
 						<!-- Work -->
@@ -661,5 +927,342 @@
 			})();
 		</script>
 
-	</body>
+		<!-- ============================================================
+		     3D Z-DEPTH STAGE — navigation, tilt, swipe
+		     ============================================================ -->
+		<script>
+		(function () {
+			'use strict';
+
+			/* ---- Config ---- */
+			const PANELS        = ['home', 'work', 'ailab', 'contact'];
+			const MAX_TILT      = 4;      // degrees (cursor parallax)
+			const NAV_DURATION  = 950;    // ms — slightly longer than CSS transition
+
+			/* ---- State ---- */
+			let current        = 0;
+			let isTransitioning = false;
+			let tiltRAF        = null;
+			let touchStartX    = 0;
+			let touchStartY    = 0;
+
+			const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+			function $p(id) { return document.getElementById(id); }
+
+			/* ---- Apply 3D states to all panels ---- */
+			function applyStates(instant) {
+				const mainEl = $p('main');
+				if (!mainEl) return;
+
+				if (!instant) {
+					mainEl.classList.add('p3d--nav');
+					isTransitioning = true;
+					setTimeout(() => {
+						mainEl.classList.remove('p3d--nav');
+						isTransitioning = false;
+					}, NAV_DURATION);
+				}
+
+				PANELS.forEach((id, i) => {
+					const el = $p(id);
+					if (!el) return;
+					el.classList.remove('p3d--active', 'p3d--back', 'p3d--front');
+					el.style.transform = '';  // clear any inline tilt
+					if      (i === current) el.classList.add('p3d--active');
+					else if (i <  current)  el.classList.add('p3d--back');
+					else                    el.classList.add('p3d--front');
+				});
+
+				updateDots();
+				syncHeight();
+			}
+
+			/* ---- Keep #main tall enough for active panel ---- */
+			function syncHeight() {
+				requestAnimationFrame(() => {
+					const mainEl  = $p('main');
+					const activeEl = $p(PANELS[current]);
+					if (!mainEl || !activeEl) return;
+					mainEl.style.minHeight = Math.max(activeEl.scrollHeight, 400) + 'px';
+				});
+			}
+
+			/* ---- Navigate to a panel by index ---- */
+			function navigate(index) {
+				if (index < 0 || index >= PANELS.length) return;
+				if (index === current || isTransitioning) return;
+				current = index;
+				applyStates(false);
+				// Update hash without page jump
+				history.replaceState(null, '',
+					current === 0 ? location.pathname : '#' + PANELS[current]);
+				// Scroll stage into view
+				const mainEl = $p('main');
+				if (mainEl) mainEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}
+
+			/* ---- Cursor parallax tilt (desktop only) ---- */
+			function onMouseMove(e) {
+				if (isReduced || isTransitioning || window.innerWidth < 768) return;
+				if (tiltRAF) cancelAnimationFrame(tiltRAF);
+				tiltRAF = requestAnimationFrame(() => {
+					const el = $p(PANELS[current]);
+					if (!el) return;
+					const r  = el.getBoundingClientRect();
+					if (!r.width || !r.height) return;
+					const dx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width  / 2)) / (r.width  / 2)));
+					const dy = Math.max(-1, Math.min(1, (e.clientY - (r.top  + r.height / 2)) / (r.height / 2)));
+					el.style.transform = `rotateX(${(-dy * MAX_TILT).toFixed(2)}deg) rotateY(${(dx * MAX_TILT).toFixed(2)}deg)`;
+				});
+			}
+
+			function resetTilt() {
+				if (tiltRAF) cancelAnimationFrame(tiltRAF);
+				const el = $p(PANELS[current]);
+				if (el) el.style.transform = '';
+			}
+
+			/* ---- Touch / swipe ---- */
+			function onTouchStart(e) {
+				touchStartX = e.touches[0].clientX;
+				touchStartY = e.touches[0].clientY;
+			}
+			function onTouchEnd(e) {
+				if (isTransitioning) return;
+				const dx = e.changedTouches[0].clientX - touchStartX;
+				const dy = e.changedTouches[0].clientY - touchStartY;
+				if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx) * 0.85) return;
+				navigate(dx < 0 ? current + 1 : current - 1);
+			}
+
+			/* ---- Dot indicator bar ---- */
+			function buildDots() {
+				const mainEl = $p('main');
+				if (!mainEl || !mainEl.parentNode) return;
+
+				const bar = document.createElement('div');
+				bar.className = 'p3d-dots';
+				PANELS.forEach((id, i) => {
+					const btn = document.createElement('button');
+					btn.className = 'p3d-dot';
+					btn.setAttribute('aria-label', 'Navigate to ' + id);
+					btn.addEventListener('click', () => navigate(i));
+					bar.appendChild(btn);
+				});
+
+				const hint = document.createElement('p');
+				hint.className = 'p3d-hint';
+				hint.textContent = '← swipe to navigate →';
+
+				// Insert after #main
+				mainEl.parentNode.insertBefore(bar,  mainEl.nextSibling);
+				mainEl.parentNode.insertBefore(hint, bar.nextSibling);
+			}
+
+			function updateDots() {
+				document.querySelectorAll('.p3d-dot').forEach((d, i) =>
+					d.classList.toggle('p3d--dot-active', i === current));
+			}
+
+			/* ---- Intercept existing nav & jumplinks ---- */
+			// preventDefault is sufficient — main.js only reacts to bare href="#".
+			// The home link now uses href="#home" so main.js ignores it.
+			function interceptLinks() {
+				document.querySelectorAll('#nav a, a.jumplink').forEach(a => {
+					const href = a.getAttribute('href') || '';
+					if (!href.startsWith('#')) return;
+					const id  = href === '#' || href === '#home' ? 'home' : href.slice(1);
+					const idx = PANELS.indexOf(id);
+					if (idx === -1) return;
+					a.addEventListener('click', e => {
+						e.preventDefault();
+						navigate(idx);
+					});
+				});
+			}
+
+			/* ---- Keyboard navigation (accessibility) ---- */
+			function onKeyDown(e) {
+				if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+				if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  navigate(current + 1);
+				if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')    navigate(current - 1);
+			}
+
+			/* ---- Init ---- */
+			function init() {
+				const hash  = location.hash.replace('#', '');
+				current = Math.max(0, PANELS.indexOf(hash));
+
+				buildDots();
+				applyStates(true);   // instant on first load
+				interceptLinks();
+
+				document.addEventListener('mousemove',  onMouseMove,   { passive: true });
+				document.addEventListener('mouseleave', resetTilt);
+				document.addEventListener('touchstart', onTouchStart,  { passive: true });
+				document.addEventListener('touchend',   onTouchEnd,    { passive: true });
+				document.addEventListener('keydown',    onKeyDown);
+				window.addEventListener('resize', () => requestAnimationFrame(syncHeight));
+			}
+
+			// Wait for main.js + jQuery to finish initialising
+			window.addEventListener('load', () => setTimeout(init, 80));
+		})();
+		</script>
+
+
+<!-- Electrical symbols background animation -->
+<script>
+(function () {
+'use strict';
+const canvas = document.getElementById('elec-bg');
+const ctx    = canvas.getContext('2d');
+
+const COLORS = [
+'rgba(0,212,255,',
+'rgba(0,136,255,',
+'rgba(168,85,247,',
+'rgba(148,163,184,',
+];
+const TYPES = ['resistor','capacitor','inductor','ground','diode','node','vsource','andgate','wire'];
+const COUNT = 38;
+let W, H, particles = [];
+
+function rand(a, b) { return a + Math.random() * (b - a); }
+function randItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function makeParticle() {
+return {
+x:     rand(0, W),   y:     rand(0, H),
+vx:    rand(-0.18, 0.18), vy: rand(-0.12, 0.12),
+rot:   rand(0, Math.PI * 2), vr: rand(-0.004, 0.004),
+scale: rand(0.75, 1.6),
+alpha: rand(0.10, 0.22),
+type:  randItem(TYPES),
+color: randItem(COLORS),
+};
+}
+
+function drawResistor(c) {
+const W2 = 28, H2 = 11, lead = 10;
+c.beginPath();
+c.moveTo(-W2 - lead, 0); c.lineTo(-W2, 0);
+for (let i = 0; i <= 6; i++) {
+c.lineTo(-W2 + (i / 6) * W2 * 2, (i % 2 === 0) ? -H2 : H2);
+}
+c.lineTo(W2, 0); c.lineTo(W2 + lead, 0);
+c.stroke();
+}
+function drawCapacitor(c) {
+const lead = 16, gap = 5, ph = 15;
+c.beginPath();
+c.moveTo(-lead - gap, 0); c.lineTo(-gap, 0);
+c.moveTo(gap, 0);         c.lineTo(lead + gap, 0);
+c.moveTo(-gap, -ph / 2);  c.lineTo(-gap, ph / 2);
+c.moveTo(gap,  -ph / 2);  c.lineTo(gap,  ph / 2);
+c.stroke();
+}
+function drawInductor(c) {
+const r = 8, bumps = 4, lead = 8, tw = bumps * r * 2;
+c.beginPath();
+c.moveTo(-tw / 2 - lead, 0); c.lineTo(-tw / 2, 0);
+for (let i = 0; i < bumps; i++) c.arc(-tw / 2 + r + i * r * 2, 0, r, Math.PI, 0, false);
+c.lineTo(tw / 2 + lead, 0);
+c.stroke();
+}
+function drawGround(c) {
+c.beginPath();
+c.moveTo(0, -14); c.lineTo(0, 0);
+[[22,0],[14,7],[6,14]].forEach(([w,y]) => { c.moveTo(-w/2,y); c.lineTo(w/2,y); });
+c.stroke();
+}
+function drawDiode(c) {
+const s = 11, lead = 13;
+c.beginPath();
+c.moveTo(-s - lead, 0); c.lineTo(-s, 0);
+c.moveTo(-s, -s); c.lineTo(-s, s); c.lineTo(s, 0); c.closePath();
+c.moveTo(s, -s); c.lineTo(s, s);
+c.moveTo(s, 0);  c.lineTo(s + lead, 0);
+c.stroke();
+}
+function drawNode(c) {
+c.beginPath(); c.arc(0, 0, 3.5, 0, Math.PI * 2); c.fill();
+c.beginPath();
+c.moveTo(-22, 0); c.lineTo(22, 0);
+c.moveTo(0, -22); c.lineTo(0, 22);
+c.stroke();
+}
+function drawVsource(c) {
+const r = 15, lead = 10;
+c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.stroke();
+c.beginPath();
+c.moveTo(-r - lead, 0); c.lineTo(-r, 0);
+c.moveTo(r, 0);         c.lineTo(r + lead, 0);
+const steps = 24, span = r * 1.3;
+for (let i = 0; i <= steps; i++) {
+const x = -span/2 + (i/steps)*span, y = Math.sin((i/steps)*Math.PI*2)*r*0.38;
+i === 0 ? c.moveTo(x,y) : c.lineTo(x,y);
+}
+c.stroke();
+}
+function drawAndgate(c) {
+const w = 28, h = 22, lead = 9;
+c.beginPath();
+c.moveTo(-w/2,-h/2); c.lineTo(-w/2,h/2); c.lineTo(0,h/2);
+c.arc(0,0,h/2,Math.PI/2,-Math.PI/2,true); c.closePath(); c.stroke();
+c.beginPath();
+c.moveTo(-w/2-lead,-h/4); c.lineTo(-w/2,-h/4);
+c.moveTo(-w/2-lead, h/4); c.lineTo(-w/2, h/4);
+c.moveTo(h/2,0);          c.lineTo(h/2+lead,0);
+c.stroke();
+}
+function drawWire(c) {
+c.beginPath(); c.moveTo(-30,0); c.lineTo(0,0); c.lineTo(0,28); c.stroke();
+[[-30,0],[0,28]].forEach(([x,y]) => { c.beginPath(); c.arc(x,y,3,0,Math.PI*2); c.fill(); });
+}
+
+const DRAW = {
+resistor: drawResistor, capacitor: drawCapacitor,
+inductor: drawInductor, ground: drawGround,
+diode: drawDiode,       node: drawNode,
+vsource: drawVsource,   andgate: drawAndgate,
+wire: drawWire,
+};
+
+function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+
+function tick() {
+ctx.clearRect(0, 0, W, H);
+particles.forEach(p => {
+p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+if (p.x < -90)    p.x = W + 90;
+if (p.x > W + 90) p.x = -90;
+if (p.y < -90)    p.y = H + 90;
+if (p.y > H + 90) p.y = -90;
+ctx.save();
+ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(p.scale, p.scale);
+const col = p.color + p.alpha + ')';
+ctx.strokeStyle = col; ctx.fillStyle = col;
+ctx.lineWidth = 1.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+DRAW[p.type](ctx);
+ctx.restore();
+});
+requestAnimationFrame(tick);
+}
+
+function init() {
+resize();
+particles = Array.from({ length: COUNT }, makeParticle);
+requestAnimationFrame(tick);
+}
+
+window.addEventListener('resize', resize);
+document.readyState === 'loading'
+? document.addEventListener('DOMContentLoaded', init)
+: init();
+})();
+</script>
+
+</body>
 </html>
