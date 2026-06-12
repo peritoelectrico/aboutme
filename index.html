@@ -120,22 +120,30 @@
 				color: var(--text) !important;
 			}
 
-			/* ============== PANELS — glass + shine ============== */
+			/* ============== PANELS — frosted glass + cursor spotlight ============== */
 			#main .panel {
 				position: relative;
 				overflow: hidden;
 
-				/* Glass fill */
+				/* Cursor-tracked spotlight position (updated by JS pointer handler) */
+				--mx: 50%;
+				--my: 50%;
+				--glow: 0;
+
+				/* Frosted glass fill — milkier white wash so frost is clearly visible */
 				background:
+					/* fine SVG noise gives a real "etched" frost grain */
+					url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/></svg>"),
 					linear-gradient(
 						135deg,
-						rgba(255,255,255,0.07) 0%,
-						rgba(255,255,255,0.03) 40%,
-						rgba(56,189,248,0.05)  70%,
-						rgba(168,85,247,0.05)  100%
+						rgba(255,255,255,0.22) 0%,
+						rgba(255,255,255,0.12) 45%,
+						rgba(186,230,253,0.10) 75%,
+						rgba(216,180,254,0.10) 100%
 					) !important;
-				backdrop-filter: blur(24px) saturate(160%) brightness(1.08);
-				-webkit-backdrop-filter: blur(24px) saturate(160%) brightness(1.08);
+				background-blend-mode: overlay, normal;
+				backdrop-filter: blur(40px) saturate(170%) brightness(1.08);
+				-webkit-backdrop-filter: blur(40px) saturate(170%) brightness(1.08);
 
 				/* Border: bright top-left edge, dim bottom-right */
 				border: 1px solid transparent !important;
@@ -144,13 +152,14 @@
 				box-shadow:
 					/* outer glow */
 					0 24px 64px -12px rgba(0,0,0,0.65),
-					/* inner top-left highlight */
-					inset 0 1px 0 rgba(255,255,255,0.18),
-					inset 1px 0 0 rgba(255,255,255,0.10),
+					/* bright top-left highlight — like a polished frost edge */
+					inset 0 1px 0 rgba(255,255,255,0.45),
+					inset 1px 0 0 rgba(255,255,255,0.22),
 					/* inner bottom-right shadow */
-					inset 0 -1px 0 rgba(0,0,0,0.25),
+					inset 0 -1px 0 rgba(0,0,0,0.30),
+					inset -1px 0 0 rgba(0,0,0,0.18),
 					/* subtle cyan rim */
-					0 0 0 1px rgba(56,189,248,0.14);
+					0 0 0 1px rgba(186,230,253,0.18);
 
 				margin-bottom: 1.5rem;
 				padding: 2.5rem !important;
@@ -179,27 +188,36 @@
 				border-radius: inherit;
 			}
 
-			/* Sweep shine on hover */
+			/* Cursor-following spotlight: a soft light that follows the mouse over the panel */
 			#main .panel::after {
 				content: "";
 				position: absolute;
 				inset: 0;
-				background: linear-gradient(
-					115deg,
-					transparent 25%,
-					rgba(255,255,255,0.0)  40%,
-					rgba(255,255,255,0.12) 50%,
-					rgba(255,255,255,0.0)  60%,
-					transparent 75%
+				background: radial-gradient(
+					360px circle at var(--mx) var(--my),
+					rgba(120, 180, 255, 0.18) 0%,
+					rgba(120, 180, 255, 0.08) 30%,
+					rgba(120, 180, 255, 0.00) 65%
 				);
-				transform: translateX(-120%);
-				transition: transform 0.75s ease;
+				opacity: var(--glow);
+				transition: opacity 0.35s ease;
 				pointer-events: none;
 				z-index: 0;
 				border-radius: inherit;
+				mix-blend-mode: screen;
 			}
-			#main .panel:hover::after {
-				transform: translateX(120%);
+			#main .panel {
+				transition:
+					transform 0.35s ease,
+					box-shadow 0.35s ease,
+					border-color 0.35s ease;
+			}
+			#main .panel:hover {
+				transform: translateY(-2px);
+				border-color: rgba(255,255,255,0.22);
+				box-shadow:
+					0 10px 28px rgba(0, 0, 0, 0.35),
+					0 0 0 1px rgba(99, 102, 241, 0.18) inset;
 			}
 
 			/* Keep all real content above the pseudo-element layers */
@@ -923,7 +941,32 @@
 					loadText('header.txt',  'header-text');
 					loadText('profile.txt', 'profile-text');
 					loadLab();
+					initPanelSpotlight();
 				});
+
+				// Cursor-tracked spotlight: updates each panel's --mx/--my
+				// CSS variables and fades the glow in/out on enter/leave.
+				function initPanelSpotlight() {
+					const panels = document.querySelectorAll('#main .panel');
+					panels.forEach((p) => {
+						let raf = 0;
+						let pending = null;
+						const apply = () => {
+							raf = 0;
+							if (!pending) return;
+							p.style.setProperty('--mx', pending.x + 'px');
+							p.style.setProperty('--my', pending.y + 'px');
+							pending = null;
+						};
+						p.addEventListener('pointermove', (e) => {
+							const r = p.getBoundingClientRect();
+							pending = { x: e.clientX - r.left, y: e.clientY - r.top };
+							if (!raf) raf = requestAnimationFrame(apply);
+						});
+						p.addEventListener('pointerenter', () => { p.style.setProperty('--glow', '1'); });
+						p.addEventListener('pointerleave', () => { p.style.setProperty('--glow', '0'); });
+					});
+				}
 			})();
 		</script>
 
