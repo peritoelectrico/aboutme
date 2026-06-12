@@ -2,7 +2,6 @@
 <!--
 	Profile by Ricardo Hernandez
 	hernandezchang.com | @Ricardo
-	Free for personal and commercial use
 -->
 <html lang="en">
 	<head>
@@ -99,25 +98,135 @@
 
 			/* ============== NAV ============== */
 			#nav {
-				background: rgba(8, 12, 24, 0.65) !important;
-				backdrop-filter: blur(14px) saturate(140%);
-				-webkit-backdrop-filter: blur(14px) saturate(140%);
-				border-right: 1px solid var(--border) !important;
-				box-shadow: var(--shadow);
+				/* Frosted-glass sheet for the icon bar */
+				background:
+					url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/></svg>"),
+					linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)),
+					rgba(8, 12, 24, 0.42) !important;
+				background-blend-mode: overlay, normal;
+				backdrop-filter: blur(20px) saturate(150%);
+				-webkit-backdrop-filter: blur(20px) saturate(150%);
+				border: 1px solid rgba(148,163,184,0.10) !important;
+				border-right: 1px solid rgba(148,163,184,0.06) !important;
+				border-radius: 14px;
+				padding: 0.6rem 0.5rem;
+				margin: 1rem 1.25rem 1rem 1rem;
+				box-shadow: 0 20px 60px -18px rgba(0,0,0,0.7), 0 6px 20px rgba(2,6,23,0.45);
+				position: relative;
+				z-index: 30;
+				--sx: 50px; /* spotlight x (px) */
+				--sy: 24px; /* spotlight y (px) */
+				--spot-opacity: 0;
+			}
+
+			/* Soft spotlight that sits behind the nav and peeks under the main panel */
+			#nav::after {
+				content: "";
+				position: absolute;
+				left: 0; top: 0;
+				width: 100%;
+				height: calc(100% + 40px);
+				pointer-events: none;
+				background: radial-gradient(360px circle at var(--sx) var(--sy), rgba(56,189,248,0.22), rgba(56,189,248,0.06) 40%, transparent 70%);
+				filter: blur(22px);
+				opacity: var(--spot-opacity);
+				transition: opacity 0.28s ease, transform 0.28s ease;
+				z-index: -1;
+			}
+			/* Layout nav as a horizontal frosted bar at the top */
+			#nav {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				justify-content: center;
+				gap: 6px;
+				width: auto;
+				max-width: 980px;
+				margin: 1rem auto;
+				padding: 0 0.5rem;
+			}
+
+			/* Small vertical spacing between nav and main content */
+			#main { margin-top: 10px; }
+
+			#nav a {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.6rem;
+				padding: 10px 12px;
+				margin: 6px;
+				border-radius: 10px;
 			}
 			#nav a {
 				color: var(--text-dim) !important;
 				transition: color .25s ease, transform .25s ease, background .25s ease;
 			}
-			#nav a:hover, #nav a.active {
+			#nav a:hover {
 				color: var(--accent) !important;
 				background: rgba(56,189,248,0.08) !important;
 				transform: translateX(2px);
 			}
+			#nav a.active {
+				color: var(--accent) !important;
+				/* Remove the rectangular highlight — spotlight will show behind */
+				background: transparent !important;
+				border: none !important;
+				box-shadow: none !important;
+				transform: none;
+				text-shadow: 0 0 14px rgba(56,189,248,0.45);
+			}
+
+			/* When the Home panel is active, tint the nav to match the intro panel */
+			#nav.nav--home {
+				background:
+					linear-gradient(
+						135deg,
+						rgba(56,189,248,0.13) 0%,
+						rgba(255,255,255,0.06) 40%,
+						rgba(168,85,247,0.12) 100%
+					) !important;
+				box-shadow:
+					0 24px 64px -12px rgba(0,0,0,0.65),
+					inset 0 1px 0 rgba(255,255,255,0.22),
+					inset 1px 0 0 rgba(255,255,255,0.12),
+					inset 0 -1px 0 rgba(0,0,0,0.2),
+					0 0 0 1px rgba(56,189,248,0.22);
+			}
+			#nav a.active::before,
+			#nav a.active::after {
+				display: none !important;
+				content: none !important;
+			}
 			#nav a span {
-				background: var(--surface-strong) !important;
-				border: 1px solid var(--border) !important;
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4rem;
+				padding: 6px 8px;
+				border-radius: 8px;
+				background: rgba(255,255,255,0.02) !important;
+				border: 1px solid rgba(148,163,184,0.06) !important;
 				color: var(--text) !important;
+				font-size: 0.95rem;
+				line-height: 1;
+			}
+			#nav a.active span {
+				background: rgba(5, 7, 13, 0.5) !important;
+				border: 1px solid rgba(56,189,248,0.4) !important;
+				color: var(--accent) !important;
+				box-shadow: 0 0 16px rgba(56,189,248,0.25);
+			}
+
+			/* Make Contact selection use hover-only outline (match other items) */
+			#nav a[href="#contact"]:hover {
+				color: var(--accent) !important;
+				background: rgba(56,189,248,0.08) !important;
+				transform: translateX(2px);
+			}
+			#nav a[href="#contact"]:hover span {
+				background: var(--surface-strong) !important;
+				border: 1px solid rgba(56,189,248,0.18) !important;
+				color: var(--text) !important;
+				box-shadow: 0 8px 24px rgba(56,189,248,0.12);
 			}
 
 			/* ============== PANELS — frosted glass + cursor spotlight ============== */
@@ -358,26 +467,53 @@
 			}
 			#work .image.fit:hover img { transform: scale(1.06); filter: brightness(1.05) saturate(1.15); }
 
-			/* ============== CONTACT FORM ============== */
-			#contact-form input,
-			#contact-form textarea {
-				background: rgba(5, 7, 13, 0.6) !important;
-				border: 1px solid var(--border) !important;
-				color: var(--text) !important;
-				border-radius: 10px !important;
-				padding: 14px 16px !important;
-				font-size: 0.95rem;
-				transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
+			/* ============== NAV ============== */
+			#nav {
+				/* Match top nav to panel frosted glass edges and outline */
+				background:
+					url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.35 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.30'/></svg>"),
+					linear-gradient(
+						135deg,
+						rgba(255,255,255,0.18) 0%,
+						rgba(255,255,255,0.08) 45%,
+						rgba(186,230,253,0.06) 75%,
+						rgba(216,180,254,0.06) 100%
+					),
+					rgba(8,12,24,0.38) !important;
+				background-blend-mode: overlay, normal;
+				backdrop-filter: blur(40px) saturate(170%) brightness(1.08);
+				-webkit-backdrop-filter: blur(40px) saturate(170%) brightness(1.08);
+				border: 1px solid transparent !important;
+				border-radius: var(--radius);
+				background-clip: padding-box !important;
+				box-shadow:
+					0 24px 64px -12px rgba(0,0,0,0.65),
+					inset 0 1px 0 rgba(255,255,255,0.45),
+					inset 1px 0 0 rgba(255,255,255,0.22),
+					inset 0 -1px 0 rgba(0,0,0,0.30),
+					inset -1px 0 0 rgba(0,0,0,0.18),
+					0 0 0 1px rgba(186,230,253,0.18);
+				padding: 0.9rem 0.6rem;
+				margin: 1rem auto;
+				position: relative;
+				z-index: 30;
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				justify-content: center;
+				gap: 6px;
+				width: auto;
+				max-width: 980px;
+				padding: 0 0.6rem;
+				--sx: 50px; /* spotlight x (px) */
+				--sy: 24px; /* spotlight y (px) */
+				--spot-opacity: 0;
 			}
-			#contact-form input::placeholder,
-			#contact-form textarea::placeholder { color: var(--text-dim) !important; }
-			#contact-form input:focus,
-			#contact-form textarea:focus {
-				border-color: var(--accent) !important;
-				background: rgba(5,7,13,0.85) !important;
-				box-shadow: 0 0 0 4px rgba(56,189,248,0.15) !important;
-				outline: none;
+			#contact-form button[type="submit"]:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 16px 35px rgba(168,85,247,0.45);
 			}
+
 			#contact-form button[type="submit"] {
 				background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important;
 				border: none !important;
@@ -390,9 +526,27 @@
 				box-shadow: 0 10px 25px rgba(56,189,248,0.35);
 				transition: transform .25s ease, box-shadow .25s ease;
 			}
-			#contact-form button[type="submit"]:hover {
-				transform: translateY(-2px);
-				box-shadow: 0 16px 35px rgba(168,85,247,0.45);
+
+			/* Translucent 3D inputs for Contact form so background image shows through */
+			#contact-form input,
+			#contact-form textarea {
+				background: rgba(5,7,13,0.10) !important;
+				border: 1px solid rgba(255,255,255,0.04) !important;
+				color: var(--text) !important;
+				border-radius: 10px !important;
+				padding: 14px 16px !important;
+				font-size: 0.95rem;
+				transition: border-color .22s ease, box-shadow .22s ease, background .22s ease;
+				box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -12px 36px rgba(0,0,0,0.6);
+				backdrop-filter: blur(6px) saturate(120%);
+			}
+
+			#contact-form input:focus,
+			#contact-form textarea:focus {
+				border-color: var(--accent) !important;
+				background: rgba(5,7,13,0.18) !important;
+				box-shadow: 0 0 0 4px rgba(56,189,248,0.10), inset 0 -10px 30px rgba(0,0,0,0.55) !important;
+				outline: none;
 			}
 			#form-success {
 				margin-top: 1rem;
@@ -512,6 +666,7 @@
 				content: "";
 				position: absolute;
 				inset: 0;
+				/* Restore original dark overlay so the image reads as a background photo */
 				background:
 					linear-gradient(rgba(5,7,13,0.72), rgba(5,7,13,0.72)),
 					url('images/perito-electricista.jpg') center center / cover no-repeat;
@@ -709,12 +864,12 @@
 			<div id="wrapper">
 
 				<!-- Nav -->
-					<nav id="nav">
-						<a href="#home" class="icon solid fa-home"><span>Home</span></a>
-						<a href="#work" class="icon solid fa-folder"><span>Work</span></a>
-						<a href="#ailab" class="icon solid fa-flask"><span>AI Lab</span></a>
-						<a href="#contact" class="icon solid fa-envelope"><span>Contact</span></a>
-						<a href="https://www.linkedin.com/in/ricardo-hernandez-ch" class="icon brands fa-linkedin" target="_blank" rel="noopener"><span>Linkedin</span></a>
+					<nav id="nav" aria-label="Primary">
+						<a href="#home" class="icon solid"><i class="fa-solid fa-home" aria-hidden="true"></i><span>Home</span></a>
+						<a href="#work" class="icon solid"><i class="fa-solid fa-folder-open" aria-hidden="true"></i><span>Work</span></a>
+						<a href="#ailab" class="icon solid"><i class="fa-solid fa-flask" aria-hidden="true"></i><span>AI Lab</span></a>
+						<a href="#contact" class="icon solid"><i class="fa-solid fa-envelope" aria-hidden="true"></i><span>Contact</span></a>
+						<a href="https://www.linkedin.com/in/ricardo-hernandez-ch" class="icon brands" target="_blank" rel="noopener"><i class="fa-brands fa-linkedin" aria-hidden="true"></i><span>Linkedin</span></a>
 					</nav>
 
 				<!-- Main -->
@@ -1139,6 +1294,7 @@
 
 				buildDots();
 				applyStates(true);   // instant on first load
+				updateNavActive();
 				interceptLinks();
 
 				document.addEventListener('mousemove',  onMouseMove,   { passive: true });
@@ -1153,6 +1309,60 @@
 			window.addEventListener('load', () => setTimeout(init, 80));
 		})();
 		</script>
+
+			<script>
+			(function () {
+				function updateNavActive() {
+					const links = document.querySelectorAll('#nav a');
+					links.forEach(a => a.classList.remove('active'));
+					const activePanel = document.querySelector('#main .panel.p3d--active') || document.querySelector('#main .panel');
+					const id = (activePanel && activePanel.id) ? activePanel.id : (location.hash.replace('#','') || 'home');
+					const sel = document.querySelector('#nav a[href="#' + id + '"]');
+					const nav = document.getElementById('nav');
+					if (sel) {
+						sel.classList.add('active');
+						// Position spotlight at the active item's center
+						if (nav) {
+							const rNav = nav.getBoundingClientRect();
+							const r = sel.getBoundingClientRect();
+							const x = Math.round((r.left + r.right) / 2 - rNav.left);
+							const y = Math.round(r.bottom - rNav.top + 8); // slightly below nav
+							nav.style.setProperty('--sx', x + 'px');
+							nav.style.setProperty('--sy', y + 'px');
+							nav.style.setProperty('--spot-opacity', '1');
+							nav.setAttribute('data-has-spot', 'true');
+							// If home is active, add a tint class to match the intro panel
+							nav.classList.toggle('nav--home', id === 'home');
+						}
+					} else if (nav) {
+						nav.style.setProperty('--spot-opacity', '0');
+						nav.removeAttribute('data-has-spot');
+						nav.classList.remove('nav--home');
+					}
+				}
+
+				// Observe panel class changes and update nav accordingly
+				const mainEl = document.getElementById('main');
+				if (mainEl) {
+					const obs = new MutationObserver(() => updateNavActive());
+					obs.observe(mainEl, { attributes: true, subtree: true, attributeFilter: ['class'] });
+				}
+
+				window.addEventListener('hashchange', updateNavActive);
+				document.addEventListener('click', (e) => {
+					const a = e.target.closest && e.target.closest('#nav a');
+					if (!a) return;
+					const href = a.getAttribute('href') || '';
+					if (!href.startsWith('#')) return;
+					setTimeout(updateNavActive, 120);
+				});
+
+				// Initial sync
+				document.addEventListener('DOMContentLoaded', () => setTimeout(updateNavActive, 80));
+
+				window.updateNavActive = updateNavActive;
+			})();
+			</script>
 
 
 <!-- Electrical symbols background animation -->
