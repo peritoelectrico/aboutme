@@ -1,6 +1,5 @@
 [
-  { "title": "Tic-Tac-Toe",                       "url": "tictactoe.html",                       "icon": "fa-gamepad",   "category": "Game"        },
-  { "title": "Bouncing Balls Physics",            "url": "bouncing_balls-with-controls.html",    "icon": "fa-gamepad",   "category": "Physics Demo" },
+  { "title": "Tic-Tac-Toe",                       "url": "tictactoe.html",                       "icon": "fa-gamepad",   "category": "Game"         },
   { "title": "3D Balls Physics",                  "url": "ball-physics-with-controls.html",      "icon": "fa-gamepad",   "category": "Physics Demo" },
   { "title": "Three Phases Motor Simulation",     "url": "ThreePhaseMotor.html",                 "icon": "fa-bullseye",  "category": "Simulation"   },
   { "title": "Wire Size Calculator 1",            "url": "WireSizeCalculation.html",             "icon": "fa-bolt",      "category": "Calculator"   },
