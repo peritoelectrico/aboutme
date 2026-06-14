@@ -40,13 +40,13 @@
     transition: color 0.25s ease, transform 0.25s ease;
     cursor: pointer;
     z-index: 10001;
-    background: rgba(5, 7, 13, 0.35);
-    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(8, 12, 24, 0.4);
     backdrop-filter: blur(20px) saturate(150%);
     -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     padding: 8px 12px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -57,10 +57,10 @@
 .lightbox-close:hover,
 .lightbox-close:focus {
     color: #38bdf8;
-    background: rgba(5, 7, 13, 0.5);
+    background: rgba(8, 12, 24, 0.6);
     border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.35);
     transform: scale(1.08);
-    box-shadow: 0 8px 20px rgba(56, 189, 248, 0.35);
 }
 
 .lightbox-caption {
