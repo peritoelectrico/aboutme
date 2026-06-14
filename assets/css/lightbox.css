@@ -21,6 +21,8 @@
     top: 50%;
     transform: translateY(-50%);
     animation: zoom 0.3s;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.7);
 }
 
 @keyframes zoom {
