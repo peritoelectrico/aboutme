@@ -70,7 +70,7 @@
         images.forEach(function(img) {
             const link = img.parentElement;
             const src = img.src;
-            const alt = img.alt || 'Image';
+            const alt = img.alt;
             
             // Add a data attribute to mark this as a lightbox image
             link.setAttribute('data-lightbox', 'true');
@@ -128,14 +128,14 @@
                 updateIndex();
                 const prevIndex = currentIndex > 0 ? currentIndex - 1 : allImages.length - 1;
                 lightboxImg.src = allImages[prevIndex].src;
-                lightboxCaption.textContent = allImages[prevIndex].alt || 'Image';
+                lightboxCaption.textContent = allImages[prevIndex].alt;
             } else if (e.key === 'ArrowRight') {
                 e.preventDefault();
                 e.stopPropagation();
                 updateIndex();
                 const nextIndex = currentIndex < allImages.length - 1 ? currentIndex + 1 : 0;
                 lightboxImg.src = allImages[nextIndex].src;
-                lightboxCaption.textContent = allImages[nextIndex].alt || 'Image';
+                lightboxCaption.textContent = allImages[nextIndex].alt;
             }
         }
     });
