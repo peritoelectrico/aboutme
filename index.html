@@ -534,15 +534,15 @@
 			/* Translucent 3D inputs for Contact form so background image shows through */
 			#contact-form input,
 			#contact-form textarea {
-				background: rgba(5,7,13,0.10) !important;
-				border: 1px solid rgba(255,255,255,0.04) !important;
+				background: rgba(5,7,13,0.15) !important;
+				border: 1px solid rgba(255,255,255,0.08) !important;
 				color: var(--text) !important;
 				border-radius: 10px !important;
 				padding: 14px 16px !important;
 				font-size: 0.95rem;
 				transition: border-color .22s ease, box-shadow .22s ease, background .22s ease;
 				box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -12px 36px rgba(0,0,0,0.6);
-				backdrop-filter: blur(6px) saturate(120%);
+				backdrop-filter: blur(2px) saturate(120%);
 			}
 
 			#contact-form input:focus,
@@ -664,19 +664,19 @@
 			/* ============== CONTACT PANEL BACKGROUND ============== */
 			#contact.panel {
 				position: relative;
-				overflow: hidden;
 			}
 			#contact.panel::before {
 				content: "";
 				position: absolute;
-				inset: 0;
-				/* Restore original dark overlay so the image reads as a background photo */
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
 				background:
 					linear-gradient(rgba(5,7,13,0.72), rgba(5,7,13,0.72)),
-					url('images/perito-electricista.jpg') center center / cover no-repeat;
+					url('images/perito-electricista.jpg') center center/cover no-repeat;
 				border-radius: inherit;
 				z-index: 0;
-				pointer-events: none;
 			}
 			#contact.panel > * {
 				position: relative;
