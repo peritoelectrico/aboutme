@@ -587,6 +587,15 @@
                     <input type="number" id="old_sf" value="1.0" step="0.1">
                 </div>
             </div>
+            <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
+                <button type="button" onclick="openNotesModal('old')"
+                    style="flex:0 0 auto;background:rgba(99,102,241,0.15);border:1px solid #6366f1;color:#a5b4fc;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;"
+                    onmouseover="this.style.background='rgba(99,102,241,0.3)'" onmouseout="this.style.background='rgba(99,102,241,0.15)'"
+                    title="Add free-form notes for the report (motor model, gearbox model, etc.). Not used in calculations.">
+                    📝 <span>Add Notes</span>
+                </button>
+                <span id="old_notes_indicator" style="font-size:0.78rem;color:#94a3b8;font-style:italic;">No notes added</span>
+            </div>
         </div>
 
         <!-- Right Column: New & Proposal -->
@@ -724,6 +733,15 @@
                         style="background: rgba(0,0,0,0.6); cursor: not-allowed; color: var(--accent);">
                 </div>
             </div>
+            <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
+                <button type="button" onclick="openNotesModal('new')"
+                    style="flex:0 0 auto;background:rgba(99,102,241,0.15);border:1px solid #6366f1;color:#a5b4fc;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;"
+                    onmouseover="this.style.background='rgba(99,102,241,0.3)'" onmouseout="this.style.background='rgba(99,102,241,0.15)'"
+                    title="Add free-form notes for the report (motor model, gearbox model, etc.). Not used in calculations.">
+                    📝 <span>Add Notes</span>
+                </button>
+                <span id="new_notes_indicator" style="font-size:0.78rem;color:#94a3b8;font-style:italic;">No notes added</span>
+            </div>
             <div id="aboutToggle" title="Click for credits"
                 style="height:14px;margin-top:6px;cursor:pointer;text-align:center;color:rgba(148,163,184,0.35);font-size:14px;line-height:14px;letter-spacing:4px;user-select:none;">
                 ···</div>
@@ -747,6 +765,12 @@
 
         <!-- Results -->
         <div id="results-section">
+            <div style="grid-column: 1 / -1; margin-bottom:12px;">
+                <button class="btn btn-print" onclick="printReport()" type="button"
+                    style="width:100%; padding:14px 18px; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16,185,129,0.4);">
+                    <span>🖨</span> Print / Save Report
+                </button>
+            </div>
             <div class="results-grid">
                 <!-- 1. Proposal Result -->
                 <div class="res-card card-proposal">
@@ -946,6 +970,39 @@
         </div>
     </div>
 
+    <!-- Notes Modal (Reference / New Configuration) -->
+    <div id="notesModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);"
+        onclick="if(event.target===this) closeNotesModal()">
+        <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid #6366f1;border-radius:14px;padding:24px 28px;max-width:640px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.8);color:#f8fafc;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                <span style="font-size:1.4rem;">📝</span>
+                <h2 id="notesModalTitle" style="margin:0;border:none;padding:0;color:#a5b4fc;font-size:1.1rem;letter-spacing:0.5px;">Notes — Reference Configuration</h2>
+            </div>
+            <div style="font-size:0.82rem;color:#94a3b8;margin-bottom:14px;line-height:1.5;">
+                Free-form notes for the printable report only. Use for motor model, gearbox model, part numbers,
+                serial numbers, location, work order, or any reference information. <strong style="color:#fbbf24;">These notes
+                are NOT used in any calculation.</strong>
+            </div>
+            <textarea id="notesModalText" rows="9"
+                placeholder="e.g.&#10;Motor model: SEW DRN132S4&#10;Motor S/N: 12345-6789&#10;Gearbox model: KA47 DRN132S4&#10;Gearbox S/N: 98765-4321&#10;Location: Line 3 — Station 7&#10;Work order: WO-2026-0042&#10;Inspector: J. Doe"
+                style="width:100%;min-height:180px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.15);color:#f8fafc;padding:12px;border-radius:8px;font-size:0.92rem;font-family:'Segoe UI',Roboto,sans-serif;line-height:1.5;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+            <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+                <button type="button" onclick="clearNotesModal()"
+                    style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:9px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85rem;letter-spacing:0.5px;">
+                    🗑 Clear
+                </button>
+                <button type="button" onclick="closeNotesModal()"
+                    style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#cbd5e1;padding:9px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85rem;letter-spacing:0.5px;">
+                    Cancel
+                </button>
+                <button type="button" onclick="saveNotesModal()"
+                    style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:#fff;padding:9px 18px;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.85rem;letter-spacing:0.5px;box-shadow:0 4px 12px rgba(16,185,129,0.3);">
+                    💾 Save
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function showBaseSpeedInfo() {
             const m = document.getElementById('baseSpeedModal');
@@ -953,6 +1010,53 @@
         }
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') document.getElementById('baseSpeedModal').style.display = 'none';
+        });
+
+        // -------- Notes (report-only, no calculation impact) --------
+        const reportNotes = { old: '', new: '' };
+        let _notesActiveKey = 'old';
+        function openNotesModal(which) {
+            _notesActiveKey = which;
+            const modal = document.getElementById('notesModal');
+            const title = document.getElementById('notesModalTitle');
+            const ta = document.getElementById('notesModalText');
+            title.textContent = which === 'old'
+                ? 'Notes — Reference Configuration'
+                : 'Notes — New Configuration';
+            ta.value = reportNotes[which] || '';
+            modal.style.display = 'flex';
+            setTimeout(() => ta.focus(), 50);
+        }
+        function closeNotesModal() {
+            document.getElementById('notesModal').style.display = 'none';
+        }
+        function saveNotesModal() {
+            const ta = document.getElementById('notesModalText');
+            reportNotes[_notesActiveKey] = ta.value;
+            updateNotesIndicator(_notesActiveKey);
+            closeNotesModal();
+        }
+        function clearNotesModal() {
+            document.getElementById('notesModalText').value = '';
+        }
+        function updateNotesIndicator(which) {
+            const ind = document.getElementById(which + '_notes_indicator');
+            if (!ind) return;
+            const txt = (reportNotes[which] || '').trim();
+            if (txt) {
+                const lines = txt.split(/\r?\n/).filter(l => l.trim().length > 0).length;
+                ind.textContent = `✓ ${lines} line${lines === 1 ? '' : 's'} of notes saved`;
+                ind.style.color = '#10b981';
+                ind.style.fontStyle = 'normal';
+            } else {
+                ind.textContent = 'No notes added';
+                ind.style.color = '#94a3b8';
+                ind.style.fontStyle = 'italic';
+            }
+        }
+        document.addEventListener('keydown', e => {
+            const modal = document.getElementById('notesModal');
+            if (e.key === 'Escape' && modal && modal.style.display === 'flex') closeNotesModal();
         });
 
         function toKW(val, unit) {
@@ -1543,6 +1647,539 @@
                     `Horiz. push/pull: ${horizKg.toFixed(2)} kg (${horizLb.toFixed(1)} lb) = ${newForceN.toFixed(2)} N / (${mu} × 9.81)<br>` +
                     `Vertical lift: ${liftKg.toFixed(2)} kg (${liftLb.toFixed(1)} lb) = ${newForceN.toFixed(2)} N / 9.81`;
             }
+        }
+
+        // -----------------------------------------------------------------------
+        //  PRINT / SAVE REPORT
+        //  Snapshots both Plotly charts as PNG images and opens a clean,
+        //  print-friendly report in a new window, then triggers the print dialog.
+        // -----------------------------------------------------------------------
+        function _v(id) {
+            const el = document.getElementById(id);
+            return el ? (el.value !== undefined ? el.value : el.textContent) : '';
+        }
+        function _txt(id) {
+            const el = document.getElementById(id);
+            return el ? (el.innerText || el.textContent || '') : '';
+        }
+        function _esc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function _row(label, value, unit) {
+            const v = (value === '' || value == null) ? '—' : value;
+            const u = unit ? ` ${_esc(unit)}` : '';
+            return `<tr><th>${_esc(label)}</th><td>${_esc(v)}${u}</td></tr>`;
+        }
+
+        // Build a print-friendly clone of an existing Plotly chart (white bg,
+        // dark text on all axes / titles / legend) and return a PNG data URL.
+        async function snapshotChartLight(srcId) {
+            const src = document.getElementById(srcId);
+            if (!src || !src.data || !src.layout) return '';
+
+            const tmp = document.createElement('div');
+            tmp.style.cssText = 'position:fixed;left:-10000px;top:0;width:1100px;height:520px;';
+            document.body.appendChild(tmp);
+
+            // Deep-clone so we don't mutate the on-screen chart.
+            const data = JSON.parse(JSON.stringify(src.data));
+            const layout = JSON.parse(JSON.stringify(src.layout));
+
+            // Print-friendly overrides.
+            layout.paper_bgcolor = '#ffffff';
+            layout.plot_bgcolor = '#ffffff';
+            layout.width = 1100;
+            layout.height = 520;
+            layout.margin = Object.assign({ l: 70, r: 70, b: 60, t: 70 }, layout.margin || {});
+
+            // Title: keep text, force dark color.
+            if (layout.title) {
+                if (typeof layout.title === 'string') {
+                    layout.title = { text: layout.title, font: { color: '#111', size: 16 } };
+                } else {
+                    layout.title.font = Object.assign({}, layout.title.font || {}, { color: '#111', size: 16 });
+                }
+            }
+
+            // Axes: dark ticks/labels/grid, including secondary y-axis.
+            ['xaxis', 'yaxis', 'yaxis2'].forEach(k => {
+                if (!layout[k]) return;
+                layout[k].tickfont = Object.assign({}, layout[k].tickfont || {}, { color: '#111', size: 11 });
+                layout[k].gridcolor = '#d0d7e2';
+                layout[k].zerolinecolor = '#94a3b8';
+                layout[k].linecolor = '#111';
+                if (layout[k].title) {
+                    if (typeof layout[k].title === 'string') {
+                        layout[k].title = { text: layout[k].title, font: { color: '#111', size: 12 } };
+                    } else {
+                        layout[k].title.font = Object.assign({}, layout[k].title.font || {}, { color: '#111', size: 12 });
+                    }
+                }
+            });
+
+            // Legend in dark text.
+            layout.legend = Object.assign({}, layout.legend || {}, {
+                font: { color: '#111', size: 11 },
+                bgcolor: 'rgba(255,255,255,0.9)',
+                bordercolor: '#cbd5e1',
+                borderwidth: 1
+            });
+
+            // Brighten light-coloured traces that don't read on white.
+            data.forEach(tr => {
+                if (tr.line && (tr.line.color === '#cbd5e1' || tr.line.color === '#f8fafc')) {
+                    tr.line.color = '#475569';
+                }
+                if (tr.marker && (tr.marker.color === '#cbd5e1' || tr.marker.color === '#f8fafc')) {
+                    tr.marker.color = '#475569';
+                }
+            });
+
+            try {
+                await Plotly.newPlot(tmp, data, layout, { displayModeBar: false, staticPlot: true });
+                const img = await Plotly.toImage(tmp, { format: 'png', width: 1100, height: 520, scale: 2 });
+                return img;
+            } finally {
+                try { Plotly.purge(tmp); } catch (_) { }
+                tmp.remove();
+            }
+        }
+
+        async function printReport() {
+            // Guard: results must be visible (i.e. Calculate Comparison has run).
+            const rs = document.getElementById('results-section');
+            if (!rs || rs.style.display === 'none' || !globalCalc || !globalCalc.newTOut) {
+                alert('Please click "Calculate Comparison" first so the report has data to print.');
+                return;
+            }
+
+            // ---- Snapshot charts as PNGs ----
+            // Use a print-friendly clone (white bg, dark text) so axis ticks,
+            // titles and legend remain visible when printed on paper.
+            let chartImg = '', motorImg = '';
+            try { chartImg = await snapshotChartLight('chart-container'); }
+            catch (e) { console.warn('chart-container snapshot failed', e); }
+            try { motorImg = await snapshotChartLight('motor-chart-container'); }
+            catch (e) { console.warn('motor-chart-container snapshot failed', e); }
+
+            // ---- Gather inputs ----
+            const oldType = document.querySelector('input[name="old_motor_type"]:checked').value;
+            const newType = document.querySelector('input[name="new_motor_type"]:checked').value;
+            const oldUnit = _v('old_unit');
+            const newUnit = _v('new_unit');
+            const scaleUnit = _v('old_scale_u');
+
+            // ---- User notes (report-only, not used in any calculation) ----
+            const oldNotes = (reportNotes && reportNotes.old) ? reportNotes.old.trim() : '';
+            const newNotes = (reportNotes && reportNotes.new) ? reportNotes.new.trim() : '';
+            const notesBlock = (label, text) => text ? `
+    <div class="notes-block">
+        <div class="notes-label">📝 ${_esc(label)}</div>
+        <pre class="notes-body">${_esc(text)}</pre>
+    </div>` : '';
+
+            // ---- Gather displayed result text (already formatted) ----
+            const res = {
+                idealRatio:   _txt('res_ideal'),
+                speedRatio:   _txt('res_speed_ratio'),
+                torqueNew:    _txt('res_torque_new'),
+                torqueOld:    _txt('res_torque_old'),
+                ratingNew:    _txt('res_rating_new'),
+                speedNew:     _txt('res_speed_new'),
+                speedOld:     _txt('res_speed_old'),
+                mathPower:    _txt('math_power'),
+                mathTorque:   _txt('math_motor_torque'),
+                mathGear:     _txt('math_gear_torque'),
+                mathRating:   _txt('math_rating'),
+                mathSpeed:    _txt('math_speed'),
+                mathForce:    _txt('math_force')
+            };
+
+            // ---- Sprocket results (may be hidden) ----
+            const spVisible = document.getElementById('sprocket-results').style.display !== 'none';
+            const sp = {
+                visible:   spVisible,
+                dia:       _v('sprocket_dia'),
+                diaUnit:   _v('sprocket_unit'),
+                eff:       _v('sprocket_eff'),
+                mu:        _v('sprocket_mu'),
+                forceN:    _txt('sp_force_n'),
+                forceLbf:  _txt('sp_force_lbf'),
+                forceOld:  _txt('sp_force_old_n'),
+                horizKg:   _txt('sp_horiz_kg'),
+                horizLb:   _txt('sp_horiz_lb'),
+                liftKg:    _txt('sp_lift_kg'),
+                liftLb:    _txt('sp_lift_lb'),
+                torqueNm:  _txt('sp_torque_nm'),
+                torqueInLb:_txt('sp_torque_inlb'),
+                torqueOld: _txt('sp_torque_old'),
+                formula:   document.getElementById('sp_formula_line') ? document.getElementById('sp_formula_line').innerHTML : ''
+            };
+
+            const now = new Date();
+            const ts = now.toLocaleString();
+
+            // ---- Build report HTML ----
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Motor &amp; Gearbox Replacement Report — ${_esc(ts)}</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: #111;
+        background: #fff;
+        margin: 24px;
+        font-size: 11pt;
+        line-height: 1.45;
+    }
+    header.report-header {
+        border-bottom: 3px solid #1e3a8a;
+        padding-bottom: 10px;
+        margin-bottom: 18px;
+    }
+    header.report-header h1 {
+        margin: 0 0 4px 0;
+        font-size: 20pt;
+        color: #1e3a8a;
+        letter-spacing: 0.5px;
+    }
+    header.report-header .meta {
+        font-size: 9pt;
+        color: #555;
+    }
+    h2 {
+        background: #1e3a8a;
+        color: #fff;
+        padding: 6px 10px;
+        font-size: 12pt;
+        margin: 18px 0 8px 0;
+        border-radius: 3px;
+        page-break-after: avoid;
+    }
+    h3 {
+        font-size: 11pt;
+        color: #1e3a8a;
+        margin: 14px 0 6px 0;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 3px;
+        page-break-after: avoid;
+    }
+    table.kv {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+        page-break-inside: avoid;
+    }
+    table.kv th, table.kv td {
+        border: 1px solid #d0d7e2;
+        padding: 5px 9px;
+        text-align: left;
+        vertical-align: top;
+        font-size: 10pt;
+    }
+    table.kv th {
+        background: #f1f5f9;
+        width: 42%;
+        font-weight: 600;
+        color: #334155;
+    }
+    .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .res-card {
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 8px 10px;
+        background: #f8fafc;
+        page-break-inside: avoid;
+    }
+    .res-card.highlight {
+        border: 2px solid #d97706;
+        background: #fef3c7;
+    }
+    .res-card .t { font-size: 8.5pt; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+    .res-card .n { font-size: 12pt; font-weight: 700; color: #0f172a; }
+    .res-card .o { font-size: 9pt; color: #475569; margin-top: 3px; }
+    .formula {
+        font-family: 'Consolas', 'Courier New', monospace;
+        background: #f8fafc;
+        border-left: 3px solid #1e3a8a;
+        padding: 5px 8px;
+        margin: 4px 0;
+        font-size: 9.5pt;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .chart-block {
+        margin: 10px 0 18px 0;
+        page-break-inside: avoid;
+    }
+    .chart-block img {
+        width: 100%;
+        height: auto;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+    }
+    .chart-block .caption {
+        font-size: 9pt;
+        color: #555;
+        text-align: center;
+        font-style: italic;
+        margin-top: 4px;
+    }
+    footer.report-footer {
+        margin-top: 22px;
+        padding-top: 8px;
+        border-top: 1px solid #cbd5e1;
+        font-size: 8.5pt;
+        color: #64748b;
+        text-align: center;
+    }
+    .notes-block {
+        margin: 6px 0 14px 0;
+        border: 1px solid #cbd5e1;
+        border-left: 4px solid #6366f1;
+        border-radius: 4px;
+        background: #f8fafc;
+        padding: 8px 12px;
+        page-break-inside: avoid;
+    }
+    .notes-label {
+        font-size: 9pt;
+        font-weight: 700;
+        color: #4338ca;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    .notes-body {
+        margin: 0;
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 10pt;
+        color: #1e293b;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        line-height: 1.5;
+    }
+    .toolbar {
+        position: sticky;
+        top: 0;
+        background: #1e3a8a;
+        color: white;
+        padding: 8px 14px;
+        margin: -24px -24px 18px -24px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        z-index: 1000;
+    }
+    .toolbar button {
+        background: #fbbf24;
+        color: #1e3a8a;
+        border: none;
+        padding: 6px 14px;
+        font-weight: 700;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 10pt;
+    }
+    .toolbar button.secondary {
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+    }
+    @media print {
+        body { margin: 12mm; }
+        .toolbar { display: none !important; }
+        h2 { background: #1e3a8a !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .res-card.highlight { background: #fef3c7 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        table.kv th { background: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .notes-block { background: #f8fafc !important; border-left-color: #6366f1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
+</head>
+<body>
+    <div class="toolbar">
+        <button onclick="window.print()">🖨 Print</button>
+        <button class="secondary" onclick="window.close()">Close</button>
+        <span style="margin-left:auto; font-size:9pt; opacity:0.85;">Use your browser's print dialog to save as PDF.</span>
+    </div>
+
+    <header class="report-header">
+        <h1>⚡ Motor &amp; Gearbox Replacement Report</h1>
+        <div class="meta">Generated: ${_esc(ts)} &nbsp;|&nbsp; Source: Motor_Gearbox_Replace tool</div>
+    </header>
+
+    <h2>1. Reference (Existing) Configuration — ${_esc(oldType.toUpperCase())}</h2>
+    <div class="two-col">
+        <table class="kv">
+            <tr><th>Motor Power</th><td>${_esc(_v('old_p'))} ${_esc(oldUnit)}</td></tr>
+            <tr><th>Motor Type</th><td>${_esc(oldType)}</td></tr>
+            <tr><th>${oldType === 'servo' ? 'Max Speed (RPM)' : 'Motor RPM (nameplate)'}</th><td>${_esc(_v('old_rpm'))}</td></tr>
+            ${oldType === 'servo'
+                ? `<tr><th>Base / Rated Speed (RPM)</th><td>${_esc(_v('old_base_rpm') || _v('old_rpm'))}</td></tr>
+                   <tr><th>Rated Torque @ Base Speed</th><td>${_esc(_v('old_rated_torque'))} Nm</td></tr>`
+                : `<tr><th>Poles (inferred)</th><td>${_esc(_v('old_poles_inferred'))}</td></tr>
+                   <tr><th>Sync Speed (RPM)</th><td>${_esc(_v('old_sync_rpm'))}</td></tr>`}
+            <tr><th>Motor Torque (Nm)</th><td>${_esc(_v('old_motor_torque'))}</td></tr>
+        </table>
+        <table class="kv">
+            <tr><th>Gearbox Ratio</th><td>${_esc(_v('old_ratio'))} : 1</td></tr>
+            <tr><th>Rack Scale (Travel / Motor Rev)</th><td>${_esc(_v('old_scale'))} ${_esc(scaleUnit)}/rev</td></tr>
+            <tr><th>Service Factor (SF)</th><td>${_esc(_v('old_sf'))}</td></tr>
+        </table>
+    </div>
+    ${notesBlock('Notes — Reference Configuration', oldNotes)}
+
+    <h2>2. New Configuration — ${_esc(newType.toUpperCase())}</h2>
+    <div class="two-col">
+        <table class="kv">
+            <tr><th>Motor Power</th><td>${_esc(_v('new_p'))} ${_esc(newUnit)}</td></tr>
+            <tr><th>Motor Type</th><td>${_esc(newType)}</td></tr>
+            <tr><th>${newType === 'servo' ? 'Max Speed (RPM)' : 'Motor RPM (nameplate)'}</th><td>${_esc(_v('new_rpm'))}</td></tr>
+            ${newType === 'servo'
+                ? `<tr><th>Base / Rated Speed (RPM)</th><td>${_esc(_v('new_base_rpm') || _v('new_rpm'))}</td></tr>
+                   <tr><th>Rated Torque @ Base Speed</th><td>${_esc(_v('new_rated_torque'))} Nm</td></tr>`
+                : `<tr><th>Poles (inferred)</th><td>${_esc(_v('new_poles_inferred'))}</td></tr>
+                   <tr><th>Sync Speed (RPM)</th><td>${_esc(_v('new_sync_rpm'))}</td></tr>`}
+            <tr><th>Motor Torque (Nm)</th><td>${_esc(_v('new_motor_torque'))}</td></tr>
+        </table>
+        <table class="kv">
+            <tr><th>Service Factor (SF)</th><td>${_esc(_v('new_sf'))}</td></tr>
+            <tr><th>Gearbox Efficiency (η)</th><td>${_esc(_v('eff'))}</td></tr>
+            <tr><th>Available / Purchasable Ratio</th><td>${_esc(_v('real_ratio'))} : 1</td></tr>
+            <tr><th>New Rack Scale (auto)</th><td>${_esc(_v('new_scale'))} ${_esc(scaleUnit)}/rev</td></tr>
+        </table>
+    </div>
+    ${notesBlock('Notes — New Configuration', newNotes)}
+
+    <h2>3. Comparison Results</h2>
+    <div class="results-grid">
+        <div class="res-card highlight">
+            <div class="t">🎯 Proposed Ideal Ratio</div>
+            <div class="n">${_esc(res.idealRatio)}</div>
+            <div class="o">${_esc(res.speedRatio)}</div>
+        </div>
+        <div class="res-card">
+            <div class="t">⚡ Output Torque (New)</div>
+            <div class="n">${_esc(res.torqueNew)}</div>
+            <div class="o">${_esc(res.torqueOld)}</div>
+            <div class="o">${_esc(res.ratingNew)}</div>
+        </div>
+        <div class="res-card">
+            <div class="t">🚀 Linear Speed (New)</div>
+            <div class="n">${_esc(res.speedNew)}</div>
+            <div class="o">${_esc(res.speedOld)}</div>
+        </div>
+    </div>
+
+    <h2>4. Diagrams</h2>
+    ${chartImg ? `<div class="chart-block">
+        <img src="${chartImg}" alt="Gearbox Output Shaft — Torque vs Output RPM">
+        <div class="caption">Figure 1 — Gearbox Output Shaft: Torque vs Output RPM (with gearbox)</div>
+    </div>` : '<p><em>Output-shaft chart unavailable.</em></p>'}
+    ${motorImg ? `<div class="chart-block">
+        <img src="${motorImg}" alt="Motor Shaft — Torque vs Motor RPM">
+        <div class="caption">Figure 2 — Motor Shaft: Torque vs Motor RPM (no gearbox)</div>
+    </div>` : '<p><em>Motor-shaft chart unavailable.</em></p>'}
+
+    ${sp.visible ? `
+    <h2>5. Mechanical Output Analysis (Sprocket / Gear)</h2>
+    <table class="kv">
+        <tr><th>Output Sprocket / Gear Diameter</th><td>${_esc(sp.dia)} ${_esc(sp.diaUnit)}</td></tr>
+        <tr><th>Drive Efficiency (chain/belt)</th><td>${_esc(sp.eff)}</td></tr>
+        <tr><th>Friction Coefficient (μ)</th><td>${_esc(sp.mu)}</td></tr>
+    </table>
+    <div class="results-grid">
+        <div class="res-card">
+            <div class="t">💪 Thrust Force</div>
+            <div class="n">${_esc(sp.forceN)}</div>
+            <div class="o">${_esc(sp.forceLbf)}</div>
+            <div class="o">Old: ${_esc(sp.forceOld)}</div>
+        </div>
+        <div class="res-card">
+            <div class="t">➡️ Horizontal Push / Pull</div>
+            <div class="n">${_esc(sp.horizKg)}</div>
+            <div class="o">${_esc(sp.horizLb)}</div>
+        </div>
+        <div class="res-card">
+            <div class="t">⬆️ Vertical Lift</div>
+            <div class="n">${_esc(sp.liftKg)}</div>
+            <div class="o">${_esc(sp.liftLb)}</div>
+        </div>
+        <div class="res-card">
+            <div class="t">📀 Output Shaft Torque</div>
+            <div class="n">${_esc(sp.torqueNm)}</div>
+            <div class="o">${_esc(sp.torqueInLb)}</div>
+            <div class="o">Old: ${_esc(sp.torqueOld)}</div>
+        </div>
+    </div>
+    <div class="formula" style="background:#eff6ff; border-left-color:#1e3a8a;">${sp.formula}</div>
+    ` : ''}
+
+    <h2>${sp.visible ? '6' : '5'}. Step-by-Step Calculations</h2>
+    <h3>1. Power Conversion</h3>
+    <div class="formula">P (kW) = P (HP) × 0.7457</div>
+    <div class="formula">${res.mathPower || '—'}</div>
+
+    <h3>2. Motor Input Torque</h3>
+    <div class="formula">T_in (Nm) = (9550 × P_kW) / RPM_motor</div>
+    <div class="formula">${res.mathTorque || '—'}</div>
+
+    <h3>3. Gearbox Output Torque</h3>
+    <div class="formula">T_out = T_in × Ratio × η     |     Required rating ≥ T_out × SF</div>
+    <div class="formula">${res.mathGear || '—'}</div>
+    <div class="formula">${res.mathRating || '—'}</div>
+
+    <h3>4. Linear Speed</h3>
+    <div class="formula">new_scale = old_scale × (old_ratio / new_ratio)
+V = RPM_motor × Rack_Scale</div>
+    <div class="formula">${res.mathSpeed || '—'}</div>
+
+    <h3>5. Force, Lift &amp; Push Capacity</h3>
+    <div class="formula">F (N) = T_out / r_sprocket     |     Mass (kg) = F / 9.81</div>
+    <div class="formula">${res.mathForce || '—'}</div>
+
+    <footer class="report-footer">
+        Motor &amp; Gearbox Replacement Comparison — generated ${_esc(ts)}<br>
+        Tool by Ricardo Hernandez Chang
+    </footer>
+
+    <script>
+        // Auto-open print dialog once images are decoded.
+        window.addEventListener('load', function () {
+            const imgs = Array.from(document.images);
+            Promise.all(imgs.map(img =>
+                img.complete ? Promise.resolve()
+                             : new Promise(res => { img.onload = img.onerror = res; })
+            )).then(() => setTimeout(() => window.print(), 250));
+        });
+    <\/script>
+</body>
+</html>`;
+
+            // ---- Open the report in a new window ----
+            const w = window.open('', '_blank');
+            if (!w) {
+                alert('Pop-up blocked. Please allow pop-ups for this page to generate the printable report.');
+                return;
+            }
+            w.document.open();
+            w.document.write(html);
+            w.document.close();
+            w.focus();
         }
 
         function drawChart(newOutRpm, realTOut, realRatio) {
