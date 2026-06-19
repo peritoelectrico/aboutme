@@ -1141,20 +1141,69 @@
             };
         }
 
-        function saveConfigToFile() {
+        // Remember the last filename so successive Saves propose it again.
+        let lastSavedFilename = '';
+
+        async function saveConfigToFile() {
             try {
                 const cfg = buildConfigObject();
-                const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
+                const json = JSON.stringify(cfg, null, 2);
                 const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                const defaultName = lastSavedFilename || `motor-gearbox-config_${ts}.json`;
+
+                // ---- Path A: native OS save dialog (Chromium / Edge) -----------------
+                // Lets the user pick filename + location and overwrite an existing file.
+                if (typeof window.showSaveFilePicker === 'function') {
+                    try {
+                        const handle = await window.showSaveFilePicker({
+                            suggestedName: defaultName,
+                            types: [{
+                                description: 'Motor & Gearbox Config (JSON)',
+                                accept: { 'application/json': ['.json'] }
+                            }]
+                        });
+                        const writable = await handle.createWritable();
+                        await writable.write(json);
+                        await writable.close();
+                        lastSavedFilename = handle.name || defaultName;
+                        showConfigMsg(
+                            `<strong>✔ Saved.</strong> Configuration written to <code>${_esc(lastSavedFilename)}</code>.`,
+                            'ok');
+                        return;
+                    } catch (err) {
+                        // User cancelled the OS dialog → silently abort.
+                        if (err && (err.name === 'AbortError' || err.code === 20)) return;
+                        // Any other failure → fall through to the prompt-based fallback.
+                        console.warn('showSaveFilePicker failed, falling back:', err);
+                    }
+                }
+
+                // ---- Path B: filename prompt + browser download (Firefox / Safari) ---
+                // No OS dialog API → ask for filename, then let the browser download
+                // to its default folder (cannot overwrite a specific path here, but
+                // re-using the same name will trigger the browser's own overwrite
+                // prompt depending on user settings).
+                let name = window.prompt(
+                    'Save configuration as:\n(The file will be downloaded to your browser\'s default download folder.)',
+                    defaultName);
+                if (name === null) return; // cancelled
+                name = String(name).trim();
+                if (!name) name = defaultName;
+                if (!/\.json$/i.test(name)) name += '.json';
+
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `motor-gearbox-config_${ts}.json`;
+                a.download = name;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
-                showConfigMsg(`<strong>✔ Saved.</strong> Configuration written to <code>${a.download}</code>.`, 'ok');
+                lastSavedFilename = name;
+                showConfigMsg(
+                    `<strong>✔ Saved.</strong> Configuration downloaded as <code>${_esc(name)}</code>.`,
+                    'ok');
             } catch (e) {
                 showConfigMsg('<strong>⚠ Save failed:</strong> ' + _esc(e.message), 'err');
             }
@@ -1225,6 +1274,10 @@
 
                 // Hide stale results — user must re-run Propose / Calculate.
                 resetResults();
+
+                // Remember loaded filename so the next Save proposes the same name
+                // (the OS picker lets the user keep it and overwrite).
+                lastSavedFilename = file.name || '';
 
                 const savedAt = cfg.savedAt ? new Date(cfg.savedAt).toLocaleString() : 'unknown';
                 showConfigMsg(
