@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Motor & Gearbox Comparison</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        :root {
+            --glass-bg: rgba(15, 23, 42, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --primary: #3b82f6;
+            --success: #10b981;
+            --fail: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #f59e0b;
+            --student-bg: rgba(20, 30, 50, 0.9);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 18% 12%, rgba(59, 130, 246, 0.18), transparent 55%),
+                radial-gradient(circle at 82% 88%, rgba(245, 158, 11, 0.14), transparent 55%),
+                linear-gradient(135deg, #0a0f1e 0%, #0e1729 35%, #111c33 65%, #0a1020 100%);
+            background-attachment: fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            grid-column: 1 / -1;
+            text-align: center;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            padding-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .col-2 {
+            flex: 2;
+        }
+
+        .col-1 {
+            flex: 1;
+        }
+
+        label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input,
+        select {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-container {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 20px;
+            margin: 10px 0;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-propose {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-propose:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.6);
+        }
+
+        .btn-calc {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+        }
+
+        .btn-calc:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.6);
+        }
+
+        #results-section {
+            grid-column: 1 / -1;
+            display: none;
+            margin-top: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .res-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .res-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .res-new {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.2;
+        }
+
+        .res-old {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 5px;
+        }
+
+        .res-old span {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            margin-right: 5px;
+            opacity: 0.7;
+        }
+
+        .card-proposal {
+            border: 2px solid var(--accent);
+            background: rgba(245, 158, 11, 0.15);
+        }
+
+        .res-prop-val {
+            color: var(--accent);
+            font-size: 1.8rem;
+        }
+
+        #chart-container {
+            grid-column: 1 / -1;
+            height: 480px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            position: relative;
+        }
+
+        #motor-chart-container {
+            grid-column: 1 / -1;
+            height: 480px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            position: relative;
+        }
+
+        /* --- STUDENT PANEL STYLES --- */
+        .student-panel {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+            background: var(--student-bg);
+            border: 1px dashed var(--accent);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .student-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .student-header h2 {
+            border: none;
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .step-box {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-left: 4px solid var(--primary);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .step-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .formula-line {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: #cbd5e1;
+        }
+
+        .calc-line {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            border-radius: 4px;
+            color: var(--success);
+        }
+
+        .note {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .results-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+
+            .container,
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-container {
+                flex-direction: column;
+            }
+        }
+
+        /* hide browser native up/down arrows on base-speed inputs */
+        input.no-spin::-webkit-inner-spin-button,
+        input.no-spin::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input.no-spin {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>⚡ Motor & Gearbox Replacement Comparison</h1>
+
+        <!-- Use-case header panel -->
+        <div class="glass-card" style="grid-column: 1 / -1; border-left: 4px solid var(--primary); padding: 20px 24px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+                <span style="font-size:1.3rem;">📋</span>
+                <h2
+                    style="margin:0; border:none; color:var(--primary); font-size:1rem; text-transform:uppercase; letter-spacing:1px;">
+                    When to Use This Tool</h2>
+            </div>
+
+            <div
+                style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:18px;">
+                <div
+                    style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.25); border-radius:10px; padding:14px;">
+                    <div
+                        style="font-size:0.75rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; font-weight:600;">
+                        🔄 Motor Upgrade / Swap</div>
+                    <div style="font-size:0.82rem; color:#cbd5e1; line-height:1.5;">Replacing an aging induction motor
+                        with a servo motor, or substituting a discontinued model with a current equivalent. Use this
+                        tool to verify the new motor delivers the same gearbox output torque and linear performance.
+                    </div>
+                </div>
+                <div
+                    style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.25); border-radius:10px; padding:14px;">
+                    <div
+                        style="font-size:0.75rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; font-weight:600;">
+                        ⚙️ Gearbox Ratio Change</div>
+                    <div style="font-size:0.82rem; color:#cbd5e1; line-height:1.5;">The original gearbox is obsolete,
+                        out of stock, or needs rerating. This tool proposes an ideal new ratio and calculates what ratio
+                        you actually need to match the original output torque and linear speed.</div>
+                </div>
+                <div
+                    style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.25); border-radius:10px; padding:14px;">
+                    <div
+                        style="font-size:0.75rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; font-weight:600;">
+                        📐 Linear Motion Systems</div>
+                    <div style="font-size:0.82rem; color:#cbd5e1; line-height:1.5;">Rack-and-pinion drives, ball/lead
+                        screws, belt &amp; pulley conveyors, winches — any application converting rotary motor output
+                        into linear travel. The Rack Scale field is the linear distance per gearbox revolution.</div>
+                </div>
+                <div
+                    style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.25); border-radius:10px; padding:14px;">
+                    <div
+                        style="font-size:0.75rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; font-weight:600;">
+                        🏭 OEM Replacement (MRO)</div>
+                    <div style="font-size:0.82rem; color:#cbd5e1; line-height:1.5;">Equipment is end-of-life or the OEM
+                        no longer supports it. Validate a cross-brand replacement maintains equivalent thrust force,
+                        travel speed, and gearbox catalog torque rating with the correct service factor.</div>
+                </div>
+            </div>
+
+            <div
+                style="display:flex; flex-wrap:wrap; gap:10px; font-size:0.78rem; color:#94a3b8; border-top:1px solid rgba(255,255,255,0.08); padding-top:12px;">
+                <div style="display:flex; align-items:center; gap:5px;"><span style="color:var(--success);">✔</span>
+                    <span>Handles both <strong style="color:#f8fafc;">Induction</strong> and <strong
+                            style="color:#f8fafc;">Servo</strong> motors with correct torque-curve physics</span></div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="color:var(--success);">✔</span>
+                    <span>Servo sizing uses <strong style="color:#f8fafc;">rated torque</strong> (constant-torque
+                        region), not max-speed torque</span></div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="color:var(--success);">✔</span>
+                    <span>Service Factor applied only to <strong style="color:#f8fafc;">gearbox catalog rating</strong>
+                        — does not inflate delivered torque</span></div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="color:var(--success);">✔</span>
+                    <span>New Rack Scale auto-calculated to preserve original <strong style="color:#f8fafc;">linear
+                            speed</strong> with the new ratio</span></div>
+                <div style="display:flex; align-items:center; gap:5px;"><span style="color:var(--success);">✔</span>
+                    <span>Compatible with <strong style="color:#f8fafc;">Studio 5000</strong> Axis Scaling (Conversion
+                        Constant)</span></div>
+            </div>
+        </div>
+
+        <!-- Left Column: Reference -->
+        <div class="glass-card">
+            <h2>📂 Reference — Existing Motor & Gearbox &nbsp;<span id="old_mode_badge"
+                    style="font-size:0.7rem;font-weight:700;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;vertical-align:middle;background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid #6366f1;">INDUCTION</span>
+            </h2>
+            <div
+                style="background: rgba(245, 158, 11, 0.08); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 6px; margin-bottom: 15px; font-size: 0.8rem; color: #cbd5e1; line-height: 1.55;">
+                Enter the nameplate and gearbox data for the <strong style="color:var(--accent);">unit currently
+                    installed</strong> — the motor and gearbox being replaced. All new-configuration results are
+                benchmarked against these values.<br>
+                <span style="display:inline-block; margin-top:6px; color:#94a3b8;">
+                    ⚠ <strong style="color:#f8fafc;">Service Factor (SF)</strong> is a catalog sizing multiplier — it
+                    does <em>not</em> increase the torque the motor actually delivers. A gearbox catalog rating must be
+                    ≥ T<sub>out</sub> × SF.
+                </span>
+            </div>
+            <div class="form-row">
+                <div class="input-group col-2">
+                    <label>Motor Power</label>
+                    <input type="number" id="old_p" placeholder="kW or HP" oninput="updateOldMotorFields()">
+                </div>
+                <div class="input-group col-1">
+                    <label>Unit</label>
+                    <select id="old_unit">
+                        <option value="kW">kW</option>
+                        <option value="HP">HP (mech)</option>
+                        <option value="HPm">HP (metric / PS)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>Motor Type</label>
+                    <div style="display:flex;gap:20px;margin-top:6px;">
+                        <label
+                            style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.9rem;color:var(--text-main);text-transform:none;letter-spacing:0;font-weight:normal;">
+                            <input type="radio" name="old_motor_type" value="induction" checked
+                                onchange="updateOldMotorType()"> Induction
+                        </label>
+                        <label
+                            style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.9rem;color:var(--text-main);text-transform:none;letter-spacing:0;font-weight:normal;">
+                            <input type="radio" name="old_motor_type" value="servo" onchange="updateOldMotorType()">
+                            Servo
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label id="old_rpm_label">Motor RPM (nameplate)</label>
+                    <input type="number" id="old_rpm" placeholder="e.g. 1750" oninput="updateOldMotorFields()"
+                        onchange="clampBaseRpm('old_base_rpm','old_rpm');updateOldMotorFields()">
+                </div>
+            </div>
+            <!-- Induction extras -->
+            <div id="old_induction_extras">
+                <div style="font-size:0.75rem;color:#94a3b8;margin:-4px 0 10px 0;font-style:italic;">⚡ 60 Hz / US — pole
+                    count inferred from nameplate RPM</div>
+                <div class="form-row">
+                    <div class="input-group col-1">
+                        <label>Poles — inferred</label>
+                        <input type="number" id="old_poles_inferred" placeholder="Auto" readonly
+                            style="background: rgba(0,0,0,0.6); cursor: not-allowed; color: var(--accent);">
+                    </div>
+                    <div class="input-group col-1">
+                        <label>Sync Speed (RPM)</label>
+                        <input type="number" id="old_sync_rpm" placeholder="Auto-calculated" readonly
+                            style="background: rgba(0,0,0,0.6); cursor: not-allowed; color: var(--accent);">
+                    </div>
+                </div>
+            </div>
+            <!-- Servo extras -->
+            <div id="old_servo_extras" style="display:none;">
+                <div style="font-size:0.75rem;color:#f59e0b;margin:-4px 0 10px 0;font-style:italic;">⚡ Base Speed
+                    defaults to Max Speed. Adjust down with spinner if drive is derated. Cannot exceed Max Speed.</div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Base / Rated Speed (RPM) <span style="font-size:0.72rem;color:#94a3b8;">&#x2014;
+                                constant-torque region up to this speed</span></label>
+                        <div style="display:flex;gap:4px;align-items:stretch;">
+                            <button type="button"
+                                onclick="stepBaseRpm('old_base_rpm','old_rpm',-5,updateOldMotorFields)"
+                                style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#f8fafc;border-radius:6px;padding:0 12px;font-size:1.1rem;cursor:pointer;line-height:1;">&#8722;</button>
+                            <input type="number" id="old_base_rpm"
+                                oninput="clampBaseRpm('old_base_rpm','old_rpm');updateOldMotorFields()" class="no-spin"
+                                style="flex:1;min-width:0;background:rgba(245,158,11,0.07);border-color:rgba(245,158,11,0.4);"
+                                placeholder="= Max Speed">
+                            <button type="button" onclick="stepBaseRpm('old_base_rpm','old_rpm',5,updateOldMotorFields)"
+                                style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#f8fafc;border-radius:6px;padding:0 12px;font-size:1.1rem;cursor:pointer;line-height:1;">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Rated Torque at Base Speed (Nm) &#x2014; from OEM datasheet</label>
+                        <input type="number" id="old_rated_torque" placeholder="e.g. 4.18"
+                            oninput="updateOldMotorFields()" step="0.01">
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label id="old_torque_label">Motor Torque (Nm) &mdash; calculated</label>
+                    <div style="display:flex;gap:8px;align-items:stretch;">
+                        <input type="number" id="old_motor_torque" placeholder="Auto-calculated" readonly
+                            oninput="onOldTorqueEdit()"
+                            style="flex:1;min-width:0;background:rgba(0,0,0,0.6);cursor:not-allowed;color:var(--accent);">
+                        <label id="old_torque_override_wrap"
+                            title="Allow manual edit of the induction motor torque value"
+                            style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#94a3b8;white-space:nowrap;cursor:pointer;padding:0 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid rgba(255,255,255,0.08);">
+                            <input type="checkbox" id="old_torque_override" onchange="toggleOldTorqueOverride()"
+                                style="margin:0;cursor:pointer;">
+                            Override
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>Current Gearbox Ratio</label>
+                    <input type="number" id="old_ratio" step="0.1">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group col-2">
+                    <label>Rack Scale (Travel / Motor Rev)</label>
+                    <input type="number" id="old_scale" placeholder="Distance per motor rev">
+                </div>
+                <div class="input-group col-1">
+                    <label>Unit</label>
+                    <select id="old_scale_u">
+                        <option value="cm">cm</option>
+                        <option value="in">in</option>
+                    </select>
+                </div>
+            </div>
+            <div
+                style="background: rgba(59, 130, 246, 0.12); border-left: 3px solid var(--primary); padding: 8px 12px; border-radius: 6px; margin: -5px 0 15px 0; font-size: 0.78rem; color: #cbd5e1; line-height: 1.4;">
+                <strong style="color: var(--primary);">🔧 PLC Tip (Studio 5000):</strong>
+                This value corresponds to the <em>Conversion Constant</em> in the <strong>Axis Properties →
+                    Scaling</strong>
+                tab of a Motion Group axis. It defines the <strong>Position Units per Motor Revolution</strong> (e.g.
+                <code>cm/Motor Rev</code> or <code>in/Motor Rev</code>). Paste the CC value directly from Studio 5000.
+                Keep your selected unit consistent
+                with the axis <em>Position Units</em> configured in the controller.
+            </div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>Service Factor (SF)</label>
+                    <input type="number" id="old_sf" value="1.0" step="0.1">
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: New & Proposal -->
+        <div class="glass-card">
+            <h2>🚀 New Configuration &nbsp;<span id="new_mode_badge"
+                    style="font-size:0.7rem;font-weight:700;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;vertical-align:middle;background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid #6366f1;">INDUCTION</span>
+            </h2>
+            <div class="form-row">
+                <div class="input-group col-2">
+                    <label>New Motor Power</label>
+                    <input type="number" id="new_p" placeholder="kW or HP" oninput="updateNewMotorFields()">
+                </div>
+                <div class="input-group col-1">
+                    <label>Unit</label>
+                    <select id="new_unit">
+                        <option value="kW">kW</option>
+                        <option value="HP">HP (mech)</option>
+                        <option value="HPm">HP (metric / PS)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>Motor Type</label>
+                    <div style="display:flex;gap:20px;margin-top:6px;">
+                        <label
+                            style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.9rem;color:var(--text-main);text-transform:none;letter-spacing:0;font-weight:normal;">
+                            <input type="radio" name="new_motor_type" value="induction" checked
+                                onchange="updateNewMotorType()"> Induction
+                        </label>
+                        <label
+                            style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.9rem;color:var(--text-main);text-transform:none;letter-spacing:0;font-weight:normal;">
+                            <input type="radio" name="new_motor_type" value="servo" onchange="updateNewMotorType()">
+                            Servo
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label id="new_rpm_label">Motor RPM (nameplate)</label>
+                    <input type="number" id="new_rpm" placeholder="e.g. 1750" oninput="updateNewMotorFields()"
+                        onchange="clampBaseRpm('new_base_rpm','new_rpm');updateNewMotorFields()">
+                </div>
+            </div>
+            <!-- Induction extras -->
+            <div id="new_induction_extras">
+                <div style="font-size:0.75rem;color:#94a3b8;margin:-4px 0 10px 0;font-style:italic;">⚡ 60 Hz / US — pole
+                    count inferred from nameplate RPM</div>
+                <div class="form-row">
+                    <div class="input-group col-1">
+                        <label>Poles — inferred</label>
+                        <input type="number" id="new_poles_inferred" placeholder="Auto" readonly
+                            style="background: rgba(0,0,0,0.6); cursor: not-allowed; color: var(--accent);">
+                    </div>
+                    <div class="input-group col-1">
+                        <label>Sync Speed (RPM)</label>
+                        <input type="number" id="new_sync_rpm" placeholder="Auto-calculated" readonly
+                            style="background: rgba(0,0,0,0.6); cursor: not-allowed; color: var(--accent);">
+                    </div>
+                </div>
+            </div>
+            <!-- Servo extras -->
+            <div id="new_servo_extras" style="display:none;">
+                <div style="font-size:0.75rem;color:#f59e0b;margin:-4px 0 10px 0;font-style:italic;">⚡ Base Speed
+                    defaults to Max Speed. Adjust down with spinner if drive is derated. Cannot exceed Max Speed.</div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Base / Rated Speed (RPM) <span style="font-size:0.72rem;color:#94a3b8;">&#x2014;
+                                constant-torque region up to this speed</span></label>
+                        <div style="display:flex;gap:4px;align-items:stretch;">
+                            <button type="button"
+                                onclick="stepBaseRpm('new_base_rpm','new_rpm',-5,updateNewMotorFields)"
+                                style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#f8fafc;border-radius:6px;padding:0 12px;font-size:1.1rem;cursor:pointer;line-height:1;">&#8722;</button>
+                            <input type="number" id="new_base_rpm"
+                                oninput="clampBaseRpm('new_base_rpm','new_rpm');updateNewMotorFields()" class="no-spin"
+                                style="flex:1;min-width:0;background:rgba(245,158,11,0.07);border-color:rgba(245,158,11,0.4);"
+                                placeholder="= Max Speed">
+                            <button type="button" onclick="stepBaseRpm('new_base_rpm','new_rpm',5,updateNewMotorFields)"
+                                style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#f8fafc;border-radius:6px;padding:0 12px;font-size:1.1rem;cursor:pointer;line-height:1;">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Rated Torque at Base Speed (Nm) &#x2014; from OEM datasheet</label>
+                        <input type="number" id="new_rated_torque" placeholder="e.g. 4.18"
+                            oninput="updateNewMotorFields()" step="0.01">
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label id="new_torque_label">Motor Torque (Nm) &mdash; calculated</label>
+                    <div style="display:flex;gap:8px;align-items:stretch;">
+                        <input type="number" id="new_motor_torque" placeholder="Auto-calculated" readonly
+                            oninput="onNewTorqueEdit()"
+                            style="flex:1;min-width:0;background:rgba(0,0,0,0.6);cursor:not-allowed;color:var(--accent);">
+                        <label id="new_torque_override_wrap"
+                            title="Allow manual edit of the induction motor torque value"
+                            style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#94a3b8;white-space:nowrap;cursor:pointer;padding:0 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid rgba(255,255,255,0.08);">
+                            <input type="checkbox" id="new_torque_override" onchange="toggleNewTorqueOverride()"
+                                style="margin:0;cursor:pointer;">
+                            Override
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>New Service Factor (SF)</label>
+                    <input type="number" id="new_sf" value="1.0" step="0.1">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>Gearbox Efficiency (η)</label>
+                    <input type="number" id="eff" value="0.95" step="0.01">
+                </div>
+            </div>
+
+            <hr style="border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+
+            <h2>🛠 Real-World Verification</h2>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>Available / Purchasable Ratio</label>
+                    <input type="number" id="real_ratio" step="0.1" placeholder="Ratio you can buy">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group">
+                    <label>New Rack Scale (Travel / Rev) — auto</label>
+                    <input type="number" id="new_scale" placeholder="Auto-calculated" readonly
+                        style="background: rgba(0,0,0,0.6); cursor: not-allowed; color: var(--accent);">
+                </div>
+            </div>
+            <div id="aboutToggle" title="Click for credits"
+                style="height:14px;margin-top:6px;cursor:pointer;text-align:center;color:rgba(148,163,184,0.35);font-size:14px;line-height:14px;letter-spacing:4px;user-select:none;">
+                ···</div>
+            <div id="aboutCredit"
+                style="display:none;margin-top:6px;text-align:center;color:#94a3b8;font:500 12px Inter,system-ui,sans-serif;">
+                —</div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="btn-container">
+            <button class="btn btn-propose" onclick="proposeGearbox()">
+                <span>🎯</span> Propose Ideal Gearbox Ratio
+            </button>
+            <button class="btn btn-calc" onclick="calculateResults()">
+                <span>✅</span> Calculate Comparison
+            </button>
+        </div>
+        <div id="propose-error"
+            style="display:none;background:rgba(239,68,68,0.15);border-left:3px solid #ef4444;color:#fca5a5;padding:8px 14px;border-radius:6px;margin:8px 0;font-size:0.85rem;">
+        </div>
+
+        <!-- Results -->
+        <div id="results-section">
+            <div class="results-grid">
+                <!-- 1. Proposal Result -->
+                <div class="res-card card-proposal">
+                    <div class="res-title">🎯 Proposed Ideal Ratio</div>
+                    <div class="res-new res-prop-val" id="res_ideal">-</div>
+                    <div class="res-old">Required to match Old Torque</div>
+                    <div class="res-old" id="res_speed_ratio"
+                        style="margin-top:4px;font-style:italic;color:var(--text-muted,#94a3b8);"></div>
+                    <div class="res-old" id="res_servo_note"
+                        style="display:none;margin-top:6px;color:#f59e0b;font-size:0.78rem;">⚠ Servo: ratio is
+                        torque-based — Max Speed RPM does not change this value</div>
+                </div>
+
+                <!-- 2. Torque Comparison -->
+                <div class="res-card">
+                    <div class="res-title">⚡ Output Torque</div>
+                    <div class="res-new" id="res_torque_new">-</div>
+                    <div class="res-old" id="res_torque_old"><span>Old:</span> - Nm</div>
+                    <div class="res-old" id="res_rating_new" style="color:var(--accent);"><span>Req. Rating (SF):</span>
+                        -</div>
+                </div>
+
+                <!-- 3. Linear Speed Comparison -->
+                <div class="res-card">
+                    <div class="res-title">🚀 Linear Speed</div>
+                    <div class="res-new" id="res_speed_new">-</div>
+                    <div class="res-old" id="res_speed_old"><span>Old:</span> -</div>
+                </div>
+
+                <!-- 4. About (click to expand) -->
+                <div class="res-card" id="about_card" onclick="toggleAboutCard()" title="Click to show / hide author"
+                    style="cursor:pointer;user-select:none;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;transition:all 0.3s ease;">
+                    <div id="about_collapsed" style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                        <div style="font-size:1.4rem;letter-spacing:6px;color:#94a3b8;">&bull;&bull;&bull;</div>
+                        <div style="font-size:0.78rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;">
+                            About</div>
+                    </div>
+                    <div id="about_expanded" style="display:none;">
+                        <div class="res-title" style="margin-bottom:6px;">&#x1F464; Created by</div>
+                        <div class="res-new" style="font-size:1.05rem;line-height:1.3;">Ricardo Hernandez Chang</div>
+                        <div class="res-old" style="margin-top:6px;font-style:italic;font-size:0.75rem;">Click again to
+                            collapse</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card" style="padding: 10px;">
+                <div id="chart-container"></div>
+            </div>
+
+            <div class="glass-card" style="padding: 10px;">
+                <div id="motor-chart-container"></div>
+            </div>
+
+            <!-- SPROCKET / GEAR OUTPUT ANALYSIS -->
+            <div class="glass-card" id="sprocket-section" style="padding:20px 24px;">
+                <h2 style="margin-top:0;">&#9881; Mechanical Output Analysis</h2>
+                <p style="font-size:0.85rem;color:#94a3b8;margin:-8px 0 18px 0;">Enter the sprocket, pinion gear, or
+                    pulley connected to the gearbox output shaft to calculate real force, horizontal capacity, and
+                    vertical lift capacity.</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px;">
+                    <div class="input-group">
+                        <label>Output Sprocket / Gear Diameter</label>
+                        <input type="number" id="sprocket_dia" placeholder="e.g. 80" oninput="calcSprocket()"
+                            step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Unit</label>
+                        <select id="sprocket_unit" onchange="calcSprocket()">
+                            <option value="mm">mm</option>
+                            <option value="in">in</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Efficiency factor (drive chain/belt)</label>
+                        <input type="number" id="sprocket_eff" value="1.0" step="0.01" min="0.5" max="1"
+                            oninput="calcSprocket()">
+                    </div>
+                    <div class="input-group">
+                        <label title="Coefficient of friction (μ) between the load and the running surface.">Friction
+                            coefficient (&mu;) &mdash; horizontal only</label>
+                        <div style="display:flex;gap:8px;align-items:stretch;">
+                            <select id="sprocket_mu_preset" onchange="onMuPresetChange()" style="flex:1;min-width:0;">
+                                <option value="0.05">Ball bearings / precision rollers (μ ≈ 0.05)</option>
+                                <option value="0.10">Lubricated steel on steel (μ ≈ 0.10)</option>
+                                <option value="0.15" selected>Industrial cart / lubricated slide (μ ≈ 0.15)</option>
+                                <option value="0.25">Rubber wheels on concrete (μ ≈ 0.25)</option>
+                                <option value="0.40">Plastic skid on steel, dry (μ ≈ 0.40)</option>
+                                <option value="0.60">Dry steel skid on steel (μ ≈ 0.60)</option>
+                                <option value="1.00">Equivalent to vertical lift (μ = 1.0)</option>
+                                <option value="custom">Custom…</option>
+                            </select>
+                            <input type="number" id="sprocket_mu" value="0.15" step="0.01" min="0.001" max="2"
+                                oninput="calcSprocket()" style="width:90px;display:none;" placeholder="μ">
+                        </div>
+                    </div>
+                </div>
+                <div id="sprocket-results" style="display:none;">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+                        <div class="res-card" style="text-align:center;">
+                            <div class="res-title">💪 Thrust Force</div>
+                            <div class="res-new" id="sp_force_n" style="font-size:1.3rem;">-</div>
+                            <div class="res-old" id="sp_force_lbf">-</div>
+                            <div class="res-old" style="font-style:italic;font-size:0.75rem;">Old: <span
+                                    id="sp_force_old_n">-</span></div>
+                        </div>
+                        <div class="res-card" style="text-align:center;">
+                            <div class="res-title">➡️ Horizontal Push / Pull</div>
+                            <div class="res-new" id="sp_horiz_kg" style="font-size:1.3rem;">-</div>
+                            <div class="res-old" id="sp_horiz_lb">-</div>
+                            <div class="res-old" style="font-style:italic;color:#f59e0b;font-size:0.75rem;">mass the
+                                system can push / pull on a flat surface</div>
+                        </div>
+                        <div class="res-card" style="text-align:center;">
+                            <div class="res-title">⬆️ Vertical Lift Capacity</div>
+                            <div class="res-new" id="sp_lift_kg" style="font-size:1.3rem;">-</div>
+                            <div class="res-old" id="sp_lift_lb">-</div>
+                            <div class="res-old" style="font-style:italic;color:#f59e0b;font-size:0.75rem;">mass that
+                                can be lifted against gravity</div>
+                        </div>
+                        <div class="res-card" style="text-align:center;">
+                            <div class="res-title">📀 Output Shaft Torque</div>
+                            <div class="res-new" id="sp_torque_nm" style="font-size:1.3rem;">-</div>
+                            <div class="res-old" id="sp_torque_inlb">-</div>
+                            <div class="res-old" style="font-style:italic;font-size:0.75rem;">Old: <span
+                                    id="sp_torque_old">-</span></div>
+                        </div>
+                    </div>
+                    <div
+                        style="margin-top:14px;padding:10px 14px;background:rgba(59,130,246,0.08);border-left:3px solid var(--primary);border-radius:6px;font-size:0.8rem;color:#94a3b8;line-height:1.6;">
+                        <strong style="color:var(--primary);">&#128210; Formulas:</strong><br>
+                        <span id="sp_formula_line"></span>
+                    </div>
+                </div>
+                <div id="sprocket-hint" style="color:#64748b;font-size:0.85rem;font-style:italic;">&#128712; Enter
+                    diameter above to see force, lift and push/pull capacity.</div>
+            </div>
+
+            <!-- STUDENT PANEL -->
+            <div class="student-panel" id="student-panel">
+                <div class="student-header">
+                    <h2>🎓 Student Analysis Panel</h2>
+                    <div style="margin-left:auto; font-size:0.8rem; color:#94a3b8;">Showing calculations for New Setup
+                    </div>
+                </div>
+                <div class="steps-grid">
+
+                    <!-- Step 1: Power -->
+                    <div class="step-box">
+                        <div class="step-title">1. Power Conversion</div>
+                        <div class="formula-line">P (kW) = P (HP) × 0.7457</div>
+                        <div class="calc-line" id="math_power">Waiting for data...</div>
+                        <div class="note">We use kW for standard SI unit calculations.</div>
+                    </div>
+
+                    <!-- Step 2: Motor Torque -->
+                    <div class="step-box">
+                        <div class="step-title">2. Motor Input Torque</div>
+                        <div class="formula-line">T_in (Nm) = (9550 × P_kW) / RPM_motor</div>
+                        <div class="calc-line" id="math_motor_torque">Waiting for data...</div>
+                        <div class="note">Constant 9550 is derived from unit conversion (60×1000 / 2π).</div>
+                    </div>
+
+                    <!-- Step 3: Gearbox Torque -->
+                    <div class="step-box">
+                        <div class="step-title">3. Gearbox Output Torque</div>
+                        <div class="formula-line">T_out = T_in × Ratio × η</div>
+                        <div class="formula-line" style="font-size:0.8rem; color:#64748b">Required gearbox rating ≥
+                            T_out × SF</div>
+                        <div class="calc-line" id="math_gear_torque">Waiting for data...</div>
+                        <div class="calc-line" id="math_rating" style="margin-top:6px;">Waiting for data...</div>
+                        <div class="note">SF is a sizing/derating factor for catalog selection — it does NOT increase
+                            delivered torque.</div>
+                    </div>
+
+                    <!-- Step 4: Speed -->
+                    <div class="step-box">
+                        <div class="step-title">4. Linear Speed</div>
+                        <div class="formula-line">new_scale = old_scale × (old_ratio / new_ratio)</div>
+                        <div class="formula-line">V = RPM_motor × Rack_Scale</div>
+                        <div class="calc-line" id="math_speed">Waiting for data...</div>
+                        <div class="note">Rack Scale = Studio 5000 CC (travel per motor revolution). New scale updates
+                            with the new gear ratio.</div>
+                    </div>
+
+                    <!-- Step 5: Force -->
+                    <div class="step-box">
+                        <div class="step-title">5. Force, Lift & Push Capacity</div>
+                        <div class="formula-line">F (N) = T_out / r_sprocket</div>
+                        <div class="formula-line" style="font-size:0.8rem; color:#64748b">Mass (kg) = F / 9.81</div>
+                        <div class="calc-line" id="math_force">Enter sprocket diameter in the Mechanical Output Analysis
+                            section below the charts.</div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showBaseSpeedInfo() {
+            const m = document.getElementById('baseSpeedModal');
+            m.style.display = 'flex';
+        }
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') document.getElementById('baseSpeedModal').style.display = 'none';
+        });
+
+        function toKW(val, unit) {
+            const v = parseFloat(val);
+            if (unit === 'HP') return v * 0.7457; // mechanical HP
+            if (unit === 'HPm') return v * 0.7355; // metric HP (PS)
+            return v;
+        }
+
+        function calcTorque(pKw, rpm) {
+            return (!isNaN(pKw) && !isNaN(rpm) && rpm > 0 && pKw > 0) ? (9550 * pKw) / rpm : null;
+        }
+
+        function calcBaseRpm(pKw, tRated) {
+            return (!isNaN(pKw) && !isNaN(tRated) && tRated > 0 && pKw > 0) ? (9550 * pKw) / tRated : null;
+        }
+
+        function stepBaseRpm(id, maxId, delta, updateFn) {
+            const maxVal = parseFloat(document.getElementById(maxId).value);
+            const el = document.getElementById(id);
+            const current = parseFloat(el.value);
+            // Default to maxVal if empty/invalid, then step
+            const base = (isNaN(current) || current <= 0) ? (isNaN(maxVal) ? 5 : maxVal) : current;
+            const next = Math.max(5, base + delta);
+            el.value = isNaN(maxVal) ? next : Math.min(maxVal, next);
+            updateFn();
+        }
+
+        function clampBaseRpm(id, maxId) {
+            const maxVal = parseFloat(document.getElementById(maxId).value);
+            const el = document.getElementById(id);
+            if (!isNaN(maxVal) && parseFloat(el.value) > maxVal) el.value = maxVal;
+        }
+
+        function updateOldMotorType() {
+            const isServo = document.querySelector('input[name="old_motor_type"]:checked').value === 'servo';
+            document.getElementById('old_induction_extras').style.display = isServo ? 'none' : 'block';
+            document.getElementById('old_servo_extras').style.display = isServo ? 'block' : 'none';
+            document.getElementById('old_rpm_label').textContent = isServo ? 'Max Speed (RPM)' : 'Motor RPM (nameplate)';
+            document.getElementById('old_torque_label').textContent = isServo ? 'Torque at Max Speed (Nm) — calculated' : 'Motor Torque (Nm) — calculated';
+            document.getElementById('old_rpm').placeholder = isServo ? 'e.g. 4750' : 'e.g. 1750';
+            const b = document.getElementById('old_mode_badge');
+            b.textContent = isServo ? 'SERVO' : 'INDUCTION';
+            b.style.background = isServo ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.2)';
+            b.style.color = isServo ? '#fcd34d' : '#a5b4fc';
+            b.style.borderColor = isServo ? '#f59e0b' : '#6366f1';
+            // Hide manual-torque override row in servo mode and clear any stale override.
+            const wrap = document.getElementById('old_torque_override_wrap');
+            if (wrap) wrap.style.display = isServo ? 'none' : 'flex';
+            const ovd = document.getElementById('old_torque_override');
+            if (isServo && ovd && ovd.checked) { ovd.checked = false; setTorqueFieldEditable('old_motor_torque', false); }
+            updateOldMotorFields();
+        }
+
+        function updateNewMotorType() {
+            const isServo = document.querySelector('input[name="new_motor_type"]:checked').value === 'servo';
+            const b = document.getElementById('new_mode_badge');
+            b.textContent = isServo ? 'SERVO' : 'INDUCTION';
+            b.style.background = isServo ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.2)';
+            b.style.color = isServo ? '#fcd34d' : '#a5b4fc';
+            b.style.borderColor = isServo ? '#f59e0b' : '#6366f1';
+            document.getElementById('new_induction_extras').style.display = isServo ? 'none' : 'block';
+            document.getElementById('new_servo_extras').style.display = isServo ? 'block' : 'none';
+            document.getElementById('new_rpm_label').textContent = isServo ? 'Max Speed (RPM)' : 'Motor RPM (nameplate)';
+            document.getElementById('new_torque_label').textContent = isServo ? 'Torque at Max Speed (Nm) — calculated' : 'Motor Torque (Nm) — calculated';
+            document.getElementById('new_rpm').placeholder = isServo ? 'e.g. 4750' : 'e.g. 1750';
+            setRpmSpinner('new_rpm', isServo);
+            // Hide manual-torque override row in servo mode and clear any stale override.
+            const wrap = document.getElementById('new_torque_override_wrap');
+            if (wrap) wrap.style.display = isServo ? 'none' : 'flex';
+            const ovd = document.getElementById('new_torque_override');
+            if (isServo && ovd && ovd.checked) { ovd.checked = false; setTorqueFieldEditable('new_motor_torque', false); }
+            updateNewMotorFields();
+        }
+
+        function inferPoles(rpm) {
+            // Iterate ascending — find the smallest sync speed >= nameplate RPM (slip keeps nameplate below sync)
+            const syncSpeeds = [600, 720, 900, 1200, 1800, 3600];
+            for (const s of syncSpeeds) { if (s >= rpm) return { poles: 7200 / s, sync: s }; }
+            return null; // above 3600 or invalid — show blank
+        }
+
+        // ---- About card (results panel) ----
+        function toggleAboutCard() {
+            const c = document.getElementById('about_collapsed');
+            const e = document.getElementById('about_expanded');
+            const card = document.getElementById('about_card');
+            if (!c || !e) return;
+            const expand = c.style.display !== 'none';
+            c.style.display = expand ? 'none' : 'flex';
+            e.style.display = expand ? 'block' : 'none';
+            if (card) card.style.background = expand ? 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.04))' : '';
+        }
+
+        // ---- Induction-only manual override of Motor Torque field ----
+        function resetResults() {
+            const rs = document.getElementById('results-section');
+            if (rs) rs.style.display = 'none';
+            const err = document.getElementById('propose-error');
+            if (err) err.style.display = 'none';
+            // Charts live inside results-section so they’re hidden with it; no Plotly purge needed.
+        }
+        function setTorqueFieldEditable(fldId, editable) {
+            const fld = document.getElementById(fldId);
+            if (!fld) return;
+            if (editable) {
+                fld.removeAttribute('readonly');
+                fld.style.background = 'rgba(245,158,11,0.07)';
+                fld.style.borderColor = 'rgba(245,158,11,0.4)';
+                fld.style.cursor = 'text';
+                fld.style.color = 'var(--accent)';
+            } else {
+                fld.setAttribute('readonly', 'readonly');
+                fld.style.background = 'rgba(0,0,0,0.6)';
+                fld.style.borderColor = '';
+                fld.style.cursor = 'not-allowed';
+                fld.style.color = 'var(--accent)';
+            }
+        }
+        function toggleOldTorqueOverride() {
+            const cb = document.getElementById('old_torque_override');
+            const on = cb && cb.checked;
+            setTorqueFieldEditable('old_motor_torque', !!on);
+            if (!on) updateOldMotorFields();   // restore auto-calculated value
+            else document.getElementById('old_motor_torque').focus();
+            resetResults();
+        }
+        function toggleNewTorqueOverride() {
+            const cb = document.getElementById('new_torque_override');
+            const on = cb && cb.checked;
+            setTorqueFieldEditable('new_motor_torque', !!on);
+            if (!on) updateNewMotorFields();
+            else document.getElementById('new_motor_torque').focus();
+            resetResults();
+        }
+        function onOldTorqueEdit() {
+            const cb = document.getElementById('old_torque_override');
+            if (cb && cb.checked) resetResults();
+        }
+        function onNewTorqueEdit() {
+            const cb = document.getElementById('new_torque_override');
+            if (cb && cb.checked) resetResults();
+        }
+
+        function updateOldMotorFields() {
+            const p = toKW(document.getElementById('old_p').value, document.getElementById('old_unit').value);
+            const maxRpm = parseFloat(document.getElementById('old_rpm').value);
+            const isServo = document.querySelector('input[name="old_motor_type"]:checked').value === 'servo';
+            let t;
+            if (isServo) {
+                // Read base speed (do NOT mutate DOM here — typing in Max Speed would destroy it).
+                // Effective base used for the curve is min(baseRpm, maxRpm); if blank, treat as maxRpm.
+                const baseRaw = parseFloat(document.getElementById('old_base_rpm').value);
+                const baseRpm = (!isNaN(baseRaw) && baseRaw > 0) ? baseRaw : maxRpm;
+                const effBase = (!isNaN(maxRpm) && !isNaN(baseRpm)) ? Math.min(baseRpm, maxRpm) : baseRpm;
+                const ratedTorque = parseFloat(document.getElementById('old_rated_torque').value);
+                // Servo motor curve (constant-power line passes through the rated point):
+                //   maxRpm ≤ base  → T = ratedTorque                          (constant-torque region)
+                //   maxRpm > base  → T = ratedTorque × baseRpm / maxRpm        (constant-power region)
+                if (!isNaN(ratedTorque) && ratedTorque > 0 && !isNaN(maxRpm) && !isNaN(effBase) && effBase > 0) {
+                    t = (maxRpm <= effBase) ? ratedTorque : (ratedTorque * effBase / maxRpm);
+                } else {
+                    t = calcTorque(p, maxRpm);
+                }
+                document.getElementById('old_motor_torque').value = (t !== null && t !== undefined && !isNaN(t)) ? t.toFixed(4) : '';
+            } else {
+                t = calcTorque(p, maxRpm);
+                if (!isNaN(maxRpm) && maxRpm > 0) {
+                    const result = inferPoles(maxRpm);
+                    document.getElementById('old_poles_inferred').value = result ? result.poles : '';
+                    document.getElementById('old_sync_rpm').value = result ? result.sync : '';
+                } else {
+                    document.getElementById('old_poles_inferred').value = '';
+                    document.getElementById('old_sync_rpm').value = '';
+                }
+                // Induction: only overwrite the torque field when the user is NOT overriding it manually
+                const ovd = document.getElementById('old_torque_override');
+                if (!(ovd && ovd.checked)) {
+                    document.getElementById('old_motor_torque').value = (t !== null && t !== undefined && !isNaN(t)) ? t.toFixed(4) : '';
+                }
+            }
+        }
+
+        function updateNewMotorFields() {
+            const p = toKW(document.getElementById('new_p').value, document.getElementById('new_unit').value);
+            const maxRpm = parseFloat(document.getElementById('new_rpm').value);
+            const isServo = document.querySelector('input[name="new_motor_type"]:checked').value === 'servo';
+            let t;
+            if (isServo) {
+                const baseRaw = parseFloat(document.getElementById('new_base_rpm').value);
+                const baseRpm = (!isNaN(baseRaw) && baseRaw > 0) ? baseRaw : maxRpm;
+                const effBase = (!isNaN(maxRpm) && !isNaN(baseRpm)) ? Math.min(baseRpm, maxRpm) : baseRpm;
+                const ratedTorque = parseFloat(document.getElementById('new_rated_torque').value);
+                // Servo motor curve (constant-power line passes through the rated point):
+                //   maxRpm ≤ base  → T = ratedTorque                          (constant-torque region)
+                //   maxRpm > base  → T = ratedTorque × baseRpm / maxRpm        (constant-power region)
+                if (!isNaN(ratedTorque) && ratedTorque > 0 && !isNaN(maxRpm) && !isNaN(effBase) && effBase > 0) {
+                    t = (maxRpm <= effBase) ? ratedTorque : (ratedTorque * effBase / maxRpm);
+                } else {
+                    t = calcTorque(p, maxRpm);
+                }
+                document.getElementById('new_motor_torque').value = (t !== null && t !== undefined && !isNaN(t)) ? t.toFixed(4) : '';
+            } else {
+                t = calcTorque(p, maxRpm);
+                if (!isNaN(maxRpm) && maxRpm > 0) {
+                    const result = inferPoles(maxRpm);
+                    document.getElementById('new_poles_inferred').value = result ? result.poles : '';
+                    document.getElementById('new_sync_rpm').value = result ? result.sync : '';
+                } else {
+                    document.getElementById('new_poles_inferred').value = '';
+                    document.getElementById('new_sync_rpm').value = '';
+                }
+                // Induction: only overwrite the torque field when the user is NOT overriding it manually
+                const ovd = document.getElementById('new_torque_override');
+                if (!(ovd && ovd.checked)) {
+                    document.getElementById('new_motor_torque').value = (t !== null && t !== undefined && !isNaN(t)) ? t.toFixed(4) : '';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            ['old_p', 'old_rpm', 'old_base_rpm', 'old_rated_torque'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.addEventListener('input', updateOldMotorFields);
+            });
+            document.getElementById('old_unit').addEventListener('change', updateOldMotorFields);
+            ['new_p', 'new_rpm', 'new_base_rpm', 'new_rated_torque'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.addEventListener('input', updateNewMotorFields);
+            });
+            document.getElementById('new_unit').addEventListener('change', updateNewMotorFields);
+            updateOldMotorFields();
+            updateNewMotorFields();
+        });
+
+        let globalCalc = {
+            oldTOut: 0, oldOutRpm: 0, oldSpeed: 0, oldForce: 0,
+            newTOut: 0, newOutRpm: 0, newSpeed: 0, newForce: 0,
+            eff: 0, oldP: 0, newP: 0, oldSf: 0, newSf: 0,
+            scaleVal: 0, isCm: true, newRpm: 0
+        };
+
+        function proposeGearbox() {
+            try {
+                const oldP = toKW(document.getElementById('old_p').value, document.getElementById('old_unit').value);
+                const oldRpm = parseFloat(document.getElementById('old_rpm').value);
+                const oldRatio = parseFloat(document.getElementById('old_ratio').value);
+                const oldSf = parseFloat(document.getElementById('old_sf').value) || 1;
+                const oldIsServo = document.querySelector('input[name="old_motor_type"]:checked').value === 'servo';
+
+                const newP = toKW(document.getElementById('new_p').value, document.getElementById('new_unit').value);
+                const newRpm = parseFloat(document.getElementById('new_rpm').value);
+                const newSf = parseFloat(document.getElementById('new_sf').value) || 1;
+                const eff = parseFloat(document.getElementById('eff').value) || 0.95;
+                const newIsServo = document.querySelector('input[name="new_motor_type"]:checked').value === 'servo';
+
+                const scaleVal = parseFloat(document.getElementById('old_scale').value);
+                const isCm = document.getElementById('old_scale_u').value === 'cm';
+
+                // Read rated torques (servo only)
+                const oldRatedTorque = parseFloat(document.getElementById('old_rated_torque').value);
+                const newRatedTorque = parseFloat(document.getElementById('new_rated_torque').value);
+                // Base speed: servo uses base_rpm field; induction base = max
+                const oldBaseRpm = oldIsServo ? (parseFloat(document.getElementById('old_base_rpm').value) || oldRpm) : oldRpm;
+                const newBaseRpm = newIsServo ? (parseFloat(document.getElementById('new_base_rpm').value) || newRpm) : newRpm;
+
+                const errEl = document.getElementById('propose-error');
+
+                // --- Validation: collect missing/invalid fields and show inline ---
+                const missing = [];
+                if (!oldP) missing.push('Reference Motor Power');
+                if (isNaN(oldRpm) || oldRpm <= 0) missing.push('Reference Motor Max Speed RPM');
+                if (isNaN(oldRatio) || oldRatio <= 0) missing.push('Reference Gearbox Ratio');
+                if (oldIsServo && (isNaN(oldRatedTorque) || oldRatedTorque <= 0)) missing.push('Reference Rated Torque (from OEM datasheet)');
+                if (!newP) missing.push('New Motor Power');
+                if (isNaN(newRpm) || newRpm <= 0) missing.push('New Motor Max Speed RPM');
+                if (newIsServo && (isNaN(newRatedTorque) || newRatedTorque <= 0)) missing.push('New Rated Torque (from OEM datasheet)');
+
+                if (missing.length > 0) {
+                    errEl.style.display = 'block';
+                    errEl.style.background = 'rgba(239,68,68,0.15)';
+                    errEl.style.borderLeftColor = '#ef4444';
+                    errEl.style.color = '#fca5a5';
+                    errEl.innerHTML = '<strong>&#9888; Missing required fields:</strong> ' + missing.join(', ');
+                    return;
+                }
+
+                // T_in: servo uses OEM rated torque at base speed; induction uses the value in the Motor Torque field
+                // (auto-calculated by default, or user-overridden when the Override checkbox is on)
+                const oldFieldT = parseFloat(document.getElementById('old_motor_torque').value);
+                const newFieldT = parseFloat(document.getElementById('new_motor_torque').value);
+                const oldTIn = oldIsServo ? oldRatedTorque : ((!isNaN(oldFieldT) && oldFieldT > 0) ? oldFieldT : (9550 * oldP) / oldBaseRpm);
+                const newTIn = newIsServo ? newRatedTorque : ((!isNaN(newFieldT) && newFieldT > 0) ? newFieldT : (9550 * newP) / newBaseRpm);
+                const oldTOut = oldTIn * oldRatio * eff;
+                const idealRatio = oldTOut / (newTIn * eff);
+
+                errEl.style.display = 'none';
+
+                // UI Update
+                document.getElementById('results-section').style.display = 'block';
+
+                // Show Proposal
+                document.getElementById('res_ideal').innerText = idealRatio.toFixed(8) + " : 1";
+
+                // Speed-matched ratio: ratio so new motor output RPM = old motor output RPM
+                const speedMatchedRatio = (newRpm * oldRatio) / oldRpm;
+                document.getElementById('res_speed_ratio').innerText =
+                    `Speed-matched ratio: ${speedMatchedRatio.toFixed(4)} : 1  (output RPM = ${(oldRpm / oldRatio).toFixed(1)})`;
+
+                // For servo new motor: RPM doesn't affect torque-matched ratio — show note
+                const servoNote = document.getElementById('res_servo_note');
+                servoNote.style.display = newIsServo ? 'block' : 'none';
+
+                // Calculate Old Reference Values for the UI
+                const oldOutRpm = oldRpm / oldRatio;
+                // Scale = Studio 5000 CC = travel per MOTOR revolution; speed = motorRpm × CC
+                const scaleOk = !isNaN(scaleVal) && scaleVal > 0;
+                const oldSpeed = scaleOk ? oldRpm * scaleVal : null;
+                const scaleM = scaleOk ? (isCm ? scaleVal * 0.01 : scaleVal * 0.0254) : null;
+                const radiusM = scaleM ? scaleM / (2 * Math.PI) : null;
+                // Force = T_motor × eff / r_virtual
+                const oldForceN = radiusM ? oldTIn * eff / radiusM : null;
+                const unitLabel = isCm ? 'cm' : 'in';
+
+                document.getElementById('res_torque_old').innerHTML = `<span>Old:</span> ${oldTOut.toFixed(8)} Nm`;
+                document.getElementById('res_speed_old').innerHTML = oldSpeed !== null
+                    ? `<span>Old:</span> ${oldSpeed.toFixed(8)} ${unitLabel}/min`
+                    : `<span>Old:</span> — (enter Rack Scale)`;
+
+                // Reset New Values
+                document.getElementById('res_torque_new').innerText = "-";
+                document.getElementById('res_speed_new').innerText = "-";
+                document.getElementById('res_rating_new').innerHTML = `<span>Req. Rating (SF):</span> -`;
+
+                // Store for calculation/chart
+                globalCalc = {
+                    oldTOut, oldOutRpm, oldSpeed, oldForce: oldForceN,
+                    oldTIn, newTIn,
+                    oldSf, newSf, eff, oldP, newP,
+                    scaleVal, isCm, newRpm,
+                    oldRpm, oldRatio,
+                    oldIsServo, oldRatedTorque, oldBaseRpm,
+                    newIsServo, newRatedTorque, newBaseRpm,
+                    realRatio: null
+                };
+
+                // Draw initial chart (curves only, no points yet)
+                drawChart(0, 0, 0);
+            } catch (e) {
+                const errEl = document.getElementById('propose-error');
+                if (errEl) {
+                    errEl.style.display = 'block';
+                    errEl.style.background = 'rgba(239,68,68,0.15)';
+                    errEl.style.borderLeftColor = '#ef4444';
+                    errEl.style.color = '#fca5a5';
+                    errEl.innerHTML = '<strong>&#9888; JS Error:</strong> ' + e.message;
+                }
+            }
+        }
+
+        function calculateResults() {
+            // --- Collect all required field values ---
+            const oldP = toKW(document.getElementById('old_p').value, document.getElementById('old_unit').value);
+            const oldRpmVal = parseFloat(document.getElementById('old_rpm').value);
+            const oldRatio = parseFloat(document.getElementById('old_ratio').value);
+            const oldSfVal = parseFloat(document.getElementById('old_sf').value);
+            const scaleVal = parseFloat(document.getElementById('old_scale').value);
+            const newP = toKW(document.getElementById('new_p').value, document.getElementById('new_unit').value);
+            const newRpmVal = parseFloat(document.getElementById('new_rpm').value);
+            const newSfVal = parseFloat(document.getElementById('new_sf').value);
+            const effVal = parseFloat(document.getElementById('eff').value);
+            const realRatio = parseFloat(document.getElementById('real_ratio').value);
+            const oldIsServo = document.querySelector('input[name="old_motor_type"]:checked').value === 'servo';
+            const newIsServo = document.querySelector('input[name="new_motor_type"]:checked').value === 'servo';
+            const oldRatedT = parseFloat(document.getElementById('old_rated_torque').value);
+            const newRatedT = parseFloat(document.getElementById('new_rated_torque').value);
+            const oldBaseRpmVal = oldIsServo ? (parseFloat(document.getElementById('old_base_rpm').value) || oldRpmVal) : oldRpmVal;
+            const newBaseRpmVal = newIsServo ? (parseFloat(document.getElementById('new_base_rpm').value) || newRpmVal) : newRpmVal;
+
+            const missing = [];
+            if (isNaN(oldP) || oldP <= 0) missing.push('• Reference Motor Power');
+            if (isNaN(oldRpmVal) || oldRpmVal <= 0) missing.push('• Reference Motor Max Speed RPM');
+            if (oldIsServo && (isNaN(oldRatedT) || oldRatedT <= 0)) missing.push('• Reference Rated Torque (OEM datasheet)');
+            if (isNaN(oldRatio) || oldRatio <= 0) missing.push('• Current Gearbox Ratio');
+            if (isNaN(scaleVal) || scaleVal <= 0) missing.push('• Rack Scale (Travel / Rev)');
+            if (isNaN(newP) || newP <= 0) missing.push('• New Motor Power');
+            if (isNaN(newRpmVal) || newRpmVal <= 0) missing.push('• New Motor Max Speed RPM');
+            if (newIsServo && (isNaN(newRatedT) || newRatedT <= 0)) missing.push('• New Rated Torque (OEM datasheet)');
+            if (isNaN(newSfVal) || newSfVal <= 0) missing.push('• New Service Factor');
+            if (isNaN(effVal) || effVal <= 0 || effVal > 1) missing.push('• Gearbox Efficiency (must be 0–1)');
+            if (isNaN(realRatio) || realRatio <= 0) missing.push('• Available / Purchasable Gearbox Ratio');
+            if (isNaN(realRatio) || realRatio <= 0) missing.push('• Available / Purchasable Gearbox Ratio');
+
+            if (missing.length > 0) {
+                alert("Please fill in the following required fields before calculating:\n\n" + missing.join('\n'));
+                return;
+            }
+
+            // --- Compute proposal values inline ---
+            const isCm = document.getElementById('old_scale_u').value === 'cm';
+            // T_in: servo uses OEM rated torque; induction uses the Motor Torque field (auto or user-overridden)
+            const oldFieldT = parseFloat(document.getElementById('old_motor_torque').value);
+            const newFieldT = parseFloat(document.getElementById('new_motor_torque').value);
+            const oldTIn = oldIsServo ? oldRatedT : ((!isNaN(oldFieldT) && oldFieldT > 0) ? oldFieldT : (9550 * oldP) / oldBaseRpmVal);
+            const newTIn = newIsServo ? newRatedT : ((!isNaN(newFieldT) && newFieldT > 0) ? newFieldT : (9550 * newP) / newBaseRpmVal);
+            const oldTOut = oldTIn * oldRatio * effVal;
+            const idealRatio = oldTOut / (newTIn * effVal);
+
+            const oldOutRpm = oldRpmVal / oldRatio;
+            // Scale = Studio 5000 CC = travel per MOTOR revolution; speed = motorRpm × CC
+            const oldSpeed = oldRpmVal * scaleVal;
+            const scaleM_old = scaleVal * (isCm ? 0.01 : 0.0254);
+            const radiusM_old = scaleM_old / (2 * Math.PI);
+            // Force = T_motor × eff / r_virtual, r_virtual = CC_m/(2π)
+            const oldForceN = oldTIn * effVal / radiusM_old;
+
+            // --- Update proposal UI ---
+            document.getElementById('results-section').style.display = 'block';
+            document.getElementById('res_ideal').innerText = idealRatio.toFixed(8) + " : 1";
+            const speedMatchedRatioCalc = (newRpmVal * oldRatio) / oldRpmVal;
+            document.getElementById('res_speed_ratio').innerText =
+                `Speed-matched ratio: ${speedMatchedRatioCalc.toFixed(4)} : 1  (output RPM = ${oldOutRpm.toFixed(1)})`;
+            document.getElementById('res_servo_note').style.display = newIsServo ? 'block' : 'none';
+            document.getElementById('res_torque_old').innerHTML = `<span>Old:</span> ${oldTOut.toFixed(8)} Nm`;
+            document.getElementById('res_speed_old').innerHTML = `<span>Old:</span> ${oldSpeed.toFixed(8)} ${isCm ? 'cm' : 'in'}/min`;
+
+            // --- Refresh globalCalc with current inputs ---
+            globalCalc = {
+                oldTOut, oldOutRpm, oldSpeed, oldForce: oldForceN,
+                oldTIn, newTIn,
+                oldSf: oldSfVal, newSf: newSfVal, eff: effVal, oldP, newP,
+                scaleVal, isCm, newRpm: newRpmVal,
+                oldRpm: oldRpmVal, oldRatio,
+                oldIsServo, oldRatedTorque: oldRatedT, oldBaseRpm: oldBaseRpmVal,
+                newIsServo, newRatedTorque: newRatedT, newBaseRpm: newBaseRpmVal
+            };
+
+            // --- New rack scale ---
+            // Rule: new_scale = old_scale * (old_ratio / new_ratio). Unit matches the OLD rack scale unit.
+            const newScaleVal = globalCalc.scaleVal * (oldRatio / realRatio);
+            const newIsCm = globalCalc.isCm;
+            document.getElementById('new_scale').value = newScaleVal.toFixed(8);
+
+            // --- Calculations --- SF is applied only to the catalog rating, not delivered torque.
+            const realTOut = globalCalc.newTIn * realRatio * globalCalc.eff;
+            const requiredRating = realTOut * globalCalc.newSf;
+            const newOutRpm = globalCalc.newRpm / realRatio;
+            // Scale = Studio 5000 CC = travel per MOTOR revolution; speed = motorRpm × CC
+            const newSpeed = globalCalc.newRpm * newScaleVal;
+
+            // --- UI Update ---
+            document.getElementById('res_torque_new').innerText = realTOut.toFixed(8) + " Nm";
+            document.getElementById('res_speed_new').innerText = newSpeed.toFixed(8) + " " + (newIsCm ? 'cm' : 'in') + "/min";
+            document.getElementById('res_rating_new').innerHTML =
+                `<span>Req. Rating (SF ${globalCalc.newSf}):</span> ${requiredRating.toFixed(8)} Nm`;
+
+            // --- UPDATE STUDENT PANEL ---
+            // 1. Power — show against globalCalc (the values actually used).
+            const inputUnit = document.getElementById('new_unit').value;
+            const rawP = parseFloat(document.getElementById('new_p').value);
+            if (inputUnit === 'HP') {
+                document.getElementById('math_power').innerHTML = `${globalCalc.newP.toFixed(8)} kW = ${rawP} HP × 0.7457`;
+            } else if (inputUnit === 'HPm') {
+                document.getElementById('math_power').innerHTML = `${globalCalc.newP.toFixed(8)} kW = ${rawP} HP(metric) × 0.7355`;
+            } else {
+                document.getElementById('math_power').innerHTML = `${globalCalc.newP.toFixed(8)} kW (no conversion needed)`;
+            }
+
+            // 2. Motor Torque
+            if (globalCalc.newIsServo) {
+                document.getElementById('math_motor_torque').innerHTML =
+                    `${globalCalc.newTIn.toFixed(8)} Nm (rated torque from datasheet — servo constant-torque region)`;
+            } else {
+                document.getElementById('math_motor_torque').innerHTML =
+                    `${globalCalc.newTIn.toFixed(8)} Nm = (9550 × ${globalCalc.newP.toFixed(8)}) / ${globalCalc.newRpm}`;
+            }
+
+            // 3. Gearbox Torque + Required Rating
+            document.getElementById('math_gear_torque').innerHTML =
+                `${realTOut.toFixed(8)} Nm = ${globalCalc.newTIn.toFixed(8)} × ${realRatio} × ${globalCalc.eff}`;
+            document.getElementById('math_rating').innerHTML =
+                `Req. rating = ${realTOut.toFixed(8)} × ${globalCalc.newSf} = ${requiredRating.toFixed(8)} Nm`;
+
+            // 4. Speed
+            document.getElementById('math_speed').innerHTML =
+                `New CC: ${newScaleVal.toFixed(8)} ${newIsCm ? 'cm' : 'in'}/motor-rev = ${globalCalc.scaleVal} × (${oldRatio} / ${realRatio})<br>` +
+                `${newSpeed.toFixed(8)} ${newIsCm ? 'cm' : 'in'}/min = ${globalCalc.newRpm} RPM × ${newScaleVal.toFixed(8)}`;
+
+            // 5. Force — moved to Mechanical Output Analysis section
+            document.getElementById('math_force').innerHTML =
+                `Enter sprocket/gear diameter in the Mechanical Output Analysis section below the charts.`;
+
+            // Store and draw
+            globalCalc.newTOut = realTOut;
+            globalCalc.oldTOut_stored = globalCalc.oldTOut;   // already in globalCalc
+            globalCalc.newOutRpm = newOutRpm;
+            globalCalc.realRatio = realRatio;
+
+            drawChart(newOutRpm, realTOut, realRatio);
+            // Trigger sprocket recalc if diameter already entered
+            calcSprocket();
+        }
+
+        function onMuPresetChange() {
+            const sel = document.getElementById('sprocket_mu_preset');
+            const inp = document.getElementById('sprocket_mu');
+            if (!sel || !inp) return;
+            if (sel.value === 'custom') {
+                inp.style.display = 'inline-block';
+                inp.focus();
+                inp.select();
+            } else {
+                inp.style.display = 'none';
+                inp.value = sel.value;
+            }
+            calcSprocket();
+        }
+
+        function calcSprocket() {
+            const dia = parseFloat(document.getElementById('sprocket_dia').value);
+            const unit = document.getElementById('sprocket_unit').value;
+            const driveEff = parseFloat(document.getElementById('sprocket_eff').value) || 1.0;
+            const hint = document.getElementById('sprocket-hint');
+            const resDiv = document.getElementById('sprocket-results');
+            const mathForceEl = document.getElementById('math_force');
+
+            if (isNaN(dia) || dia <= 0) {
+                hint.style.display = 'block';
+                resDiv.style.display = 'none';
+                if (mathForceEl) mathForceEl.innerHTML = 'Enter sprocket/gear diameter in the Mechanical Output Analysis section below the charts.';
+                return;
+            }
+            if (!globalCalc.newTOut || !globalCalc.oldTOut) {
+                hint.textContent = '⚠ Run Calculate Comparison first to get gearbox output torques.';
+                hint.style.display = 'block';
+                resDiv.style.display = 'none';
+                if (mathForceEl) mathForceEl.innerHTML = '⚠ Run Calculate Comparison first to get gearbox output torques.';
+                return;
+            }
+
+            hint.style.display = 'none';
+            resDiv.style.display = 'block';
+
+            // Radius in metres
+            const rM = (unit === 'mm') ? (dia / 2) / 1000 : (dia / 2) * 0.0254;
+
+            // Force = T_out / r  (gearbox output shaft torque ÷ sprocket radius)
+            const newForceN = globalCalc.newTOut * driveEff / rM;
+            const oldForceN = globalCalc.oldTOut * driveEff / rM;
+            const newForceLbf = newForceN / 4.44822;
+            const oldForceLbf = oldForceN / 4.44822;
+
+            // Horizontal push/pull on a flat surface: rolling/sliding friction must be overcome.
+            //   F_drive = μ × m × g  ⇒  m_horiz = F_drive / (μ × g)
+            // μ → 0  : almost frictionless → huge mass moves with tiny force.
+            // μ = 1.0: equivalent to vertical lift (sliding on its own weight).
+            const muRaw = parseFloat(document.getElementById('sprocket_mu').value);
+            const mu = (!isNaN(muRaw) && muRaw > 0) ? muRaw : 0.15;
+            const horizKg = newForceN / (mu * 9.81);
+            const horizLb = horizKg * 2.20462;
+
+            // Vertical lift against gravity (no friction):  F = m × g  ⇒  m_lift = F / g
+            const liftKg = newForceN / 9.81;
+            const liftLb = liftKg * 2.20462;
+
+            document.getElementById('sp_force_n').textContent = newForceN.toFixed(2) + ' N';
+            document.getElementById('sp_force_lbf').textContent = newForceLbf.toFixed(2) + ' lbf';
+            document.getElementById('sp_force_old_n').textContent = oldForceN.toFixed(2) + ' N  (' + oldForceLbf.toFixed(2) + ' lbf)';
+
+            document.getElementById('sp_horiz_kg').textContent = horizKg.toFixed(2) + ' kg';
+            document.getElementById('sp_horiz_lb').textContent = horizLb.toFixed(1) + ' lb';
+
+            document.getElementById('sp_lift_kg').textContent = liftKg.toFixed(2) + ' kg';
+            document.getElementById('sp_lift_lb').textContent = liftLb.toFixed(1) + ' lb';
+
+            document.getElementById('sp_torque_nm').textContent = globalCalc.newTOut.toFixed(4) + ' Nm';
+            document.getElementById('sp_torque_inlb').textContent = (globalCalc.newTOut * 8.8507).toFixed(2) + ' in·lbf';
+            document.getElementById('sp_torque_old').textContent = globalCalc.oldTOut.toFixed(4) + ' Nm  (' + (globalCalc.oldTOut * 8.8507).toFixed(2) + ' in·lbf)';
+
+            const diaDisp = dia + ' ' + unit;
+            document.getElementById('sp_formula_line').innerHTML =
+                `r = ${dia}/2 = ${(dia / 2).toFixed(2)} ${unit} = <b>${(rM * 1000).toFixed(2)} mm = ${rM.toFixed(5)} m</b><br>` +
+                `F = T_out &times; &eta;_drive / r = ${globalCalc.newTOut.toFixed(4)} &times; ${driveEff} / ${rM.toFixed(5)} = <b>${newForceN.toFixed(2)} N</b><br>` +
+                `Horizontal mass = F / (&mu; &times; g) = ${newForceN.toFixed(2)} / (${mu} &times; 9.81) = <b>${horizKg.toFixed(2)} kg</b> &nbsp;(μ=${mu})<br>` +
+                `Vertical lift = F / g = ${newForceN.toFixed(2)} / 9.81 = <b>${liftKg.toFixed(2)} kg</b> (max static, no safety factor applied)`;
+
+            if (mathForceEl) {
+                mathForceEl.innerHTML =
+                    `F: ${newForceN.toFixed(2)} N = (${globalCalc.newTOut.toFixed(4)} Nm × ${driveEff}) / ${rM.toFixed(5)} m<br>` +
+                    `Horiz. push/pull: ${horizKg.toFixed(2)} kg (${horizLb.toFixed(1)} lb) = ${newForceN.toFixed(2)} N / (${mu} × 9.81)<br>` +
+                    `Vertical lift: ${liftKg.toFixed(2)} kg (${liftLb.toFixed(1)} lb) = ${newForceN.toFixed(2)} N / 9.81`;
+            }
+        }
+
+        function drawChart(newOutRpm, realTOut, realRatio) {
+            // X axis = shared OUTPUT shaft RPM so we can compare old vs new at the SAME shaft speed.
+            const refMin = Math.min(
+                globalCalc.oldOutRpm > 0 ? globalCalc.oldOutRpm : Infinity,
+                newOutRpm > 0 ? newOutRpm : Infinity
+            );
+            const refMax = Math.max(globalCalc.oldOutRpm || 0, newOutRpm || globalCalc.newOutRpm || 0);
+            const maxRPM = (refMax > 0 ? refMax : 100) * 1.5;
+            const startRPM = 0;
+            const step = Math.max(1, Math.round(maxRPM / 200));
+            const rpmRange = [];
+            for (let r = startRPM; r <= maxRPM; r += step) rpmRange.push(r);
+            if (rpmRange.length === 0) rpmRange.push(startRPM);
+
+            // Build torque curve on the OUTPUT shaft axis.
+            // Servo:      flat at OEM rated torque up to base speed, then constant-power hyperbola
+            //             through the rated point: T(rpm) = T_rated × baseRpm / rpm  (above base)
+            // Induction:  flat at T_rated = 9550×P/nameplateRpm, then constant-power hyperbola.
+            function torqueCurve(motorTrated, baseRpm, gearRatio, isServo) {
+                if (!motorTrated || motorTrated <= 0 || !gearRatio || !baseRpm) return rpmRange.map(() => null);
+                const tOutMax = motorTrated * gearRatio * globalCalc.eff;
+                return rpmRange.map(r => {
+                    // r is OUTPUT shaft RPM → motor RPM = r × gearRatio
+                    const motorRpm = r * gearRatio;
+                    let coolingFactor = 1.0;
+                    if (!isServo && motorRpm < 0.5 * baseRpm) {
+                        coolingFactor = 0.5 + 0.5 * (motorRpm / (0.5 * baseRpm));
+                    }
+                    if (motorRpm <= baseRpm) return tOutMax * coolingFactor;
+                    // constant-power region: T_motor = T_rated × baseRpm / motorRpm
+                    const tMotor = motorTrated * baseRpm / motorRpm;
+                    return tMotor * gearRatio * globalCalc.eff;
+                });
+            }
+
+            const oldR = globalCalc.oldRatio;
+            const newR = realRatio || null;
+
+            // Effective rated torque at the motor shaft for each side.
+            // Servo → OEM datasheet value entered by user.
+            // Induction → Motor Torque field value (auto-calculated by default, user-overridden when checkbox is on).
+            // Both cases are already captured in globalCalc.oldTIn / newTIn.
+            const oldMotorTrated = globalCalc.oldTIn || (globalCalc.oldIsServo
+                ? globalCalc.oldRatedTorque
+                : (globalCalc.oldP && globalCalc.oldRpm ? (9550 * globalCalc.oldP) / globalCalc.oldRpm : null));
+            const newMotorTrated = globalCalc.newTIn || (globalCalc.newIsServo
+                ? globalCalc.newRatedTorque
+                : (globalCalc.newP && globalCalc.newRpm ? (9550 * globalCalc.newP) / globalCalc.newRpm : null));
+
+            const yOld = torqueCurve(oldMotorTrated, globalCalc.oldBaseRpm || globalCalc.oldRpm, oldR, globalCalc.oldIsServo);
+            const yNew = newR ? torqueCurve(newMotorTrated, globalCalc.newBaseRpm || globalCalc.newRpm, newR, globalCalc.newIsServo)
+                : rpmRange.map(() => null);
+            const yDiff = newR ? rpmRange.map((_, i) => yNew[i] - yOld[i]) : rpmRange.map(() => null);
+
+            // Base speed vertical marker on output shaft chart
+            const oldBR = globalCalc.oldBaseRpm || globalCalc.oldRpm;
+            const newBR = globalCalc.newBaseRpm || globalCalc.newRpm;
+            const oldBaseOut = (oldBR && oldR) ? oldBR / oldR : null;
+            const newBaseOut = (newBR && newR) ? newBR / newR : null;
+            const oldTOutCap = (oldBaseOut && oldMotorTrated) ? oldMotorTrated * oldR * globalCalc.eff : null;
+            const newTOutCap = (newBaseOut && newR && newMotorTrated) ? newMotorTrated * newR * globalCalc.eff : null;
+
+            // Motor RPM hover data.
+            const oldMotor = rpmRange.map(r => r * oldR);
+            const newMotor = newR ? rpmRange.map(r => r * newR) : rpmRange.map(() => null);
+            const cd = rpmRange.map((_, i) => [oldMotor[i], newMotor ? newMotor[i] : null, yOld[i], yNew ? yNew[i] : null, yDiff ? yDiff[i] : null]);
+
+            const hoverTplOld =
+                '<span style="color:#cbd5e1;">Old motor %{customdata[0]:.2f} RPM &nbsp;|&nbsp; ' +
+                'Torque %{y:.4f} Nm</span><extra></extra>';
+            const hoverTplNew =
+                '<span style="color:#60a5fa;">New motor %{customdata[1]:.2f} RPM &nbsp;|&nbsp; ' +
+                'Torque %{y:.4f} Nm</span><extra></extra>';
+            const hoverTplDiff =
+                '<span style="color:#f59e0b;">Δ (New − Old) %{y:.4f} Nm</span><extra></extra>';
+
+            const traceOld = {
+                x: rpmRange, y: yOld, customdata: cd,
+                type: 'scatter', mode: 'lines', name: `Old (ratio ${oldR})`,
+                line: { color: '#cbd5e1', width: 3, dash: 'dot' },
+                hovertemplate: hoverTplOld
+            };
+            const traceNew = {
+                x: rpmRange, y: yNew, customdata: cd,
+                type: 'scatter', mode: 'lines',
+                name: newR ? `New (ratio ${newR})` : 'New (ratio TBD)',
+                line: { color: '#60a5fa', width: 3 },
+                hovertemplate: hoverTplNew
+            };
+            const traceDiff = {
+                x: rpmRange, y: yDiff,
+                type: 'scatter', mode: 'lines', name: 'Δ Torque (New − Old)',
+                yaxis: 'y2',
+                line: { color: '#f59e0b', width: 2, dash: 'dash' },
+                hovertemplate: hoverTplDiff
+            };
+
+            const data = [traceOld, traceNew, traceDiff];
+
+            // Base speed vertical markers for servo motors.
+            if (oldBaseOut && oldTOutCap) {
+                data.push({
+                    x: [oldBaseOut, oldBaseOut], y: [0, oldTOutCap],
+                    type: 'scatter', mode: 'lines', name: 'Old Base Speed',
+                    line: { color: '#cbd5e1', width: 1, dash: 'dot' },
+                    hovertemplate: `<span style="color:#cbd5e1;"><b>Old Base Speed</b><br>Output shaft: ${oldBaseOut.toFixed(2)} RPM<br>T_out rated: ${oldTOutCap.toFixed(4)} Nm</span><extra></extra>`
+                });
+            }
+            if (newBaseOut && newTOutCap) {
+                data.push({
+                    x: [newBaseOut, newBaseOut], y: [0, newTOutCap],
+                    type: 'scatter', mode: 'lines', name: 'New Base Speed',
+                    line: { color: '#60a5fa', width: 1, dash: 'dot' },
+                    hovertemplate: `<span style="color:#60a5fa;"><b>New Base Speed</b><br>Output shaft: ${newBaseOut.toFixed(2)} RPM<br>T_out rated: ${newTOutCap.toFixed(4)} Nm</span><extra></extra>`
+                });
+            }
+
+            // Operating-point markers once a real ratio is provided.
+            if (realRatio) {
+                const oldBaseR = globalCalc.oldBaseRpm || globalCalc.oldRpm;
+                const oldMotorTorqueAtMax = (globalCalc.oldRpm <= oldBaseR)
+                    ? oldMotorTrated
+                    : (oldMotorTrated * oldBaseR / globalCalc.oldRpm);
+                const oldTOutAtMax = oldMotorTorqueAtMax * oldR * globalCalc.eff;
+
+                const newBaseR = globalCalc.newBaseRpm || globalCalc.newRpm;
+                const newMotorTorqueAtMax = (globalCalc.newRpm <= newBaseR)
+                    ? newMotorTrated
+                    : (newMotorTrated * newBaseR / globalCalc.newRpm);
+                const newTOutAtMax = newMotorTorqueAtMax * newR * globalCalc.eff;
+
+                data.push({
+                    x: [globalCalc.oldOutRpm], y: [oldTOutAtMax],
+                    mode: 'markers', name: 'Old Operating Point',
+                    marker: { size: 12, color: '#cbd5e1', symbol: 'circle', line: { width: 2, color: 'white' } },
+                    hovertemplate:
+                        '<span style="color:#cbd5e1;"><b>Old Operating Point</b><br>' +
+                        `Motor: ${globalCalc.oldRpm.toFixed(2)} RPM<br>` +
+                        'Output shaft: %{x:.4f} RPM<br>' +
+                        'Torque: %{y:.4f} Nm</span><extra></extra>'
+                });
+                data.push({
+                    x: [newOutRpm], y: [newTOutAtMax],
+                    mode: 'markers', name: 'New Operating Point',
+                    marker: { size: 14, color: '#60a5fa', symbol: 'star', line: { width: 2, color: 'white' } },
+                    hovertemplate:
+                        '<span style="color:#60a5fa;"><b>New Operating Point</b><br>' +
+                        `Motor: ${globalCalc.newRpm.toFixed(2)} RPM<br>` +
+                        'Output shaft: %{x:.4f} RPM<br>' +
+                        'Torque: %{y:.4f} Nm</span><extra></extra>'
+                });
+            }
+
+            const layout = {
+                title: { text: 'Gearbox Output Shaft \u2014 Torque vs Output RPM (with gearbox)', font: { color: '#f8fafc', size: 16 } },
+                xaxis: {
+                    title: 'Output Shaft RPM',
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    tickfont: { color: '#94a3b8', size: 11 },
+                    showspikes: true,
+                    spikemode: 'across',
+                    spikecolor: '#f59e0b',
+                    spikethickness: 1,
+                    spikedash: 'solid',
+                    fixedrange: true
+                },
+                yaxis: {
+                    title: 'Torque (Nm)',
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    tickfont: { color: '#f8fafc', size: 12 },
+                    nticks: 8,
+                    fixedrange: true,
+                    showspikes: true,
+                    spikemode: 'across',
+                    spikecolor: 'rgba(255,255,255,0.25)',
+                    spikethickness: 1
+                },
+                yaxis2: {
+                    title: 'Δ Torque (Nm)',
+                    titlefont: { color: '#f59e0b' },
+                    tickfont: { color: '#f59e0b', size: 11 },
+                    overlaying: 'y',
+                    side: 'right',
+                    zeroline: true,
+                    zerolinecolor: 'rgba(245,158,11,0.4)',
+                    showgrid: false,
+                    fixedrange: true
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                legend: { font: { color: '#f8fafc', size: 12 }, orientation: 'h', x: 0, y: 1.12 },
+                hovermode: 'x unified',
+                hoverlabel: { bgcolor: 'rgba(15,23,42,0.95)', bordercolor: '#3b82f6', font: { color: '#f8fafc', size: 12 } },
+                margin: { l: 60, r: 60, b: 50, t: 70 }
+            };
+
+            Plotly.newPlot('chart-container', data, layout, { responsive: true, displayModeBar: false });
+            drawMotorChart();
+        }
+
+        function drawMotorChart() {
+            // X axis = MOTOR shaft RPM (no gearbox). Servo: flat then hyperbola. Induction: hyperbola.
+            const oldMaxRpm = globalCalc.oldRpm || 0;
+            const newMaxRpm = globalCalc.newRpm || 0;
+            const maxMotorRpm = Math.max(oldMaxRpm, newMaxRpm, 100) * 1.3;
+            const minMotorRpm = Math.min(
+                oldMaxRpm > 0 ? oldMaxRpm : Infinity,
+                newMaxRpm > 0 ? newMaxRpm : Infinity
+            );
+            const startMotorRpm = 0;
+            const step = Math.max(1, Math.round(maxMotorRpm / 300));
+            const rpmM = [];
+            for (let r = startMotorRpm; r <= maxMotorRpm; r += step) rpmM.push(r);
+            if (rpmM.length === 0) rpmM.push(startMotorRpm);
+
+            function motorTorqueCurve(motorTrated, baseRpm, isServo) {
+                // Flat at T_rated up to baseRpm, then constant-power drop through the rated point.
+                // Under TEFC cooling, induction motors are derated at low speeds.
+                if (!motorTrated || motorTrated <= 0 || !baseRpm) return rpmM.map(() => 0);
+                return rpmM.map(r => {
+                    let coolingFactor = 1.0;
+                    if (!isServo && r < 0.5 * baseRpm) {
+                        coolingFactor = 0.5 + 0.5 * (r / (0.5 * baseRpm));
+                    }
+                    return (r <= baseRpm) ? (motorTrated * coolingFactor) : (motorTrated * baseRpm / r);
+                });
+            }
+
+            // Effective rated torque at the motor shaft (servo: OEM datasheet; induction: field value, auto or overridden)
+            const oldMotorTratedM = globalCalc.oldTIn || (globalCalc.oldIsServo
+                ? globalCalc.oldRatedTorque
+                : (globalCalc.oldP && globalCalc.oldRpm ? (9550 * globalCalc.oldP) / globalCalc.oldRpm : null));
+            const newMotorTratedM = globalCalc.newTIn || (globalCalc.newIsServo
+                ? globalCalc.newRatedTorque
+                : (globalCalc.newP && globalCalc.newRpm ? (9550 * globalCalc.newP) / globalCalc.newRpm : null));
+
+            const yOldM = motorTorqueCurve(oldMotorTratedM, globalCalc.oldBaseRpm || globalCalc.oldRpm, globalCalc.oldIsServo);
+            const yNewM = motorTorqueCurve(newMotorTratedM, globalCalc.newBaseRpm || globalCalc.newRpm, globalCalc.newIsServo);
+            const yDiffM = rpmM.map((_, i) => yNewM[i] - yOldM[i]);
+
+            const traceOldM = {
+                x: rpmM, y: yOldM,
+                type: 'scatter', mode: 'lines', name: 'Old Motor',
+                line: { color: '#cbd5e1', width: 3, dash: 'dot' },
+                hovertemplate: '<span style="color:#cbd5e1;">Old motor %{x:.0f} RPM | T: %{y:.4f} Nm</span><extra></extra>'
+            };
+            const traceNewM = {
+                x: rpmM, y: yNewM,
+                type: 'scatter', mode: 'lines', name: 'New Motor',
+                line: { color: '#60a5fa', width: 3 },
+                hovertemplate: '<span style="color:#60a5fa;">New motor %{x:.0f} RPM | T: %{y:.4f} Nm</span><extra></extra>'
+            };
+            const traceDiffM = {
+                x: rpmM, y: yDiffM,
+                type: 'scatter', mode: 'lines', name: '\u0394 Torque (New \u2212 Old)',
+                yaxis: 'y2',
+                line: { color: '#f59e0b', width: 2, dash: 'dash' },
+                hovertemplate: '<span style="color:#f59e0b;">\u0394 %{y:.4f} Nm</span><extra></extra>'
+            };
+
+            const dataM = [traceOldM, traceNewM, traceDiffM];
+
+            // Operating point markers — motor shaft (shown at base/rated speed with rated torque)
+            const oldBRM = globalCalc.oldBaseRpm || globalCalc.oldRpm;
+            const newBRM = globalCalc.newBaseRpm || globalCalc.newRpm;
+            if (oldBRM && globalCalc.oldTIn) {
+                dataM.push({
+                    x: [oldBRM], y: [globalCalc.oldTIn],
+                    mode: 'markers', name: 'Old Rated Point',
+                    marker: { size: 12, color: '#cbd5e1', symbol: 'circle', line: { width: 2, color: 'white' } },
+                    hovertemplate: `<span style="color:#cbd5e1;"><b>Old Rated Point</b><br>${oldBRM.toFixed(0)} RPM (base) | ${globalCalc.oldTIn.toFixed(4)} Nm</span><extra></extra>`
+                });
+            }
+            if (newBRM && globalCalc.newTIn) {
+                dataM.push({
+                    x: [newBRM], y: [globalCalc.newTIn],
+                    mode: 'markers', name: 'New Rated Point',
+                    marker: { size: 14, color: '#60a5fa', symbol: 'star', line: { width: 2, color: 'white' } },
+                    hovertemplate: `<span style="color:#60a5fa;"><b>New Rated Point</b><br>${newBRM.toFixed(0)} RPM (base) | ${globalCalc.newTIn.toFixed(4)} Nm</span><extra></extra>`
+                });
+            }
+
+            const layoutM = {
+                title: { text: 'Motor Shaft — Torque vs Motor RPM (no gearbox)', font: { color: '#f8fafc', size: 16 } },
+                xaxis: {
+                    title: 'Motor Shaft RPM',
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    tickfont: { color: '#94a3b8', size: 11 },
+                    showspikes: true, spikemode: 'across', spikecolor: '#f59e0b', spikethickness: 1, spikedash: 'solid',
+                    fixedrange: true
+                },
+                yaxis: {
+                    title: 'Motor Torque (Nm)',
+                    gridcolor: 'rgba(255,255,255,0.1)',
+                    tickfont: { color: '#f8fafc', size: 12 },
+                    nticks: 8, fixedrange: true,
+                    showspikes: true, spikemode: 'across', spikecolor: 'rgba(255,255,255,0.25)', spikethickness: 1
+                },
+                yaxis2: {
+                    title: '\u0394 Torque (Nm)',
+                    titlefont: { color: '#f59e0b' },
+                    tickfont: { color: '#f59e0b', size: 11 },
+                    overlaying: 'y', side: 'right',
+                    zeroline: true, zerolinecolor: 'rgba(245,158,11,0.4)',
+                    showgrid: false, fixedrange: true
+                },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                legend: { font: { color: '#f8fafc', size: 12 }, orientation: 'h', x: 0, y: 1.12 },
+                hovermode: 'x unified',
+                hoverlabel: { bgcolor: 'rgba(15,23,42,0.95)', bordercolor: '#3b82f6', font: { color: '#f8fafc', size: 12 } },
+                margin: { l: 60, r: 60, b: 50, t: 70 }
+            };
+
+            Plotly.newPlot('motor-chart-container', dataM, layoutM, { responsive: true, displayModeBar: false });
+        }
+    </script>
+
+    <script>
+        // Click the small "···" strip under New Rack Scale to reveal/hide the credit.
+        // String built from a +7-shifted byte table (no plain text in source).
+        (function () {
+            const t = [74, 121, 108, 104, 123, 108, 107, 39, 105, 128, 39, 89, 112, 106, 104, 121, 107, 118, 39, 79, 108, 121, 117, 104, 117, 107, 108, 129, 39, 74, 111, 104, 117, 110];
+            let s = ''; for (let i = 0; i < t.length; i++) s += String.fromCharCode(t[i] - 7);
+            window.addEventListener('DOMContentLoaded', function () {
+                const strip = document.getElementById('aboutToggle');
+                const credit = document.getElementById('aboutCredit');
+                if (!strip || !credit) return;
+                credit.textContent = s;
+                strip.addEventListener('click', function () {
+                    credit.style.display = (credit.style.display === 'block') ? 'none' : 'block';
+                });
+            });
+        })();
+    </script>
+
+    <!-- Base Speed Info Modal -->
+    <div id="baseSpeedModal"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+        <div
+            style="background:#0f172a;border:1px solid rgba(255,255,255,0.2);border-radius:16px;padding:28px 32px;max-width:540px;width:90%;color:#f8fafc;position:relative;box-shadow:0 8px 40px rgba(0,0,0,0.7);">
+            <button onclick="document.getElementById('baseSpeedModal').style.display='none'"
+                style="position:absolute;top:12px;right:16px;background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
+            <h3 style="margin:0 0 14px;color:#3b82f6;font-size:1.05rem;letter-spacing:1px;text-transform:uppercase;">
+                What is Base Speed?</h3>
+            <p style="font-size:0.88rem;color:#cbd5e1;line-height:1.6;margin:0 0 16px;">Base Speed is the highest motor
+                RPM at which the motor can still deliver its <strong>full rated torque</strong>. Below this point,
+                torque is constant (limited by current). Above it, power is constant and torque drops as speed
+                increases.</p>
+            <svg viewBox="0 0 420 200" style="width:100%;border-radius:8px;background:#0a1020;margin-bottom:16px;"
+                xmlns="http://www.w3.org/2000/svg">
+                <!-- axes -->
+                <line x1="40" y1="170" x2="400" y2="170" stroke="#475569" stroke-width="1.5" />
+                <line x1="40" y1="20" x2="40" y2="170" stroke="#475569" stroke-width="1.5" />
+                <!-- axis labels -->
+                <text x="210" y="195" text-anchor="middle" fill="#94a3b8" font-size="11">Motor RPM</text>
+                <text x="12" y="100" text-anchor="middle" fill="#94a3b8" font-size="11"
+                    transform="rotate(-90,12,100)">Torque (Nm)</text>
+                <!-- flat region -->
+                <line x1="40" y1="60" x2="200" y2="60" stroke="#60a5fa" stroke-width="2.5" />
+                <!-- hyperbolic drop -->
+                <path d="M200,60 Q250,70 280,90 Q320,115 360,145 L390,160" fill="none" stroke="#60a5fa"
+                    stroke-width="2.5" />
+                <!-- base speed vertical dashed line -->
+                <line x1="200" y1="60" x2="200" y2="170" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,4" />
+                <!-- labels -->
+                <text x="50" y="52" fill="#94a3b8" font-size="10">Constant Torque</text>
+                <text x="50" y="64" fill="#94a3b8" font-size="10">(current limited)</text>
+                <text x="250" y="85" fill="#94a3b8" font-size="10">Constant Power</text>
+                <text x="250" y="97" fill="#94a3b8" font-size="10">(voltage limited)</text>
+                <text x="203" y="185" fill="#f59e0b" font-size="10">Base Speed</text>
+                <!-- T_rated label -->
+                <line x1="34" y1="60" x2="44" y2="60" stroke="#60a5fa" stroke-width="1" />
+                <text x="28" y="63" text-anchor="end" fill="#60a5fa" font-size="10">Tₙ</text>
+            </svg>
+            <p style="font-size:0.82rem;color:#94a3b8;line-height:1.5;margin:0;">Calculated as: <code
+                    style="color:#f59e0b;background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;">Base Speed = (9550 &times; P<sub>kW</sub>) / T<sub>rated</sub></code><br>Use
+                the <strong>rated torque from the motor datasheet</strong> for sizing gearboxes — not the torque at max
+                speed.</p>
+        </div>
+    </div>
+
+</body>
+
+</html>
