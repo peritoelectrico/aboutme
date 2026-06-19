@@ -742,6 +742,28 @@
                 </button>
                 <span id="new_notes_indicator" style="font-size:0.78rem;color:#94a3b8;font-style:italic;">No notes added</span>
             </div>
+
+            <!-- Save / Load configuration (JSON) -->
+            <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+                <button type="button" onclick="saveConfigToFile()"
+                    style="flex:1 1 0;min-width:0;background:linear-gradient(135deg,#6366f1,#4338ca);border:none;color:#fff;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:700;letter-spacing:0.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(99,102,241,0.35);transition:transform 0.15s;"
+                    onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'"
+                    title="Save Reference + New Configuration (and notes) to a JSON file">
+                    💾 ↓ <span>Save Configuration</span>
+                </button>
+                <button type="button" onclick="document.getElementById('load_config_input').click()"
+                    style="flex:1 1 0;min-width:0;background:linear-gradient(135deg,#8b5cf6,#6d28d9);border:none;color:#fff;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:700;letter-spacing:0.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(139,92,246,0.35);transition:transform 0.15s;"
+                    onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'"
+                    title="Load a previously saved JSON configuration file">
+                    💾 ↑ <span>Load Configuration</span>
+                </button>
+                <input type="file" id="load_config_input" accept=".json,application/json" style="display:none;"
+                    onchange="loadConfigFromFile(event)">
+            </div>
+            <div id="config-msg"
+                style="display:none;padding:8px 12px;border-radius:6px;margin-top:8px;font-size:0.8rem;border-left:3px solid;line-height:1.5;">
+            </div>
+
             <div id="aboutToggle" title="Click for credits"
                 style="height:14px;margin-top:6px;cursor:pointer;text-align:center;color:rgba(148,163,184,0.35);font-size:14px;line-height:14px;letter-spacing:4px;user-select:none;">
                 ···</div>
@@ -1058,6 +1080,161 @@
             const modal = document.getElementById('notesModal');
             if (e.key === 'Escape' && modal && modal.style.display === 'flex') closeNotesModal();
         });
+
+        // ===================================================================
+        //  SAVE / LOAD CONFIGURATION (JSON)
+        //  Persists every user-input field + notes + motor-type radio.
+        //  Files are tagged with a magic signature so loading the wrong file
+        //  is rejected before any field is touched.
+        // ===================================================================
+        const CONFIG_SIGNATURE = 'MotorGearboxReplace.Config';
+        const CONFIG_VERSION   = 1;
+
+        // Every <input>/<select> the user fills in. Auto-calculated / readonly
+        // fields (poles, sync rpm, motor torque, new_scale) are intentionally
+        // excluded — user must press Propose / Calculate after loading.
+        const CONFIG_FIELDS = [
+            // Reference
+            'old_p', 'old_unit', 'old_rpm', 'old_base_rpm', 'old_rated_torque',
+            'old_ratio', 'old_scale', 'old_scale_u', 'old_sf',
+            // New
+            'new_p', 'new_unit', 'new_rpm', 'new_base_rpm', 'new_rated_torque',
+            'new_sf', 'eff', 'real_ratio',
+            // Sprocket / Mechanical Output
+            'sprocket_dia', 'sprocket_unit', 'sprocket_eff',
+            'sprocket_mu_preset', 'sprocket_mu'
+        ];
+
+        function showConfigMsg(text, kind /* 'ok' | 'err' | 'info' */) {
+            const el = document.getElementById('config-msg');
+            if (!el) return;
+            const palette = {
+                ok:   { bg: 'rgba(16,185,129,0.15)',  border: '#10b981', color: '#6ee7b7' },
+                err:  { bg: 'rgba(239,68,68,0.15)',   border: '#ef4444', color: '#fca5a5' },
+                info: { bg: 'rgba(99,102,241,0.15)',  border: '#6366f1', color: '#a5b4fc' }
+            }[kind] || { bg: 'rgba(99,102,241,0.15)', border: '#6366f1', color: '#a5b4fc' };
+            el.style.display = 'block';
+            el.style.background = palette.bg;
+            el.style.borderLeftColor = palette.border;
+            el.style.color = palette.color;
+            el.innerHTML = text;
+            clearTimeout(showConfigMsg._t);
+            showConfigMsg._t = setTimeout(() => { el.style.display = 'none'; }, 6000);
+        }
+
+        function buildConfigObject() {
+            const fields = {};
+            CONFIG_FIELDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) fields[id] = el.value;
+            });
+            return {
+                signature: CONFIG_SIGNATURE,
+                version: CONFIG_VERSION,
+                savedAt: new Date().toISOString(),
+                motorType: {
+                    old: (document.querySelector('input[name="old_motor_type"]:checked') || {}).value || 'induction',
+                    new: (document.querySelector('input[name="new_motor_type"]:checked') || {}).value || 'induction'
+                },
+                fields: fields,
+                notes: { old: reportNotes.old || '', new: reportNotes.new || '' }
+            };
+        }
+
+        function saveConfigToFile() {
+            try {
+                const cfg = buildConfigObject();
+                const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `motor-gearbox-config_${ts}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                showConfigMsg(`<strong>✔ Saved.</strong> Configuration written to <code>${a.download}</code>.`, 'ok');
+            } catch (e) {
+                showConfigMsg('<strong>⚠ Save failed:</strong> ' + _esc(e.message), 'err');
+            }
+        }
+
+        function loadConfigFromFile(evt) {
+            const file = evt.target.files && evt.target.files[0];
+            // Reset the input so selecting the same file again still triggers change.
+            evt.target.value = '';
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onerror = () => showConfigMsg('<strong>⚠ Could not read file.</strong>', 'err');
+            reader.onload = e => {
+                let cfg;
+                try {
+                    cfg = JSON.parse(e.target.result);
+                } catch (err) {
+                    showConfigMsg('<strong>⚠ Invalid JSON.</strong> The selected file is not valid JSON.', 'err');
+                    return;
+                }
+                if (!cfg || cfg.signature !== CONFIG_SIGNATURE) {
+                    showConfigMsg(
+                        '<strong>⚠ Wrong file type.</strong> This file was not produced by the ' +
+                        'Motor &amp; Gearbox Replacement tool (missing or invalid signature). No fields were modified.',
+                        'err');
+                    return;
+                }
+                if (typeof cfg.version === 'number' && cfg.version > CONFIG_VERSION) {
+                    showConfigMsg(
+                        `<strong>⚠ Newer file format (v${cfg.version}).</strong> This page understands up to v${CONFIG_VERSION}. ` +
+                        'Some fields may not load correctly.', 'err');
+                    // continue anyway
+                }
+
+                // ---- Apply motor-type radios FIRST so dependent fields are visible/wired ----
+                try {
+                    const ot = (cfg.motorType && cfg.motorType.old) || 'induction';
+                    const nt = (cfg.motorType && cfg.motorType.new) || 'induction';
+                    const otRadio = document.querySelector(`input[name="old_motor_type"][value="${ot}"]`);
+                    const ntRadio = document.querySelector(`input[name="new_motor_type"][value="${nt}"]`);
+                    if (otRadio) { otRadio.checked = true; updateOldMotorType(); }
+                    if (ntRadio) { ntRadio.checked = true; updateNewMotorType(); }
+                } catch (_) { /* ignore */ }
+
+                // ---- Apply scalar fields ----
+                const f = cfg.fields || {};
+                let restored = 0;
+                CONFIG_FIELDS.forEach(id => {
+                    if (!(id in f)) return;
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    el.value = f[id];
+                    restored++;
+                });
+
+                // Re-sync derived display fields (poles, sync rpm, motor torque).
+                try { updateOldMotorFields(); } catch (_) { }
+                try { updateNewMotorFields(); } catch (_) { }
+                // Re-sync sprocket μ preset → custom input visibility.
+                try { onMuPresetChange(); } catch (_) { }
+
+                // ---- Apply notes ----
+                reportNotes.old = (cfg.notes && typeof cfg.notes.old === 'string') ? cfg.notes.old : '';
+                reportNotes.new = (cfg.notes && typeof cfg.notes.new === 'string') ? cfg.notes.new : '';
+                updateNotesIndicator('old');
+                updateNotesIndicator('new');
+
+                // Hide stale results — user must re-run Propose / Calculate.
+                resetResults();
+
+                const savedAt = cfg.savedAt ? new Date(cfg.savedAt).toLocaleString() : 'unknown';
+                showConfigMsg(
+                    `<strong>✔ Loaded.</strong> Restored ${restored} field${restored === 1 ? '' : 's'} ` +
+                    `from <code>${_esc(file.name)}</code> (saved ${_esc(savedAt)}). ` +
+                    'Press <strong>Propose Ideal Gearbox Ratio</strong> or <strong>Calculate Comparison</strong> to compute results.',
+                    'ok');
+            };
+            reader.readAsText(file);
+        }
 
         function toKW(val, unit) {
             const v = parseFloat(val);
