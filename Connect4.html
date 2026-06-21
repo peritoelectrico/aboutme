@@ -164,8 +164,8 @@
         }
 
         #three-canvas {
-            width: 100% !important;
-            height: 100% !important;
+            width: 100%;
+            height: 100%;
             display: block;
             outline: none;
         }
@@ -1163,7 +1163,7 @@
 
             // 3. Renderer setup
             renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: true });
-            renderer.setSize(width, height, false);
+            renderer.setSize(width, height);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -2048,7 +2048,7 @@
 
             camera.aspect = aspect;
             camera.updateProjectionMatrix();
-            renderer.setSize(width, height, false);
+            renderer.setSize(width, height);
 
             // Adapt Z distance dynamically on orientation changes
             let defaultZ = 14.5;
