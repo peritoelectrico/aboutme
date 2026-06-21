@@ -767,13 +767,22 @@
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const soundEnabledInput = document.getElementById('sound-toggle');
 
+        const resumeAudio = () => {
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(e => console.log("AudioContext resume failed:", e));
+            }
+        };
+
+        // Bind user gesture listeners to unlock AudioContext
+        ['click', 'mousedown', 'keydown', 'touchstart', 'pointerdown'].forEach(evt => {
+            window.addEventListener(evt, resumeAudio, { once: true, capture: true });
+        });
+
         function playSynthSound(type) {
             if (!soundEnabledInput.checked) return;
 
             // Resume context if suspended (browser security)
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            resumeAudio();
 
             const osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
@@ -1346,6 +1355,7 @@
         }
 
         function onTouchStart(event) {
+            resumeAudio();
             // Simply update mouse tracking to help raycast click events on tablets
             if (event.touches.length > 0) {
                 const touch = event.touches[0];
@@ -1356,6 +1366,7 @@
         }
 
         function onPointerDown(event) {
+            resumeAudio();
             // Log position to filter out camera drags
             pointerDownPos.set(event.clientX, event.clientY);
         }
