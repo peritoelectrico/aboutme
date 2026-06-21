@@ -1,0 +1,1858 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Frost Connect Four</title>
+
+    <!-- External Styles & Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" />
+
+    <!-- Three.js and OrbitControls via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <style>
+        /* ============================================================
+           THEME DEFINITIONS (Direct copy from index.html)
+           ============================================================ */
+        :root {
+            --bg-0: #05070d;
+            --bg-1: #0b1020;
+            --bg-2: #111a33;
+            --surface: rgba(17, 26, 51, 0.45);
+            --surface-strong: rgba(15, 23, 42, 0.85);
+            --border: rgba(148, 163, 184, 0.15);
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --accent: #38bdf8;
+            /* Cyan (Player) */
+            --accent-2: #a855f7;
+            /* Purple (Computer) */
+            --accent-3: #22d3ee;
+            --success: #10b981;
+            --shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.7);
+            --radius: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-0) !important;
+            color: var(--text) !important;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+            -webkit-font-smoothing: antialiased;
+            overflow: hidden;
+        }
+
+        /* Animated aurora background */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background:
+                radial-gradient(1200px 600px at 10% -10%, rgba(56, 189, 248, 0.18), transparent 60%),
+                radial-gradient(900px 500px at 110% 10%, rgba(168, 85, 247, 0.18), transparent 60%),
+                radial-gradient(900px 500px at 50% 120%, rgba(34, 211, 238, 0.12), transparent 60%),
+                linear-gradient(180deg, #05070d 0%, #0b1020 50%, #05070d 100%);
+            animation: auroraShift 22s ease-in-out infinite alternate;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.9), transparent 75%);
+            -webkit-mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.9), transparent 75%);
+        }
+
+        @keyframes auroraShift {
+            0% {
+                filter: hue-rotate(0deg);
+                transform: translate3d(0, 0, 0);
+            }
+
+            50% {
+                filter: hue-rotate(20deg);
+            }
+
+            100% {
+                filter: hue-rotate(-15deg);
+                transform: translate3d(0, -2%, 0);
+            }
+        }
+
+        /* ============================================================
+           APP LAYOUT
+           ============================================================ */
+        .app-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Sidebar panel - Frosted glass */
+        .sidebar {
+            width: 380px;
+            height: 100vh;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            border-right: 1px solid var(--border);
+
+            /* Frosty noise texture and glassmorphism styling */
+            background:
+                url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.35 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.20'/></svg>"),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 45%, rgba(186, 230, 253, 0.02) 75%, rgba(216, 180, 254, 0.02) 100%),
+                rgba(8, 12, 24, 0.45);
+            background-blend-mode: overlay, normal;
+            backdrop-filter: blur(30px) saturate(160%) brightness(1.05);
+            -webkit-backdrop-filter: blur(30px) saturate(160%) brightness(1.05);
+            box-shadow: 10px 0 40px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 3D Canvas Area */
+        .canvas-container {
+            flex: 1;
+            height: 100vh;
+            position: relative;
+            outline: none;
+        }
+
+        #three-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            outline: none;
+        }
+
+        /* ============================================================
+           COMPONENTS & TEXT
+           ============================================================ */
+
+        /* Back Button & Header */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.3s, transform 0.3s;
+            cursor: pointer;
+            margin-bottom: 0.25rem;
+        }
+
+        .back-link:hover {
+            color: var(--accent);
+            transform: translateX(-4px);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(120deg, #e2e8f0 0%, var(--accent) 50%, var(--accent-2) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent !important;
+            margin-bottom: 0.25rem;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        /* Card panels - frosted glass styling */
+        .card {
+            background: rgba(15, 23, 42, 0.3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: border-color 0.3s, transform 0.3s;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Scoreboard design */
+        .scoreboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.5rem;
+            text-align: center;
+            background: rgba(5, 7, 13, 0.4);
+            border-radius: 12px;
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.1rem;
+        }
+
+        .score-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text);
+            text-transform: capitalize;
+            line-height: 1.25;
+        }
+
+        .score-color {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 0.25rem;
+            line-height: 1.25;
+        }
+
+        .score-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .score-val.player {
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        }
+
+        .score-val.ai {
+            color: var(--accent-2);
+            text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+        }
+
+        .score-val.ties {
+            color: var(--text-dim);
+        }
+
+        /* Control Form Elements */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .toggle-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent);
+            font-weight: normal;
+        }
+
+        /* Custom Segmented Buttons for Difficulty */
+        .segmented-control {
+            display: flex;
+            background: rgba(5, 7, 13, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 2px;
+            width: 100%;
+        }
+
+        .segment-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-dim);
+            padding: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .segment-btn:hover:not(.active) {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .segment-btn.active {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(168, 85, 247, 0.2));
+            color: var(--text);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 10px rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+        }
+
+        /* Standard Buttons */
+        button.action-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important;
+            border: none !important;
+            color: white !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.5px;
+            padding: 12px 20px !important;
+            border-radius: 10px !important;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(56, 189, 248, 0.2);
+            transition: transform .25s ease, box-shadow .25s ease, filter 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        button.action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(168, 85, 247, 0.35);
+        }
+
+        button.action-btn:active {
+            transform: translateY(0);
+        }
+
+        button.action-btn.secondary {
+            background: rgba(15, 23, 42, 0.45) !important;
+            border: 1px solid var(--border) !important;
+            color: var(--text) !important;
+            box-shadow: none;
+        }
+
+        button.action-btn.secondary:hover {
+            border-color: var(--accent) !important;
+            color: var(--accent) !important;
+            background: rgba(15, 23, 42, 0.6) !important;
+        }
+
+        /* Status Banner Overlay (at bottom of screen) */
+        .status-banner {
+            position: absolute;
+            bottom: 2rem;
+            left: calc(380px + (100vw - 380px)/2);
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-weight: 600;
+            z-index: 100;
+            pointer-events: auto;
+
+            /* Glassmorphism */
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            box-shadow: var(--shadow);
+
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+            animation: breathe 1.5s infinite ease-in-out;
+        }
+
+        .status-dot.ai-turn {
+            background-color: var(--accent-2);
+            box-shadow: 0 0 10px var(--accent-2);
+        }
+
+        .status-dot.win-turn {
+            background-color: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                opacity: 0.5;
+                transform: scale(0.9);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.15);
+            }
+        }
+
+        /* Orbit rotation helper text overlay */
+        .view-controls-helper {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            pointer-events: none;
+            background: rgba(15, 23, 42, 0.45);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            backdrop-filter: blur(10px);
+            transition: opacity 1.5s ease;
+            z-index: 10;
+        }
+
+        /* Sound Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 38px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: rgba(5, 7, 13, 0.6);
+            border: 1px solid var(--border);
+            transition: .3s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-dim);
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            border-color: var(--accent);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(18px);
+            background-color: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+        }
+
+        /* Rules card styling */
+        .rules-list {
+            padding-left: 1.1rem;
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            line-height: 1.45;
+        }
+
+        /* Toggle Sidebar Button for Mobile */
+        .mobile-toggle {
+            display: none;
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            z-index: 100;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: rgba(15, 23, 42, 0.85);
+            color: var(--text);
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+        }
+
+        /* ============================================================
+           RESPONSIVENESS
+           ============================================================ */
+        @media (max-width: 800px) {
+            .sidebar {
+                position: absolute;
+                left: 0;
+                top: 0;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .mobile-toggle {
+                display: flex;
+            }
+
+            .status-banner {
+                bottom: 1.5rem;
+                left: 50%;
+                width: 90%;
+                max-width: 400px;
+                font-size: 0.85rem;
+                padding: 0.75rem 1.25rem;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Mobile sidebar toggler -->
+    <button class="mobile-toggle" id="mobile-sidebar-toggle" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div class="app-container">
+
+        <!-- Left frosted sidebar -->
+        <aside class="sidebar" id="game-sidebar">
+            <div>
+                <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Portfolio</a>
+                <h1>Frost Connect 3D</h1>
+                <div class="subtitle" id="game-subtitle">Human (Cyan) vs Computer (Purple)</div>
+            </div>
+
+            <!-- Player Name -->
+            <div class="card">
+                <div class="control-group">
+                    <label for="player-name-input">Player Name</label>
+                    <input type="text" id="player-name-input" placeholder="Enter name..." value="Human"
+                        oninput="changePlayerName(this.value)"
+                        style="width: 100%; background: rgba(5, 7, 13, 0.5); border: 1px solid var(--border); border-radius: 10px; color: var(--text); padding: 8px 12px; font-size: 0.9rem; outline: none; transition: border-color 0.25s;"
+                        onfocus="this.style.borderColor='var(--accent)'"
+                        onblur="this.style.borderColor='var(--border)'" />
+                </div>
+            </div>
+
+            <!-- Scoreboard -->
+            <div class="card">
+                <div class="scoreboard">
+                    <div class="score-item">
+                        <span class="score-name" id="player-score-name">Human</span>
+                        <span class="score-color">(Cyan)</span>
+                        <span class="score-val player" id="player-score">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="score-name">Ties</span>
+                        <span class="score-color">&nbsp;</span>
+                        <span class="score-val ties" id="ties-score">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="score-name">AI</span>
+                        <span class="score-color">(Purple)</span>
+                        <span class="score-val ai" id="ai-score">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game configuration & settings -->
+            <div class="card">
+                <div class="control-group">
+                    <label>AI Difficulty</label>
+                    <div class="segmented-control">
+                        <button class="segment-btn" onclick="setDifficulty('easy')" id="diff-easy">Easy</button>
+                        <button class="segment-btn" onclick="setDifficulty('medium')" id="diff-medium">Medium</button>
+                        <button class="segment-btn active" onclick="setDifficulty('hard')" id="diff-hard">Hard</button>
+                    </div>
+                </div>
+
+                <div class="control-group switch-container">
+                    <label>Audio SFX</label>
+                    <label class="switch">
+                        <input type="checkbox" id="sound-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="control-group switch-container">
+                    <label>Orbit Camera <span class="toggle-badge" id="camera-badge">Enabled</span></label>
+                    <label class="switch">
+                        <input type="checkbox" id="orbit-toggle" checked onchange="toggleOrbitControls(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="card" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <button class="action-btn" onclick="resetGame()"><i class="fa-solid fa-rotate-right"></i> Restart
+                    Board</button>
+                <button class="action-btn secondary" onclick="resetAllScores()"><i class="fa-solid fa-trash-can"></i>
+                    Reset Records</button>
+                <button class="action-btn secondary" onclick="resetCamera()"><i class="fa-solid fa-video"></i> Align
+                    View</button>
+            </div>
+
+            <!-- Stats/Match rules -->
+            <div class="card">
+                <h3
+                    style="font-size: 0.85rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                    <i class="fa-solid fa-circle-info"></i> How to Play</h3>
+                <ul class="rules-list">
+                    <li>Drag with <b>Right-click</b> (or Left-click) to rotate the 3D board view.</li>
+                    <li>Hover your mouse over columns to see a preview chip.</li>
+                    <li>Left-click on a column to drop your piece.</li>
+                    <li>Align <b>4 chips</b> horizontally, vertically, or diagonally to win.</li>
+                    <li><b>Starter rule</b>: The starting player alternates each match.</li>
+                </ul>
+            </div>
+
+            <div style="margin-top: auto; font-size: 0.7rem; color: var(--text-dim); text-align: center;">
+                <span id="starter-indicator">Next game starts: Human</span>
+            </div>
+        </aside>
+
+        <!-- 3D Canvas rendering space -->
+        <main class="canvas-container" id="main-stage">
+            <div class="view-controls-helper" id="view-helper">
+                <i class="fa-solid fa-arrows-spin"></i> Drag board to rotate/tilt
+            </div>
+
+            <canvas id="three-canvas"></canvas>
+
+            <!-- Turn status indicator -->
+            <div class="status-banner" id="turn-banner">
+                <div class="status-dot" id="turn-dot"></div>
+                <span id="turn-text">Initializing Game...</span>
+            </div>
+        </main>
+    </div>
+
+    <!-- ============================================================
+       GAME LOGIC & THREE.JS ENGINE
+       ============================================================ -->
+    <script>
+        // --- SOUND ENGINE (Web Audio API Synthesizer) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const soundEnabledInput = document.getElementById('sound-toggle');
+
+        function playSynthSound(type) {
+            if (!soundEnabledInput.checked) return;
+
+            // Resume context if suspended (browser security)
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'hover') {
+                // Subtle high pitch tick
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
+                gainNode.gain.setValueAtTime(0.04, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+            else if (type === 'drop') {
+                // Descending pitch representing fall, hitting a short bass pop
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(110, now + 0.25);
+                gainNode.gain.setValueAtTime(0.18, now);
+                gainNode.gain.linearRampToValueAtTime(0.05, now + 0.2);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+                // Add sub impact pop
+                const oscImpact = audioCtx.createOscillator();
+                const gainImpact = audioCtx.createGain();
+                oscImpact.type = 'sine';
+                oscImpact.frequency.setValueAtTime(75, now + 0.22);
+                gainImpact.gain.setValueAtTime(0, now);
+                gainImpact.gain.setValueAtTime(0.25, now + 0.22);
+                gainImpact.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+                oscImpact.connect(gainImpact);
+                gainImpact.connect(audioCtx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.3);
+                oscImpact.start(now + 0.22);
+                oscImpact.stop(now + 0.32);
+            }
+            else if (type === 'win') {
+                // Sci-fi major arpeggio sweep (Cyan/Future win)
+                const freqs = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C major notes
+                freqs.forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+
+                    o.type = 'sine';
+                    o.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    g.gain.setValueAtTime(0, now);
+                    g.gain.setValueAtTime(0.08, now + idx * 0.08);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.6);
+
+                    o.start(now + idx * 0.08);
+                    o.stop(now + idx * 0.08 + 0.65);
+                });
+            }
+            else if (type === 'lose') {
+                // Sci-fi descending minor chord sweep
+                const freqs = [392.00, 311.13, 261.63, 196.00, 130.81]; // C minor descending notes
+                freqs.forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+
+                    o.type = 'sawtooth';
+                    o.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    g.gain.setValueAtTime(0, now);
+                    g.gain.setValueAtTime(0.06, now + idx * 0.12);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.8);
+
+                    o.start(now + idx * 0.12);
+                    o.stop(now + idx * 0.12 + 0.85);
+                });
+            }
+            else if (type === 'tie') {
+                // Neutral ambient sound
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(220, now + 0.3);
+                gainNode.gain.setValueAtTime(0.12, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            }
+        }
+
+        // --- GAME ENGINE CONSTANTS ---
+        const ROWS = 6;
+        const COLS = 7;
+
+        // Grid state (0 = empty, 1 = Human/Cyan, 2 = AI/Purple)
+        let gameGrid = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+        let gameActive = true;
+        let difficulty = 'hard'; // 'easy', 'medium', 'hard'
+        let currentTurn = 1; // 1 = player, 2 = AI
+        let nextStartPlayer = 'player'; // alternates after games: 'player' or 'computer'
+        let isAnimating = false; // block inputs during drops/animating wins
+        let gameSessionId = 0; // tracks active game to isolate late animation callbacks
+        let playerName = "Human";
+
+        // Local Record Scores
+        let scores = {
+            player: 0,
+            ai: 0,
+            ties: 0
+        };
+        let profiles = {}; // local score database mapping player names to wins/losses/ties
+
+        // Load scores and start configurations from localstorage profiles
+        function loadSettingsAndStats() {
+            // 1. Load profiles dictionary
+            try {
+                profiles = JSON.parse(localStorage.getItem('connect4_profiles')) || {};
+            } catch (e) {
+                profiles = {};
+            }
+
+            // 2. Load active player name
+            const savedName = localStorage.getItem('connect4_player_name');
+            playerName = savedName !== null ? savedName : "Human";
+
+            // 3. Load configurations
+            const savedNextStart = localStorage.getItem('connect4_next_start');
+            const savedDifficulty = localStorage.getItem('connect4_difficulty');
+
+            if (savedNextStart !== null) nextStartPlayer = savedNextStart;
+            if (savedDifficulty !== null) {
+                difficulty = savedDifficulty;
+                // Update UI state
+                document.querySelectorAll('.segment-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(`diff-${difficulty}`).classList.add('active');
+            }
+
+            // 4. Load player scores from profiles
+            loadPlayerProfileScores();
+
+            // Sync UI
+            const nameInput = document.getElementById('player-name-input');
+            if (nameInput) nameInput.value = playerName;
+            updateScoreboardUI();
+            updateStarterUI();
+        }
+
+        function loadPlayerProfileScores() {
+            if (!profiles[playerName]) {
+                profiles[playerName] = { playerWins: 0, computerWins: 0, ties: 0 };
+            }
+            const profile = profiles[playerName];
+            scores.player = profile.playerWins || 0;
+            scores.ai = profile.computerWins || 0;
+            scores.ties = profile.ties || 0;
+        }
+
+        function saveStats() {
+            // Save active scores to current profile
+            profiles[playerName] = {
+                playerWins: scores.player,
+                computerWins: scores.ai,
+                ties: scores.ties
+            };
+
+            // Save settings and dictionary
+            localStorage.setItem('connect4_profiles', JSON.stringify(profiles));
+            localStorage.setItem('connect4_player_name', playerName);
+            localStorage.setItem('connect4_next_start', nextStartPlayer);
+            localStorage.setItem('connect4_difficulty', difficulty);
+        }
+
+        function changePlayerName(name) {
+            // 1. Save current profile's stats before switching
+            saveStats();
+
+            // 2. Switch name
+            playerName = name.trim() || "Human";
+            localStorage.setItem('connect4_player_name', playerName);
+
+            // 3. Load or initialize target profile scores
+            loadPlayerProfileScores();
+
+            // 4. Update UI labels
+            updateScoreboardUI();
+            updateStarterUI();
+        }
+
+        function updateScoreboardUI() {
+            document.getElementById('player-score').innerText = scores.player;
+            document.getElementById('ai-score').innerText = scores.ai;
+            document.getElementById('ties-score').innerText = scores.ties;
+
+            // Update the scoreboard header label
+            const nameEl = document.getElementById('player-score-name');
+            if (nameEl) {
+                nameEl.innerText = playerName;
+            }
+
+            // Update subtitle
+            const subtitleEl = document.getElementById('game-subtitle');
+            if (subtitleEl) {
+                subtitleEl.innerText = `${playerName} (Cyan) vs Computer (Purple)`;
+            }
+        }
+
+        function updateStarterUI() {
+            const nextStartText = nextStartPlayer === 'player' ? `${playerName} (Cyan)` : 'Computer (Purple)';
+            document.getElementById('starter-indicator').innerText = `Next game starts: ${nextStartText}`;
+        }
+
+        // --- THREE.JS INTERACTION ENVIRONMENT ---
+        let scene, camera, renderer, controls;
+        let boardGroup;
+        let columnSensors = [];
+        let droppedPiecesGroup;
+        let hoverPreviewMesh;
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let currentHoveredCol = -1;
+
+        // Colors & materials
+        const COLOR_PLAYER = 0x00e5ff; // Glowing Cyan
+        const COLOR_AI = 0xd500f9;     // Glowing Violet/Purple
+        const COLOR_BOARD = 0x111a33;  // Deep Blue/Grey Glass
+
+        let boardFrontPlate, boardBackPlate;
+
+        // Custom canvas textures for high-fidelity frosty glass with circular cutouts
+        function createFrostedGlassTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+
+            // Draw dark frosty translucent background
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw noise overlay to simulate sand-blasted frost texture
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const noise = (Math.random() - 0.5) * 16;
+                data[i] = Math.min(255, Math.max(0, data[i] + noise));
+                data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
+                data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
+            }
+            ctx.putImageData(imgData, 0, 0);
+
+            // Add highlight/glowing rims before cut-outs
+            ctx.globalCompositeOperation = 'source-over';
+            const colWidth = canvas.width / COLS;
+            const rowHeight = canvas.height / ROWS;
+
+            for (let c = 0; c < COLS; c++) {
+                for (let r = 0; r < ROWS; r++) {
+                    const x = (c + 0.5) * colWidth;
+                    // Flip Y to match WebGL space coordinate origins (bottom-left)
+                    const y = canvas.height - (r + 0.5) * rowHeight;
+                    const radius = Math.min(colWidth, rowHeight) * 0.40;
+
+                    // Neon/Frost rim highlights
+                    ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
+                    ctx.lineWidth = 12;
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius + 2, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius + 1, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+
+            // Punch holes in the texture
+            ctx.globalCompositeOperation = 'destination-out';
+            for (let c = 0; c < COLS; c++) {
+                for (let r = 0; r < ROWS; r++) {
+                    const x = (c + 0.5) * colWidth;
+                    const y = canvas.height - (r + 0.5) * rowHeight;
+                    const radius = Math.min(colWidth, rowHeight) * 0.40;
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function initThreeJS() {
+            const container = document.getElementById('main-stage');
+            const canvasEl = document.getElementById('three-canvas');
+
+            // 1. Scene setup
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x05070d, 0.05);
+
+            // 2. Camera setup
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+            resetCamera();
+
+            // 3. Renderer setup
+            renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.05;
+
+            // 4. Controls setup
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 + 0.05; // limit looking upwards from below
+            controls.minPolarAngle = Math.PI / 4;        // limit looking directly from top
+            controls.minDistance = 5;
+            controls.maxDistance = 22;
+
+            // Map right click to rotate (also keep left click enabled)
+            controls.mouseButtons = {
+                LEFT: THREE.MOUSE.ROTATE,
+                MIDDLE: THREE.MOUSE.DOLLY,
+                RIGHT: THREE.MOUSE.ROTATE
+            };
+
+            // Sync initial settings for orbit controls toggle
+            const cameraToggle = document.getElementById('orbit-toggle');
+            controls.enabled = cameraToggle.checked;
+
+            // 5. Ambient & Point Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+            scene.add(ambientLight);
+
+            // Directional overhead rim light
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(5, 10, 7);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // Colored point lights mirroring game tokens
+            const blueLight = new THREE.PointLight(COLOR_PLAYER, 1.5, 15);
+            blueLight.position.set(-6, 2, 4);
+            scene.add(blueLight);
+
+            const purpleLight = new THREE.PointLight(COLOR_AI, 1.5, 15);
+            purpleLight.position.set(6, 2, 4);
+            scene.add(purpleLight);
+
+            // Subtly illuminate board floor grid
+            const gridHelper = new THREE.GridHelper(30, 30, 0x1e293b, 0x0f172a);
+            gridHelper.position.y = -4.0;
+            scene.add(gridHelper);
+
+            // 6. Draw Connect 4 board
+            boardGroup = new THREE.Group();
+            scene.add(boardGroup);
+            build3DBoard();
+
+            // Dynamic group for tokens
+            droppedPiecesGroup = new THREE.Group();
+            scene.add(droppedPiecesGroup);
+
+            // 7. Initialize Column Colliders for Interactive Raycasting
+            buildColumnSensors();
+
+            // 8. Create Hover preview sphere
+            const previewGeo = new THREE.SphereGeometry(0.38, 32, 32);
+            const previewMat = new THREE.MeshBasicMaterial({
+                color: COLOR_PLAYER,
+                transparent: true,
+                opacity: 0.0 // starts invisible
+            });
+            hoverPreviewMesh = new THREE.Mesh(previewGeo, previewMat);
+            scene.add(hoverPreviewMesh);
+
+            // Handle Resize
+            window.addEventListener('resize', onWindowResize);
+
+            // Pointer actions
+            container.addEventListener('mousemove', onMouseMove);
+            container.addEventListener('click', onCanvasClick);
+
+            // Touch helpers for mobile
+            container.addEventListener('touchstart', onTouchStart, { passive: true });
+        }
+
+        // Generate the 3D Board cabinet structures
+        function build3DBoard() {
+            // Front & Back board plates using transparent canvas textures
+            const texture = createFrostedGlassTexture();
+
+            const boardWidth = COLS * 1.0;
+            const boardHeight = ROWS * 1.0;
+
+            const plateGeo = new THREE.PlaneGeometry(boardWidth, boardHeight);
+
+            const frontPlateMat = new THREE.MeshPhysicalMaterial({
+                map: texture,
+                transparent: true,
+                alphaTest: 0.05,
+                roughness: 0.18,
+                transmission: 0.65,
+                ior: 1.5,
+                side: THREE.DoubleSide
+            });
+            frontPlateMat.thickness = 0.5;
+
+            const backPlateMat = new THREE.MeshPhysicalMaterial({
+                map: texture,
+                color: 0x05070d, // Dark black-blue tint matching website bg
+                transparent: true,
+                alphaTest: 0.05,
+                roughness: 0.3,   // Higher roughness for frostiness
+                transmission: 0.2, // Lower transmission for darker opacity
+                ior: 1.6,
+                side: THREE.DoubleSide
+            });
+            backPlateMat.thickness = 1.0;
+
+            boardFrontPlate = new THREE.Mesh(plateGeo, frontPlateMat);
+            boardFrontPlate.position.set(0, 0, 0.35); // offset forward
+            boardGroup.add(boardFrontPlate);
+
+            boardBackPlate = new THREE.Mesh(plateGeo, backPlateMat);
+            boardBackPlate.position.set(0, 0, -0.35); // offset backward
+            boardBackPlate.rotation.y = Math.PI; // flip
+            boardGroup.add(boardBackPlate);
+
+            // Cabinet side pillars
+            const sideGeo = new THREE.BoxGeometry(0.35, boardHeight + 0.4, 0.85);
+            const frameMat = new THREE.MeshStandardMaterial({
+                color: 0x1e293b,
+                roughness: 0.5,
+                metalness: 0.8
+            });
+
+            const leftPillar = new THREE.Mesh(sideGeo, frameMat);
+            leftPillar.position.set(-(boardWidth / 2 + 0.175), 0, 0);
+            boardGroup.add(leftPillar);
+
+            const rightPillar = new THREE.Mesh(sideGeo, frameMat);
+            rightPillar.position.set((boardWidth / 2 + 0.175), 0, 0);
+            boardGroup.add(rightPillar);
+
+            // Base stand
+            const baseGeo = new THREE.BoxGeometry(boardWidth + 1.2, 0.4, 1.8);
+            const baseMesh = new THREE.Mesh(baseGeo, frameMat);
+            baseMesh.position.set(0, -(boardHeight / 2 + 0.2), 0);
+            boardGroup.add(baseMesh);
+
+            // Position entire board in the center of coordinates
+            // Row spaces mapping: Center around 0. Row index 0 to 5.
+            // Center is Y = 0.
+        }
+
+        // Invisible raycasting hit zones for columns
+        function buildColumnSensors() {
+            const boardWidth = COLS * 1.0;
+            const sensorGeo = new THREE.BoxGeometry(0.9, ROWS * 1.2, 0.8);
+
+            // Invisible glass shell for collision detection
+            const sensorMat = new THREE.MeshBasicMaterial({
+                color: 0x00ff00,
+                transparent: true,
+                opacity: 0.0, // invisible
+                depthWrite: false
+            });
+
+            for (let c = 0; c < COLS; c++) {
+                const xPos = - (boardWidth / 2) + 0.5 + c * 1.0;
+                const sensor = new THREE.Mesh(sensorGeo, sensorMat);
+                sensor.position.set(xPos, 0, 0);
+                sensor.userData = { columnIndex: c };
+                columnSensors.push(sensor);
+                scene.add(sensor);
+            }
+        }
+
+        function toggleOrbitControls(enabled) {
+            controls.enabled = enabled;
+            document.getElementById('camera-badge').innerText = enabled ? 'Enabled' : 'Disabled';
+        }
+
+        function resetCamera() {
+            camera.position.set(0, 1.2, 9);
+            if (controls) {
+                controls.target.set(0, 0, 0);
+                controls.update();
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('game-sidebar');
+            sidebar.classList.toggle('open');
+
+            const btnIcon = document.querySelector('#mobile-sidebar-toggle i');
+            if (sidebar.classList.contains('open')) {
+                btnIcon.className = 'fa-solid fa-xmark';
+            } else {
+                btnIcon.className = 'fa-solid fa-bars';
+            }
+        }
+
+        // Set game difficulty
+        function setDifficulty(level) {
+            difficulty = level;
+            document.querySelectorAll('.segment-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`diff-${level}`).classList.add('active');
+            saveStats();
+        }
+
+        // --- GAME PLAY LOGIC ---
+
+        // Get empty row slot inside a column (0 is bottom, 5 is top)
+        function getAvailableRow(grid, col) {
+            for (let r = 0; r < ROWS; r++) {
+                if (grid[r][col] === 0) {
+                    return r;
+                }
+            }
+            return -1;
+        }
+
+        // Hover events
+        function onMouseMove(event) {
+            if (!gameActive || isAnimating || currentTurn !== 1) {
+                hoverPreviewMesh.material.opacity = 0;
+                return;
+            }
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(columnSensors);
+
+            if (intersects.length > 0) {
+                const col = intersects[0].object.userData.columnIndex;
+                if (col !== currentHoveredCol) {
+                    currentHoveredCol = col;
+                    playSynthSound('hover');
+                }
+
+                const openRow = getAvailableRow(gameGrid, col);
+                if (openRow !== -1) {
+                    // Place hover preview above the board at corresponding column
+                    const xPos = - (COLS * 1.0 / 2) + 0.5 + col * 1.0;
+                    hoverPreviewMesh.position.set(xPos, (ROWS * 1.0 / 2) + 0.4, 0);
+                    hoverPreviewMesh.material.color.setHex(COLOR_PLAYER);
+                    hoverPreviewMesh.material.opacity = 0.5 + Math.sin(Date.now() * 0.01) * 0.2; // pulse
+                } else {
+                    hoverPreviewMesh.material.opacity = 0;
+                }
+            } else {
+                currentHoveredCol = -1;
+                hoverPreviewMesh.material.opacity = 0;
+            }
+        }
+
+        function onTouchStart(event) {
+            // Simply update mouse tracking to help raycast click events on tablets
+            if (event.touches.length > 0) {
+                const touch = event.touches[0];
+                const rect = renderer.domElement.getBoundingClientRect();
+                mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+            }
+        }
+
+        // Select column and play piece on click
+        function onCanvasClick(event) {
+            if (!gameActive || isAnimating || currentTurn !== 1) return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(columnSensors);
+
+            if (intersects.length > 0) {
+                const col = intersects[0].object.userData.columnIndex;
+                makeHumanMove(col);
+            }
+        }
+
+        // Execute player selection
+        function makeHumanMove(col) {
+            const row = getAvailableRow(gameGrid, col);
+            if (row === -1) return; // full column
+
+            hoverPreviewMesh.material.opacity = 0;
+            dropPieceIn3D(col, row, 1, () => {
+                gameGrid[row][col] = 1;
+
+                if (checkGameWinner(gameGrid, 1)) {
+                    triggerWinState(1);
+                } else if (isBoardFull(gameGrid)) {
+                    triggerDrawState();
+                } else {
+                    currentTurn = 2; // hand over to Computer AI
+                    updateStatusUI();
+
+                    // Trigger AI computation
+                    setTimeout(makeAIMove, 700);
+                }
+            });
+        }
+
+        // Animate piece drop in 3D
+        let activeAnimations = [];
+
+        function dropPieceIn3D(col, row, player, onFinishedCallback) {
+            isAnimating = true;
+            const dropSessionId = gameSessionId;
+
+            // Create shiny spherical token mesh
+            const pieceGeo = new THREE.SphereGeometry(0.38, 32, 32);
+
+            // Material settings for glowing glossy glass spheres
+            const colorHex = (player === 1) ? COLOR_PLAYER : COLOR_AI;
+            const pieceMat = new THREE.MeshPhysicalMaterial({
+                color: colorHex,
+                emissive: colorHex,
+                emissiveIntensity: 0.45,
+                roughness: 0.1,
+                transmission: 0.7,
+                ior: 1.6,
+                clearcoat: 1.0,
+                clearcoatRoughness: 0.05
+            });
+            pieceMat.thickness = 0.8;
+
+            const pieceMesh = new THREE.Mesh(pieceGeo, pieceMat);
+
+            // Initial coordinate offsets
+            const startX = - (COLS * 1.0 / 2) + 0.5 + col * 1.0;
+            const startY = (ROWS * 1.0 / 2) + 1.5; // fall from above board
+            const targetY = - (ROWS * 1.0 / 2) + 0.5 + row * 1.0; // rest coordinates
+
+            pieceMesh.position.set(startX, startY, 0);
+            droppedPiecesGroup.add(pieceMesh);
+
+            // Attach coordinates info for winning animation filter
+            pieceMesh.userData = { gridRow: row, gridCol: col, player: player };
+
+            // Physics drop loop
+            let velocity = 0.0;
+            const gravity = -0.015;
+            let currentY = startY;
+            const bounceStrength = 0.35; // bounce factor
+            let bounceCount = 0;
+
+            playSynthSound('drop');
+
+            function animateDrop() {
+                // If game was reset mid-animation, abort the drop loop
+                if (dropSessionId !== gameSessionId) {
+                    activeAnimations = activeAnimations.filter(anim => anim !== animateDrop);
+                    return;
+                }
+
+                velocity += gravity;
+                currentY += velocity;
+
+                if (currentY <= targetY) {
+                    currentY = targetY;
+                    velocity = -velocity * bounceStrength; // reverse velocity on bounce
+                    bounceCount++;
+
+                    if (bounceCount > 2 || Math.abs(velocity) < 0.02) {
+                        pieceMesh.position.y = targetY;
+                        isAnimating = false;
+                        activeAnimations = activeAnimations.filter(anim => anim !== animateDrop);
+                        if (dropSessionId === gameSessionId && onFinishedCallback) onFinishedCallback();
+                        return;
+                    }
+                }
+
+                pieceMesh.position.y = currentY;
+                requestAnimationFrame(animateDrop);
+            }
+
+            activeAnimations.push(animateDrop);
+            animateDrop();
+        }
+
+        // --- COMPUTER AI (Minimax with Alpha-Beta Pruning) ---
+        function makeAIMove() {
+            if (!gameActive) return;
+
+            let bestScore = -Infinity;
+            let bestColumns = [];
+
+            // AI dynamic searching parameters based on selected difficulty
+            let maxSearchDepth = 1;
+            if (difficulty === 'medium') maxSearchDepth = 3;
+            if (difficulty === 'hard') maxSearchDepth = 6;
+
+            const startTime = performance.now();
+            let nodesEvaluated = 0;
+
+            // Ordered columns evaluation center-out helps trigger quick alpha-beta pruning cuts
+            const searchOrder = [3, 2, 4, 1, 5, 0, 6];
+
+            for (let c of searchOrder) {
+                const r = getAvailableRow(gameGrid, c);
+                if (r !== -1) {
+                    gameGrid[r][c] = 2; // AI test move
+                    nodesEvaluated++;
+                    const score = minimax(gameGrid, 0, false, -Infinity, Infinity, maxSearchDepth);
+                    gameGrid[r][c] = 0; // undo
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestColumns = [c];
+                    } else if (score === bestScore) {
+                        bestColumns.push(c);
+                    }
+                }
+            }
+
+            // Pick a column randomly from best scoring options
+            const chosenCol = bestColumns[Math.floor(Math.random() * bestColumns.length)];
+            const chosenRow = getAvailableRow(gameGrid, chosenCol);
+
+            const duration = (performance.now() - startTime).toFixed(1);
+            console.log(`[AI Engine] Column Chosen: ${chosenCol} | Score: ${bestScore} | Search Depth: ${maxSearchDepth} | Evaluated: ${nodesEvaluated} nodes in ${duration}ms`);
+
+            dropPieceIn3D(chosenCol, chosenRow, 2, () => {
+                gameGrid[chosenRow][chosenCol] = 2;
+
+                if (checkGameWinner(gameGrid, 2)) {
+                    triggerWinState(2);
+                } else if (isBoardFull(gameGrid)) {
+                    triggerDrawState();
+                } else {
+                    currentTurn = 1; // back to human player
+                    updateStatusUI();
+                }
+            });
+        }
+
+        // Minimax recursive search algorithm
+        function minimax(grid, depth, isMaximizing, alpha, beta, maxDepth) {
+            // Check terminal conditions
+            if (checkGameWinner(grid, 2)) return 1000000 - depth; // computer win (prefer shorter depth path)
+            if (checkGameWinner(grid, 1)) return -1000000 + depth; // human win (delay losses)
+            if (isBoardFull(grid) || depth >= maxDepth) {
+                return evaluateHeuristicScore(grid);
+            }
+
+            const searchOrder = [3, 2, 4, 1, 5, 0, 6];
+
+            if (isMaximizing) {
+                let maxVal = -Infinity;
+                for (let c of searchOrder) {
+                    const r = getAvailableRow(grid, c);
+                    if (r !== -1) {
+                        grid[r][c] = 2;
+                        const val = minimax(grid, depth + 1, false, alpha, beta, maxDepth);
+                        grid[r][c] = 0; // undo
+
+                        maxVal = Math.max(maxVal, val);
+                        alpha = Math.max(alpha, val);
+                        if (beta <= alpha) break; // beta cut
+                    }
+                }
+                return maxVal;
+            } else {
+                let minVal = Infinity;
+                for (let c of searchOrder) {
+                    const r = getAvailableRow(grid, c);
+                    if (r !== -1) {
+                        grid[r][c] = 1;
+                        const val = minimax(grid, depth + 1, true, alpha, beta, maxDepth);
+                        grid[r][c] = 0; // undo
+
+                        minVal = Math.min(minVal, val);
+                        beta = Math.min(beta, val);
+                        if (beta <= alpha) break; // alpha cut
+                    }
+                }
+                return minVal;
+            }
+        }
+
+        // Connect Four heuristic board analyzer
+        function evaluateHeuristicScore(grid) {
+            let score = 0;
+
+            // Center Column Control weight boosts (Column index 3)
+            let centerAICount = 0;
+            let centerHumanCount = 0;
+            for (let r = 0; r < ROWS; r++) {
+                if (grid[r][3] === 2) centerAICount++;
+                else if (grid[r][3] === 1) centerHumanCount++;
+            }
+            score += centerAICount * 4;
+            score -= centerHumanCount * 4;
+
+            // Adjacent Columns weight offsets (Columns 2 & 4)
+            for (let r = 0; r < ROWS; r++) {
+                if (grid[r][2] === 2) score += 1;
+                if (grid[r][4] === 2) score += 1;
+                if (grid[r][2] === 1) score -= 1;
+                if (grid[r][4] === 1) score -= 1;
+            }
+
+            // Slotted sequence score sums (horizontal, vertical, diagonal window evaluation)
+            // 1. Horizontal
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS - 3; c++) {
+                    const window = [grid[r][c], grid[r][c + 1], grid[r][c + 2], grid[r][c + 3]];
+                    score += evaluateSequenceWindow(window);
+                }
+            }
+
+            // 2. Vertical
+            for (let c = 0; c < COLS; c++) {
+                for (let r = 0; r < ROWS - 3; r++) {
+                    const window = [grid[r][c], grid[r + 1][c], grid[r + 2][c], grid[r + 3][c]];
+                    score += evaluateSequenceWindow(window);
+                }
+            }
+
+            // 3. Diagonal Positive Slopes
+            for (let r = 0; r < ROWS - 3; r++) {
+                for (let c = 0; c < COLS - 3; c++) {
+                    const window = [grid[r][c], grid[r + 1][c + 1], grid[r + 2][c + 2], grid[r + 3][c + 3]];
+                    score += evaluateSequenceWindow(window);
+                }
+            }
+
+            // 4. Diagonal Negative Slopes
+            for (let r = 3; r < ROWS; r++) {
+                for (let c = 0; c < COLS - 3; c++) {
+                    const window = [grid[r][c], grid[r - 1][c + 1], grid[r - 2][c + 2], grid[r - 3][c + 3]];
+                    score += evaluateSequenceWindow(window);
+                }
+            }
+
+            return score;
+        }
+
+        // Weight value lookup helper for window sequences
+        function evaluateSequenceWindow(window) {
+            let aiCount = 0;
+            let humanCount = 0;
+            let emptyCount = 0;
+
+            for (let cell of window) {
+                if (cell === 2) aiCount++;
+                else if (cell === 1) humanCount++;
+                else emptyCount++;
+            }
+
+            if (aiCount === 4) return 100000;
+            if (aiCount === 3 && emptyCount === 1) return 100;
+            if (aiCount === 2 && emptyCount === 2) return 10;
+
+            if (humanCount === 3 && emptyCount === 1) return -900; // prioritize blocking player
+            if (humanCount === 2 && emptyCount === 2) return -8;
+
+            return 0;
+        }
+
+        // Check if current board configuration holds 4-in-a-row winning sequence
+        function checkGameWinner(grid, player) {
+            // Horizontal check
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS - 3; c++) {
+                    if (grid[r][c] === player && grid[r][c + 1] === player && grid[r][c + 2] === player && grid[r][c + 3] === player) {
+                        return true;
+                    }
+                }
+            }
+
+            // Vertical check
+            for (let c = 0; c < COLS; c++) {
+                for (let r = 0; r < ROWS - 3; r++) {
+                    if (grid[r][c] === player && grid[r + 1][c] === player && grid[r + 2][c] === player && grid[r + 3][c] === player) {
+                        return true;
+                    }
+                }
+            }
+
+            // Diagonal positive slopes
+            for (let r = 0; r < ROWS - 3; r++) {
+                for (let c = 0; c < COLS - 3; c++) {
+                    if (grid[r][c] === player && grid[r + 1][c + 1] === player && grid[r + 2][c + 2] === player && grid[r + 3][c + 3] === player) {
+                        return true;
+                    }
+                }
+            }
+
+            // Diagonal negative slopes
+            for (let r = 3; r < ROWS; r++) {
+                for (let c = 0; c < COLS - 3; c++) {
+                    if (grid[r][c] === player && grid[r - 1][c + 1] === player && grid[r - 2][c + 2] === player && grid[r - 3][c + 3] === player) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        function getWinningSegments(grid, player) {
+            // Get coordinates of the winning 4 cells to trigger pulsate shaders
+            const coords = [];
+
+            // Horizontal
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS - 3; c++) {
+                    if (grid[r][c] === player && grid[r][c + 1] === player && grid[r][c + 2] === player && grid[r][c + 3] === player) {
+                        return [[r, c], [r, c + 1], [r, c + 2], [r, c + 3]];
+                    }
+                }
+            }
+
+            // Vertical
+            for (let c = 0; c < COLS; c++) {
+                for (let r = 0; r < ROWS - 3; r++) {
+                    if (grid[r][c] === player && grid[r + 1][c] === player && grid[r + 2][c] === player && grid[r + 3][c] === player) {
+                        return [[r, c], [r + 1, c], [r + 2, c], [r + 3, c]];
+                    }
+                }
+            }
+
+            // Diagonal positive
+            for (let r = 0; r < ROWS - 3; r++) {
+                for (let c = 0; c < COLS - 3; c++) {
+                    if (grid[r][c] === player && grid[r + 1][c + 1] === player && grid[r + 2][c + 2] === player && grid[r + 3][c + 3] === player) {
+                        return [[r, c], [r + 1, c + 1], [r + 2, c + 2], [r + 3, c + 3]];
+                    }
+                }
+            }
+
+            // Diagonal negative
+            for (let r = 3; r < ROWS; r++) {
+                for (let c = 0; c < COLS - 3; c++) {
+                    if (grid[r][c] === player && grid[r - 1][c + 1] === player && grid[r - 2][c + 2] === player && grid[r - 3][c + 3] === player) {
+                        return [[r, c], [r - 1, c + 1], [r - 2, c + 2], [r - 3, c + 3]];
+                    }
+                }
+            }
+
+            return coords;
+        }
+
+        // Draw detection
+        function isBoardFull(grid) {
+            for (let c = 0; c < COLS; c++) {
+                if (grid[ROWS - 1][c] === 0) return false;
+            }
+            return true;
+        }
+
+        // End Game: Trigger Win Visual Effects
+        let winAnimateInterval = null;
+        function triggerWinState(winnerVal) {
+            gameActive = false;
+
+            const winningCells = getWinningSegments(gameGrid, winnerVal);
+
+            // Render winner details on screen banner
+            const turnText = document.getElementById('turn-text');
+            const turnDot = document.getElementById('turn-dot');
+            turnDot.className = 'status-dot win-turn';
+
+            if (winnerVal === 1) {
+                turnText.innerText = "🎉 Human Player wins!";
+                scores.player++;
+                playSynthSound('win');
+            } else {
+                turnText.innerText = "💻 Computer wins!";
+                scores.ai++;
+                playSynthSound('lose');
+            }
+
+            // Save records
+            saveStats();
+            updateScoreboardUI();
+
+            // Set up alternating starting player for the next game!
+            nextStartPlayer = (winnerVal === 1) ? 'computer' : 'player';
+            saveStats();
+            updateStarterUI();
+
+            // Apply glowing effect on winning meshes & dim non-winning pieces
+            const winningMeshes = [];
+            droppedPiecesGroup.children.forEach(mesh => {
+                const r = mesh.userData.gridRow;
+                const c = mesh.userData.gridCol;
+
+                // Check if this mesh is part of the winning coordinate array
+                const isWinner = winningCells.some(cell => cell[0] === r && cell[1] === c);
+
+                if (isWinner) {
+                    mesh.material.emissiveIntensity = 2.0; // Glow intensely
+                    winningMeshes.push(mesh);
+                } else {
+                    // Dim standard tokens
+                    mesh.material.transparent = true;
+                    mesh.material.opacity = 0.25;
+                }
+            });
+
+            // Pulsate winning spheres
+            let time = 0;
+            function pulseWinningPieces() {
+                if (gameActive) return; // stop on restart
+                time += 0.05;
+                winningMeshes.forEach(mesh => {
+                    const scaleFactor = 1.0 + Math.sin(time * 3) * 0.06;
+                    mesh.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                });
+                requestAnimationFrame(pulseWinningPieces);
+            }
+            pulseWinningPieces();
+        }
+
+        // End Game: Draw Visuals
+        function triggerDrawState() {
+            gameActive = false;
+
+            const turnText = document.getElementById('turn-text');
+            const turnDot = document.getElementById('turn-dot');
+            turnDot.className = 'status-dot';
+            turnText.innerText = "🤝 Match drawn! Board is full.";
+
+            scores.ties++;
+            playSynthSound('draw');
+
+            saveStats();
+            updateScoreboardUI();
+
+            // Alternating start rules still toggle
+            nextStartPlayer = nextStartPlayer === 'player' ? 'computer' : 'player';
+            saveStats();
+            updateStarterUI();
+        }
+
+        // Update Bottom Status text
+        function updateStatusUI() {
+            const turnText = document.getElementById('turn-text');
+            const turnDot = document.getElementById('turn-dot');
+
+            if (currentTurn === 1) {
+                turnText.innerText = "Your Turn (Drop piece)";
+                turnDot.className = 'status-dot';
+            } else {
+                turnText.innerText = "Computer thinking...";
+                turnDot.className = 'status-dot ai-turn';
+            }
+        }
+
+        // Reset game board grid state
+        function resetGame() {
+            gameSessionId++; // invalidates any ongoing animations from previous match
+            gameGrid = Array(ROWS).fill(null).map(() => Array(COLS).fill(0));
+            gameActive = true;
+            isAnimating = false;
+            currentHoveredCol = -1;
+
+            // Clear drop visual meshes
+            while (droppedPiecesGroup.children.length > 0) {
+                const mesh = droppedPiecesGroup.children[0];
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+                droppedPiecesGroup.remove(mesh);
+            }
+
+            // Read the next starting player flag
+            currentTurn = nextStartPlayer === 'player' ? 1 : 2;
+            updateStatusUI();
+
+            // If Computer starts the game, prompt immediately
+            if (currentTurn === 2) {
+                setTimeout(makeAIMove, 800);
+            }
+        }
+
+        // Clear scoreboard statistics records
+        function resetAllScores() {
+            scores.player = 0;
+            scores.ai = 0;
+            scores.ties = 0;
+            saveStats();
+            updateScoreboardUI();
+            updateStarterUI();
+            resetGame();
+        }
+
+        function resetCamera() {
+            camera.position.set(0, 1.2, 14.5);
+            if (controls) {
+                controls.target.set(0, 0, 0);
+                controls.update();
+            }
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('main-stage');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // --- ANIMATION LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Orbit Update
+            if (controls && controls.enabled) {
+                controls.update();
+            }
+
+            // Animate hovering previews
+            if (hoverPreviewMesh && hoverPreviewMesh.material.opacity > 0) {
+                hoverPreviewMesh.material.opacity = 0.4 + Math.sin(Date.now() * 0.007) * 0.15;
+            }
+
+            // Sync layout positions
+            renderer.render(scene, camera);
+        }
+
+        // --- INITIAL STARTUP ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSettingsAndStats();
+            initThreeJS();
+            resetGame();
+            animate();
+
+            // Fade out drag instruction indicator overlay after 5 seconds
+            setTimeout(() => {
+                const helper = document.getElementById('view-helper');
+                if (helper) helper.style.opacity = 0.0;
+            }, 5000);
+        });
+
+    </script>
+</body>
+
+</html>
