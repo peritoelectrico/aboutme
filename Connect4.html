@@ -1113,22 +1113,22 @@
                     const y = canvas.height - (r + 0.5) * rowHeight;
                     const radius = Math.min(colWidth, rowHeight) * 0.40;
 
-                    // Neon/Frost rim highlights
+                    // Neon/Frost rim highlights (use ellipse to correct aspect ratio stretch)
                     ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
                     ctx.lineWidth = 12;
                     ctx.beginPath();
-                    ctx.arc(x, y, radius + 2, 0, Math.PI * 2);
+                    ctx.ellipse(x, y, (radius + 2) * (6 / 7), radius + 2, 0, 0, Math.PI * 2);
                     ctx.stroke();
 
                     ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
                     ctx.lineWidth = 3;
                     ctx.beginPath();
-                    ctx.arc(x, y, radius + 1, 0, Math.PI * 2);
+                    ctx.ellipse(x, y, (radius + 1) * (6 / 7), radius + 1, 0, 0, Math.PI * 2);
                     ctx.stroke();
                 }
             }
 
-            // Punch holes in the texture
+            // Punch holes in the texture (use ellipse to correct aspect ratio stretch)
             ctx.globalCompositeOperation = 'destination-out';
             for (let c = 0; c < COLS; c++) {
                 for (let r = 0; r < ROWS; r++) {
@@ -1137,7 +1137,7 @@
                     const radius = Math.min(colWidth, rowHeight) * 0.40;
 
                     ctx.beginPath();
-                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.ellipse(x, y, radius * (6 / 7), radius, 0, 0, Math.PI * 2);
                     ctx.fill();
                 }
             }
