@@ -50,6 +50,7 @@
         body {
             width: 100%;
             height: 100%;
+            height: 100dvh;
             background: var(--bg-0) !important;
             color: var(--text) !important;
             font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
@@ -108,14 +109,17 @@
             display: flex;
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
             position: relative;
             z-index: 1;
+            overflow: hidden;
         }
 
         /* Sidebar panel - Frosted glass */
         .sidebar {
             width: 380px;
             height: 100vh;
+            height: 100dvh;
             padding: 2rem 1.5rem;
             display: flex;
             flex-direction: column;
@@ -139,14 +143,29 @@
         /* 3D Canvas Area */
         .canvas-container {
             flex: 1;
+            min-width: 0;
+            min-height: 0;
             height: 100vh;
+            height: 100dvh;
             position: relative;
             outline: none;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #canvas-wrapper {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            position: relative;
+            outline: none;
+            overflow: hidden;
         }
 
         #three-canvas {
-            width: 100%;
-            height: 100%;
+            width: 100% !important;
+            height: 100% !important;
             display: block;
             outline: none;
         }
@@ -372,13 +391,14 @@
         .status-banner {
             position: absolute;
             bottom: 2rem;
-            left: calc(380px + (100vw - 380px)/2);
+            left: 50%;
             transform: translateX(-50%);
             padding: 1rem 2rem;
             border-radius: 30px;
             border: 1px solid var(--border);
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 1rem;
             font-weight: 600;
             z-index: 100;
@@ -550,14 +570,17 @@
             }
 
             .status-banner {
-                bottom: 1.25rem;
-                left: 50%;
-                transform: translateX(-50%);
+                position: relative;
+                bottom: auto;
+                left: auto;
+                transform: none;
                 width: 90%;
                 max-width: 380px;
                 font-size: 0.8rem;
-                padding: 0.6rem 1rem;
+                padding: 0.5rem 1rem;
+                margin: 0.5rem auto;
                 justify-content: center;
+                z-index: 101;
             }
 
             /* Hide mobile drop overlay buttons in tight horizontal landscape to avoid screen clutter */
@@ -619,6 +642,15 @@
         @media (max-width: 800px) {
             .mobile-controls-overlay {
                 display: flex;
+                position: relative;
+                bottom: auto;
+                left: auto;
+                transform: none;
+                width: 92%;
+                max-width: 440px;
+                margin: 0 auto 1.25rem auto;
+                padding: 0;
+                z-index: 100;
             }
         }
     </style>
@@ -738,7 +770,15 @@
                 <i class="fa-solid fa-arrows-spin"></i> Drag board to rotate/tilt
             </div>
 
-            <canvas id="three-canvas"></canvas>
+            <div id="canvas-wrapper">
+                <canvas id="three-canvas"></canvas>
+            </div>
+
+            <!-- Turn status indicator -->
+            <div class="status-banner" id="turn-banner">
+                <div class="status-dot" id="turn-dot"></div>
+                <span id="turn-text">Initializing Game...</span>
+            </div>
 
             <!-- Mobile Column Drop Buttons Overlay -->
             <div class="mobile-controls-overlay" id="mobile-drop-controls">
@@ -749,12 +789,6 @@
                 <button class="mobile-drop-btn" onclick="makeHumanMove(4)">5</button>
                 <button class="mobile-drop-btn" onclick="makeHumanMove(5)">6</button>
                 <button class="mobile-drop-btn" onclick="makeHumanMove(6)">7</button>
-            </div>
-
-            <!-- Turn status indicator -->
-            <div class="status-banner" id="turn-banner">
-                <div class="status-dot" id="turn-dot"></div>
-                <span id="turn-text">Initializing Game...</span>
             </div>
         </main>
     </div>
@@ -1083,6 +1117,7 @@
         }
 
         function initThreeJS() {
+            const wrapper = document.getElementById('canvas-wrapper');
             const container = document.getElementById('main-stage');
             const canvasEl = document.getElementById('three-canvas');
 
@@ -1091,12 +1126,14 @@
             scene.fog = new THREE.FogExp2(0x05070d, 0.05);
 
             // 2. Camera setup
-            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+            const width = wrapper.clientWidth || window.innerWidth;
+            const height = wrapper.clientHeight || window.innerHeight;
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
             resetCamera();
 
             // 3. Renderer setup
             renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setSize(width, height, false);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1936,8 +1973,10 @@
         }
 
         function resetCamera() {
-            const container = document.getElementById('main-stage');
-            const aspect = container.clientWidth / container.clientHeight;
+            const wrapper = document.getElementById('canvas-wrapper') || document.getElementById('main-stage');
+            const width = wrapper.clientWidth || window.innerWidth;
+            const height = wrapper.clientHeight || window.innerHeight;
+            const aspect = width / height;
 
             // Portrait view requires pushing the camera back to fit width
             let defaultZ = 14.5;
@@ -1953,12 +1992,15 @@
         }
 
         function onWindowResize() {
-            const container = document.getElementById('main-stage');
-            const aspect = container.clientWidth / container.clientHeight;
+            const wrapper = document.getElementById('canvas-wrapper');
+            if (!wrapper) return;
+            const width = wrapper.clientWidth || window.innerWidth;
+            const height = wrapper.clientHeight || window.innerHeight;
+            const aspect = width / height;
 
             camera.aspect = aspect;
             camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setSize(width, height, false);
 
             // Adapt Z distance dynamically on orientation changes
             let defaultZ = 14.5;
@@ -1994,12 +2036,17 @@
             resetGame();
             animate();
 
+            // Trigger a resize check to guarantee correct dimensions after layout
+            setTimeout(onWindowResize, 0);
+
             // Fade out drag instruction indicator overlay after 5 seconds
             setTimeout(() => {
                 const helper = document.getElementById('view-helper');
                 if (helper) helper.style.opacity = 0.0;
             }, 5000);
         });
+
+        window.addEventListener('load', onWindowResize);
 
     </script>
 </body>
