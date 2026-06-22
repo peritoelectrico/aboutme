@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon 3D Pong</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020205;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: center;
+            gap: 15vw;
+            margin-top: 4vh;
+            font-size: 5rem;
+            font-weight: bold;
+        }
+
+        #score-left {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        #score-right {
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        .glass-panel {
+            background: rgba(20, 20, 30, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 40px 60px;
+            pointer-events: auto;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            transition: opacity 0.4s ease;
+        }
+
+        h1 {
+            margin: 0;
+            color: white;
+            font-size: 3.5rem;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            background: linear-gradient(90deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            margin: 0;
+            color: white;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+            margin: 5px 0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        #btn-left {
+            border-color: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+        }
+
+        #btn-left:hover {
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        #btn-right {
+            border-color: #ff00ff;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.2);
+        }
+
+        #btn-right:hover {
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+
+        .diff-btn {
+            font-size: 0.9rem;
+            padding: 8px 16px;
+            border-color: #888;
+        }
+
+        .diff-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .mode-btn {
+            border-color: #00ffff;
+        }
+
+        .mode-btn.active {
+            background: rgba(0, 255, 255, 0.2);
+            border-color: #00ffff;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+        }
+
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #pause-screen,
+        #game-over-screen {
+            display: none;
+        }
+    </style>
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.150.1/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+    <div id="ui-layer">
+        <div class="score-board">
+            <span id="score-left">0</span>
+            <span id="score-right">0</span>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="glass-panel">
+            <h1>Neon Pong</h1>
+            <p style="margin-bottom: 5px;">First to 10 wins!</p>
+
+            <p style="font-size: 0.8rem; letter-spacing: 2px; margin-top: 15px;">MODE</p>
+            <div class="btn-group" style="margin-top: 0;">
+                <button id="btn-mode-1p" class="diff-btn mode-btn active">1 Player</button>
+                <button id="btn-mode-2p" class="diff-btn mode-btn">2 Players</button>
+            </div>
+
+            <p style="font-size: 0.8rem; letter-spacing: 2px; margin-top: 15px;">DIFFICULTY</p>
+            <div class="btn-group" style="margin-top: 0; margin-bottom: 10px;">
+                <button id="btn-diff-easy" class="diff-btn">Easy</button>
+                <button id="btn-diff-med" class="diff-btn active">Medium</button>
+                <button id="btn-diff-hard" class="diff-btn">Hard</button>
+            </div>
+
+            <!-- 1P Controls -->
+            <div id="controls-1p">
+                <div class="btn-group">
+                    <button id="btn-left">Play Left</button>
+                    <button id="btn-right">Play Right</button>
+                </div>
+                <p style="font-size: 0.8rem; margin-top: 15px;">Use Mouse or Arrows to move.</p>
+            </div>
+
+            <!-- 2P Controls -->
+            <div id="controls-2p" style="display: none;">
+                <div class="btn-group">
+                    <button id="btn-start-2p"
+                        style="border-color: #ff00ff; box-shadow: 0 0 10px rgba(255,0,255,0.3);">Start Match</button>
+                </div>
+                <p style="font-size: 0.8rem; margin-top: 15px; color: #00ffff;">Left Player: W / S</p>
+                <p style="font-size: 0.8rem; margin-top: 0px; color: #ff00ff;">Right Player: Arrows or Mouse</p>
+            </div>
+
+            <p style="font-size: 0.8rem; margin-top: 10px;">Spacebar to pause.</p>
+        </div>
+
+        <!-- Pause Screen -->
+        <div id="pause-screen" class="glass-panel">
+            <h2>Paused</h2>
+            <p>Press Spacebar to resume</p>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="glass-panel">
+            <h1 id="winner-text">You Win!</h1>
+            <button id="btn-restart" style="margin-top: 20px;">Play Again</button>
+        </div>
+    </div>
+
+    <canvas id="game-canvas"></canvas>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- CONFIG ---
+        const GAME_WIDTH = 44;
+        const GAME_HEIGHT = 30;
+        const PADDLE_WIDTH = 1;
+        const PADDLE_HEIGHT = 6;
+        const PADDLE_DEPTH = 1.5;
+        const BALL_RADIUS = 0.6;
+        const WIN_SCORE = 10;
+
+        // --- STATE ---
+        let gameState = 'START';
+        let gameInProgress = false;
+        let gameMode = '1P'; // '1P' or '2P'
+        let playerSide = 'left'; // Used only in 1P
+        let leftScore = 0;
+        let rightScore = 0;
+
+        let ballVelocity = new THREE.Vector3(0, 0, 0);
+        let selectedDifficulty = 'Medium';
+        let initialBallSpeed = 20;
+        let ballSpeed = initialBallSpeed;
+        let speedIncrement = 1.0;
+        let maxBallSpeed = 45;
+
+        // Inputs
+        const keys = { w: false, s: false, ArrowUp: false, ArrowDown: false };
+        let mouseY = 0;
+        let inputMode = 'mouse'; // Track active input source (mouse or keyboard)
+        let lastMouseYPos = null;
+
+        // Track paddle velocities for accentuated physics
+        let leftPaddleLastY = 0;
+        let leftPaddleVelY = 0;
+        let rightPaddleLastY = 0;
+        let rightPaddleVelY = 0;
+
+        // UI Elements
+        const startScreen = document.getElementById('start-screen');
+        const pauseScreen = document.getElementById('pause-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const scoreLeftEl = document.getElementById('score-left');
+        const scoreRightEl = document.getElementById('score-right');
+        const winnerText = document.getElementById('winner-text');
+        const diffBtns = {
+            'Easy': document.getElementById('btn-diff-easy'),
+            'Medium': document.getElementById('btn-diff-med'),
+            'Hard': document.getElementById('btn-diff-hard')
+        };
+        const modeBtns = {
+            '1P': document.getElementById('btn-mode-1p'),
+            '2P': document.getElementById('btn-mode-2p')
+        };
+        const controls1P = document.getElementById('controls-1p');
+        const controls2P = document.getElementById('controls-2p');
+
+        // --- THREE.JS SETUP ---
+        const canvas = document.getElementById('game-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x020205, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, -30, 45);
+        camera.lookAt(0, 0, 0);
+
+        // --- POST PROCESSING ---
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0.8;
+        bloomPass.strength = 1.0;
+        bloomPass.radius = 0.2;
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // --- MATERIALS ---
+
+        // Ball: Steel ball bearing
+        const ballMat = new THREE.MeshPhysicalMaterial({
+            color: 0x777777, // Medium steel grey
+            metalness: 1.0,  // Fully metallic
+            roughness: 0.15, // Very smooth and reflective
+            clearcoat: 0.5,
+            emissive: 0x000000
+        });
+
+        // Function to create a procedural frosted glass/ice texture
+        function createFrostTexture() {
+            const canvas = document.createElement('canvas');
+            const size = 512;
+            canvas.width = size;
+            canvas.height = size;
+            const context = canvas.getContext('2d');
+
+            // Base color
+            context.fillStyle = 'rgb(128, 128, 128)';
+            context.fillRect(0, 0, size, size);
+
+            // Draw wavy crackle lines to match the reference image
+            context.lineWidth = 1;
+            for (let i = 0; i < 3000; i++) {
+                const val = Math.floor(Math.random() * 255);
+                context.strokeStyle = `rgba(${val}, ${val}, ${val}, 0.4)`;
+                context.beginPath();
+                let x = Math.random() * size;
+                let y = Math.random() * size;
+                context.moveTo(x, y);
+
+                for (let j = 0; j < 6; j++) {
+                    x += (Math.random() - 0.5) * 15;
+                    y += (Math.random() - 0.5) * 15;
+                    context.lineTo(x, y);
+                }
+                context.stroke();
+            }
+
+            // Add fine noise grain
+            const imgData = context.getImageData(0, 0, size, size);
+            for (let i = 0; i < imgData.data.length; i += 4) {
+                const noise = (Math.random() - 0.5) * 40;
+                imgData.data[i] = Math.min(255, Math.max(0, imgData.data[i] + noise));
+                imgData.data[i + 1] = Math.min(255, Math.max(0, imgData.data[i + 1] + noise));
+                imgData.data[i + 2] = Math.min(255, Math.max(0, imgData.data[i + 2] + noise));
+            }
+            context.putImageData(imgData, 0, 0);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(6, 4); // Tile it across the wide board
+            return texture;
+        }
+
+        const frostTex = createFrostTexture();
+
+        // Board: More frosty, highly diffuse reflections with bump map
+        const boardMat = new THREE.MeshPhysicalMaterial({
+            color: 0x111a22, // Darker color toward black
+            metalness: 0.2,  // Slight metallic sheen to catch highlights better
+
+            roughness: 0.85,
+            bumpMap: frostTex,
+            bumpScale: 0.08, // Gives the light that scattered, heavily textured look
+            transmission: 0.85,
+            ior: 1.3,
+            thickness: 2.0,
+            transparent: true,
+            opacity: 0.95
+        });
+
+        const wallMat = new THREE.MeshPhysicalMaterial({
+            color: 0x111122,
+            metalness: 0.2,
+            roughness: 0.1,
+            transmission: 0.6,
+            ior: 1.5,
+            transparent: true
+        });
+
+        const leftMat = new THREE.MeshStandardMaterial({
+            color: 0x00ffff,
+            emissive: 0x008888,
+            roughness: 0.2,
+            metalness: 0.8
+        });
+
+        const rightMat = new THREE.MeshStandardMaterial({
+            color: 0xff00ff,
+            emissive: 0x880088,
+            roughness: 0.2,
+            metalness: 0.8
+        });
+
+        // --- OBJECTS ---
+
+        const gridHelper = new THREE.GridHelper(300, 100, 0x00aaaa, 0x222244);
+        gridHelper.rotation.x = Math.PI / 2;
+        gridHelper.position.z = -2;
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = 0.3;
+        scene.add(gridHelper);
+
+        const boardGeo = new THREE.BoxGeometry(GAME_WIDTH, GAME_HEIGHT, 0.5);
+        const board = new THREE.Mesh(boardGeo, boardMat);
+        board.position.z = 0;
+        scene.add(board);
+
+        const wallGeo = new THREE.BoxGeometry(GAME_WIDTH + 2, 1, 2);
+        const wallTop = new THREE.Mesh(wallGeo, wallMat);
+        wallTop.position.set(0, GAME_HEIGHT / 2 + 0.5, 0.5);
+        scene.add(wallTop);
+
+        const wallBot = new THREE.Mesh(wallGeo, wallMat);
+        wallBot.position.set(0, -GAME_HEIGHT / 2 - 0.5, 0.5);
+        scene.add(wallBot);
+
+        const lineGeo = new THREE.BoxGeometry(0.2, GAME_HEIGHT, 0.1);
+        const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1 });
+        const centerLine = new THREE.Mesh(lineGeo, lineMat);
+        centerLine.position.z = 0.3;
+        scene.add(centerLine);
+
+        const paddleGeo = new THREE.BoxGeometry(PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_DEPTH);
+        const leftPaddle = new THREE.Mesh(paddleGeo, leftMat);
+        leftPaddle.position.set(-GAME_WIDTH / 2 + 1, 0, PADDLE_DEPTH / 2);
+        scene.add(leftPaddle);
+
+        const rightPaddle = new THREE.Mesh(paddleGeo, rightMat);
+        rightPaddle.position.set(GAME_WIDTH / 2 - 1, 0, PADDLE_DEPTH / 2);
+        scene.add(rightPaddle);
+
+        const ballGeo = new THREE.SphereGeometry(BALL_RADIUS, 64, 64);
+        const ball = new THREE.Mesh(ballGeo, ballMat);
+        ball.position.set(0, 0, BALL_RADIUS);
+        scene.add(ball);
+
+        // --- FAKE REFLECTIONS ---
+        // Since the board is transmissive frosted glass, we can place duplicate meshes mirrored underneath it.
+        // The MeshPhysicalMaterial will naturally blur them, creating a perfect frosted reflection!
+        const SURFACE_Z = 0.25; // Board is at Z=0, thickness 0.5, so front surface is at 0.25
+
+        function createReflection(mesh, geo, mat) {
+            const ref = new THREE.Mesh(geo, mat);
+            scene.add(ref);
+            return ref;
+        }
+
+        const refLeftPaddle = createReflection(leftPaddle, paddleGeo, leftMat);
+        const refRightPaddle = createReflection(rightPaddle, paddleGeo, rightMat);
+        const refBall = createReflection(ball, ballGeo, ballMat);
+
+        function updateReflections() {
+            // Mirror position across SURFACE_Z
+            // RefZ = SURFACE_Z - (ObjZ - SURFACE_Z) = 2 * SURFACE_Z - ObjZ
+
+            refLeftPaddle.position.copy(leftPaddle.position);
+            refLeftPaddle.position.z = 2 * SURFACE_Z - leftPaddle.position.z;
+
+            refRightPaddle.position.copy(rightPaddle.position);
+            refRightPaddle.position.z = 2 * SURFACE_Z - rightPaddle.position.z;
+
+            refBall.position.copy(ball.position);
+            refBall.position.z = 2 * SURFACE_Z - ball.position.z;
+        }
+
+        // Initial update
+        updateReflections();
+
+        // --- LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // Much brighter ambient light
+        scene.add(ambientLight);
+
+        // Point lights moved closer to the center (half center of each side)
+        const leftLight = new THREE.PointLight(0x00ffff, 4, 30);
+        leftLight.position.set(-GAME_WIDTH / 4, 0, 5);
+        scene.add(leftLight);
+
+        const rightLight = new THREE.PointLight(0xff00ff, 4, 30);
+        rightLight.position.set(GAME_WIDTH / 4, 0, 5);
+        scene.add(rightLight);
+
+        // Tracking Spotlights
+        const leftSpotLight = new THREE.SpotLight(0x00ffff, 2.5); // Reduced intensity
+        leftSpotLight.position.set(-GAME_WIDTH / 2 + 5, 0, 25);
+        leftSpotLight.angle = Math.PI / 7;
+        leftSpotLight.penumbra = 0.8; // Softer edges
+        leftSpotLight.decay = 2;
+        leftSpotLight.distance = 100;
+        leftSpotLight.target = ball;
+        scene.add(leftSpotLight);
+
+        const rightSpotLight = new THREE.SpotLight(0xff00ff, 2.5); // Reduced intensity
+        rightSpotLight.position.set(GAME_WIDTH / 2 - 5, 0, 25);
+        rightSpotLight.angle = Math.PI / 7;
+        rightSpotLight.penumbra = 0.8;
+        rightSpotLight.decay = 2;
+        rightSpotLight.distance = 100;
+        rightSpotLight.target = ball;
+        scene.add(rightSpotLight);
+
+        const ballLight = new THREE.PointLight(0xffffff, 1.5, 10);
+        scene.add(ballLight);
+
+        // --- DISCO BALL (Victory) ---
+        const discoGeo = new THREE.IcosahedronGeometry(3.5, 2); // segmented sphere for faceted look
+        const discoMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            emissive: 0x444444, // Generates its own base light
+            emissiveIntensity: 0.8,
+            roughness: 0.1,
+            metalness: 1.0,
+            flatShading: true
+        });
+        const discoBall = new THREE.Mesh(discoGeo, discoMat);
+
+        // Black polygonal outlines
+        const discoEdges = new THREE.EdgesGeometry(discoGeo);
+        const discoLineMat = new THREE.LineBasicMaterial({ color: 0x000000 });
+        const discoOutlines = new THREE.LineSegments(discoEdges, discoLineMat);
+        discoBall.add(discoOutlines);
+
+        discoBall.visible = false;
+        scene.add(discoBall);
+
+        // Add 4 spinning colored lights just outside the ball to illuminate its facets and spray neon reflections
+        const dLight1 = new THREE.PointLight(0x00ffff, 15, 30); // Cyan
+        dLight1.position.set(4.5, 4.5, 4.5);
+        discoBall.add(dLight1);
+
+        const dLight2 = new THREE.PointLight(0xff00ff, 15, 30); // Magenta
+        dLight2.position.set(-4.5, -4.5, -4.5);
+        discoBall.add(dLight2);
+
+        const dLight3 = new THREE.PointLight(0xffff00, 15, 30); // Neon Yellow
+        dLight3.position.set(-4.5, 4.5, -4.5);
+        discoBall.add(dLight3);
+
+        const dLight4 = new THREE.PointLight(0x00ff00, 15, 30); // Neon Green
+        dLight4.position.set(4.5, -4.5, 4.5);
+        discoBall.add(dLight4);
+
+        const dLight5 = new THREE.PointLight(0xff8800, 15, 30); // Neon Orange
+        dLight5.position.set(4.5, 4.5, -4.5);
+        discoBall.add(dLight5);
+
+        const dLight6 = new THREE.PointLight(0x0088ff, 15, 30); // Deep Blue
+        dLight6.position.set(-4.5, 4.5, 4.5);
+        discoBall.add(dLight6);
+
+        const dLight7 = new THREE.PointLight(0xff0000, 15, 30); // Bright Red
+        dLight7.position.set(4.5, -4.5, -4.5);
+        discoBall.add(dLight7);
+
+        const dLight8 = new THREE.PointLight(0xffffff, 15, 30); // Bright White
+        dLight8.position.set(-4.5, -4.5, 4.5);
+        discoBall.add(dLight8);
+
+        // --- GAME LOGIC ---
+        // Stronger directional light grazing the board to highlight the frosty bumps
+        const dirLight = new THREE.DirectionalLight(0xffffff, 3.0);
+        dirLight.position.set(0, -15, 10);
+        scene.add(dirLight);
+
+        // Central white light specifically to illuminate the frosted board texture
+        const centerLight = new THREE.PointLight(0xffffff, 3.5, 60);
+        centerLight.position.set(0, 0, 12);
+        scene.add(centerLight);
+
+        // --- LOGIC ---
+
+        function setDifficulty(diff) {
+            selectedDifficulty = diff;
+            Object.values(diffBtns).forEach(btn => btn.classList.remove('active'));
+            diffBtns[diff].classList.add('active');
+
+            if (diff === 'Easy') {
+                initialBallSpeed = 16;
+                speedIncrement = 0.5;
+                maxBallSpeed = 35;
+            } else if (diff === 'Medium') {
+                initialBallSpeed = 22;
+                speedIncrement = 1.0;
+                maxBallSpeed = 50;
+            } else if (diff === 'Hard') {
+                initialBallSpeed = 28;
+                speedIncrement = 2.0;
+                maxBallSpeed = 65;
+            }
+        }
+
+        function resetBall(direction = 0) {
+            ball.position.set(0, 0, BALL_RADIUS);
+            ballSpeed = initialBallSpeed;
+
+            const angle = (Math.random() - 0.5) * Math.PI / 2.5;
+
+            let dir = direction !== 0 ? direction : (Math.random() > 0.5 ? 1 : -1);
+            ballVelocity.set(dir * Math.cos(angle), Math.sin(angle), 0).normalize().multiplyScalar(ballSpeed);
+        }
+
+        function updateScore() {
+            scoreLeftEl.innerText = leftScore;
+            scoreRightEl.innerText = rightScore;
+
+            if (leftScore >= 10 || rightScore >= 10) {
+                gameState = 'OVER';
+                gameInProgress = false;
+                winnerText.innerText = leftScore >= 10 ? "Left Player Wins!" : "Right Player Wins!";
+                gameOverScreen.style.display = 'flex';
+
+                // Set Disco Ball colors to match winning team (Darker tones)
+                if (leftScore >= 10) {
+                    discoMat.color.setHex(0x004444); // Dark Cyan
+                    discoMat.emissive.setHex(0x001111); // Very subtle glow
+                } else {
+                    discoMat.color.setHex(0x440044); // Dark Magenta
+                    discoMat.emissive.setHex(0x110011);
+                }
+
+                // Show Disco Ball
+                discoBall.visible = true;
+                discoBall.position.set(leftScore >= 10 ? -GAME_WIDTH / 4 : GAME_WIDTH / 4, 0, 10);
+            }
+        }
+
+        function flashLight(isLeft) {
+            const lightToFlash = isLeft ? leftLight : rightLight;
+            const spotToFlash = isLeft ? leftSpotLight : rightSpotLight;
+            const originalIntensity = lightToFlash.intensity;
+            const originalSpotIntensity = spotToFlash.intensity;
+
+            lightToFlash.intensity = 15;
+            spotToFlash.intensity = 25;
+
+            setTimeout(() => {
+                lightToFlash.intensity = originalIntensity;
+                spotToFlash.intensity = originalSpotIntensity;
+            }, 200);
+        }
+
+        function setGameMode(mode) {
+            gameMode = mode;
+            Object.values(modeBtns).forEach(btn => btn.classList.remove('active'));
+            modeBtns[mode].classList.add('active');
+
+            if (mode === '1P') {
+                controls1P.style.display = 'block';
+                controls2P.style.display = 'none';
+            } else {
+                controls1P.style.display = 'none';
+                controls2P.style.display = 'block';
+            }
+        }
+
+        function startGame(side = 'left') {
+            playerSide = side;
+            leftScore = 0;
+            rightScore = 0;
+            gameInProgress = true;
+            updateScore();
+
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+            discoBall.visible = false; // Hide disco ball on restart
+            resetBall(side === 'left' ? -1 : 1);
+            gameState = 'PLAYING';
+        }
+
+        function endGame() {
+            gameState = 'OVER';
+            gameOverScreen.style.display = 'flex';
+
+            const playerWon = (playerSide === 'left' && leftScore >= WIN_SCORE) ||
+                (playerSide === 'right' && rightScore >= WIN_SCORE);
+
+            if (playerWon) {
+                winnerText.innerText = "You Win!";
+                winnerText.style.background = "linear-gradient(90deg, #00ff00, #00ffff)";
+            } else {
+                winnerText.innerText = "You Lose!";
+                winnerText.style.background = "linear-gradient(90deg, #ff0000, #ff00ff)";
+            }
+            winnerText.style.webkitBackgroundClip = "text";
+        }
+
+        function togglePause() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                pauseScreen.style.display = 'flex';
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                pauseScreen.style.display = 'none';
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                togglePause();
+                return;
+            }
+            if (e.key === 'Escape') {
+                if (gameState === 'PLAYING' || gameState === 'PAUSED') {
+                    // Pause game and open menu
+                    gameState = 'START';
+                    pauseScreen.style.display = 'none';
+                    gameOverScreen.style.display = 'none';
+                    startScreen.style.display = 'flex';
+                } else if (gameState === 'START' && gameInProgress) {
+                    // Resume game
+                    gameState = 'PLAYING';
+                    startScreen.style.display = 'none';
+                } else if (gameState === 'OVER') {
+                    // Back to menu after win
+                    gameState = 'START';
+                    pauseScreen.style.display = 'none';
+                    gameOverScreen.style.display = 'none';
+                    startScreen.style.display = 'flex';
+                    discoBall.visible = false;
+                }
+                return;
+            }
+
+            const key = e.key.toLowerCase();
+            if (keys.hasOwnProperty(key)) keys[key] = true;
+            if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+
+            // Switch to keyboard mode when relevant keys are pressed
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') inputMode = 'keyboard';
+            if (gameMode === '1P' && (key === 'w' || key === 's')) inputMode = 'keyboard';
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (keys.hasOwnProperty(key)) keys[key] = false;
+            if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (gameState !== 'PLAYING') return;
+
+            // Require a slight movement to switch to mouse mode (prevents micro-vibrations from stealing focus)
+            if (lastMouseYPos !== null && Math.abs(e.clientY - lastMouseYPos) > 2) {
+                inputMode = 'mouse';
+            }
+            lastMouseYPos = e.clientY;
+
+            const rect = canvas.getBoundingClientRect();
+            const relativeY = (e.clientY - rect.top) / rect.height;
+            mouseY = -(relativeY - 0.5) * (GAME_HEIGHT * 1.5);
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.getElementById('btn-mode-1p').addEventListener('click', () => setGameMode('1P'));
+        document.getElementById('btn-mode-2p').addEventListener('click', () => setGameMode('2P'));
+
+        document.getElementById('btn-diff-easy').addEventListener('click', () => setDifficulty('Easy'));
+        document.getElementById('btn-diff-med').addEventListener('click', () => setDifficulty('Medium'));
+        document.getElementById('btn-diff-hard').addEventListener('click', () => setDifficulty('Hard'));
+
+        document.getElementById('btn-left').addEventListener('click', () => startGame('left'));
+        document.getElementById('btn-right').addEventListener('click', () => startGame('right'));
+        document.getElementById('btn-start-2p').addEventListener('click', () => startGame());
+        document.getElementById('btn-restart').addEventListener('click', () => {
+            gameOverScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+        });
+
+        // Initialize defaults
+        setDifficulty('Medium');
+        setGameMode('1P');
+
+        // --- MAIN LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = Math.min(clock.getDelta(), 0.1);
+
+            if (gameState === 'PLAYING') {
+                const maxY = GAME_HEIGHT / 2 - PADDLE_HEIGHT / 2;
+                const paddleSpeed = 55; // Much more responsive keyboard movement
+
+                if (gameMode === '1P') {
+                    const pPaddle = playerSide === 'left' ? leftPaddle : rightPaddle;
+                    const aiPaddle = playerSide === 'left' ? rightPaddle : leftPaddle;
+
+                    // --- PLAYER MOVEMENT ---
+                    if (inputMode === 'keyboard') {
+                        if (keys.w || keys.ArrowUp) pPaddle.position.y += paddleSpeed * dt;
+                        if (keys.s || keys.ArrowDown) pPaddle.position.y -= paddleSpeed * dt;
+                    } else if (inputMode === 'mouse') {
+                        pPaddle.position.y += (mouseY - pPaddle.position.y) * 15 * dt;
+                    }
+                    pPaddle.position.y = Math.max(-maxY, Math.min(maxY, pPaddle.position.y));
+
+                    // --- AI MOVEMENT ---
+                    const aiSpeed = initialBallSpeed * 0.9 + (ballSpeed - initialBallSpeed) * 0.7;
+                    const ballHeadingToAI = (playerSide === 'left' && ballVelocity.x > 0) ||
+                        (playerSide === 'right' && ballVelocity.x < 0);
+
+                    if (ballHeadingToAI) {
+                        const targetY = ball.position.y + ballVelocity.y * 0.1;
+                        if (aiPaddle.position.y < targetY - 0.5) aiPaddle.position.y += aiSpeed * dt;
+                        else if (aiPaddle.position.y > targetY + 0.5) aiPaddle.position.y -= aiSpeed * dt;
+                    } else {
+                        if (aiPaddle.position.y < -1) aiPaddle.position.y += aiSpeed * 0.5 * dt;
+                        else if (aiPaddle.position.y > 1) aiPaddle.position.y -= aiSpeed * 0.5 * dt;
+                    }
+                    aiPaddle.position.y = Math.max(-maxY, Math.min(maxY, aiPaddle.position.y));
+
+                } else if (gameMode === '2P') {
+                    // Left Player ALWAYS uses W/S
+                    if (keys.w) leftPaddle.position.y += paddleSpeed * dt;
+                    if (keys.s) leftPaddle.position.y -= paddleSpeed * dt;
+                    leftPaddle.position.y = Math.max(-maxY, Math.min(maxY, leftPaddle.position.y));
+
+                    // Right Player uses Arrows OR Mouse
+                    if (inputMode === 'keyboard') {
+                        if (keys.ArrowUp) rightPaddle.position.y += paddleSpeed * dt;
+                        if (keys.ArrowDown) rightPaddle.position.y -= paddleSpeed * dt;
+                    } else if (inputMode === 'mouse') {
+                        rightPaddle.position.y += (mouseY - rightPaddle.position.y) * 15 * dt;
+                    }
+                    rightPaddle.position.y = Math.max(-maxY, Math.min(maxY, rightPaddle.position.y));
+                }
+
+                // Calculate paddle velocities
+                leftPaddleVelY = (leftPaddle.position.y - leftPaddleLastY) / dt;
+                leftPaddleLastY = leftPaddle.position.y;
+
+                rightPaddleVelY = (rightPaddle.position.y - rightPaddleLastY) / dt;
+                rightPaddleLastY = rightPaddle.position.y;
+
+                // --- BALL MOVEMENT ---
+                ball.position.addScaledVector(ballVelocity, dt);
+
+                ballLight.position.copy(ball.position);
+                ballLight.position.z += 1;
+
+                // --- WALL COLLISIONS ---
+                let hitWall = false;
+                if (ball.position.y >= GAME_HEIGHT / 2 - BALL_RADIUS) {
+                    ball.position.y = GAME_HEIGHT / 2 - BALL_RADIUS;
+                    ballVelocity.y *= -1;
+                    hitWall = true;
+                } else if (ball.position.y <= -GAME_HEIGHT / 2 + BALL_RADIUS) {
+                    ball.position.y = -GAME_HEIGHT / 2 + BALL_RADIUS;
+                    ballVelocity.y *= -1;
+                    hitWall = true;
+                }
+
+                if (hitWall) {
+                    // Gain a bit of speed on wall bounces to end vertical loops faster
+                    ballSpeed = Math.min(ballSpeed + (speedIncrement * 0.5), maxBallSpeed);
+                    ballVelocity.normalize().multiplyScalar(ballSpeed);
+                }
+
+                // --- PADDLE COLLISIONS ---
+
+                // Left Paddle
+                if (ballVelocity.x < 0 &&
+                    ball.position.x - BALL_RADIUS <= leftPaddle.position.x + PADDLE_WIDTH / 2 &&
+                    ball.position.x + BALL_RADIUS >= leftPaddle.position.x - PADDLE_WIDTH / 2) {
+
+                    if (ball.position.y >= leftPaddle.position.y - PADDLE_HEIGHT / 2 &&
+                        ball.position.y <= leftPaddle.position.y + PADDLE_HEIGHT / 2) {
+
+                        ball.position.x = leftPaddle.position.x + PADDLE_WIDTH / 2 + BALL_RADIUS;
+                        ballVelocity.x *= -1;
+
+                        // Accentuated physics: add english based on hit position AND paddle velocity
+                        const hitFactor = (ball.position.y - leftPaddle.position.y) / (PADDLE_HEIGHT / 2);
+                        ballVelocity.y += (hitFactor * 8) + (leftPaddleVelY * 0.15); // Toned down effect
+
+                        // Prevent pure vertical bouncing (cap X ratio)
+                        if (Math.abs(ballVelocity.x) < Math.abs(ballVelocity.y) * 0.3) {
+                            ballVelocity.x = Math.sign(ballVelocity.x) * Math.abs(ballVelocity.y) * 0.3;
+                        }
+
+                        ballSpeed = Math.min(ballSpeed + speedIncrement, maxBallSpeed);
+                        ballVelocity.normalize().multiplyScalar(ballSpeed);
+                    }
+                }
+
+                // Right Paddle
+                if (ballVelocity.x > 0 &&
+                    ball.position.x + BALL_RADIUS >= rightPaddle.position.x - PADDLE_WIDTH / 2 &&
+                    ball.position.x - BALL_RADIUS <= rightPaddle.position.x + PADDLE_WIDTH / 2) {
+
+                    if (ball.position.y >= rightPaddle.position.y - PADDLE_HEIGHT / 2 &&
+                        ball.position.y <= rightPaddle.position.y + PADDLE_HEIGHT / 2) {
+
+                        ball.position.x = rightPaddle.position.x - PADDLE_WIDTH / 2 - BALL_RADIUS;
+                        ballVelocity.x *= -1;
+
+                        // Accentuated physics: add english based on hit position AND paddle velocity
+                        const hitFactor = (ball.position.y - rightPaddle.position.y) / (PADDLE_HEIGHT / 2);
+                        ballVelocity.y += (hitFactor * 8) + (rightPaddleVelY * 0.15); // Toned down effect
+
+                        // Prevent pure vertical bouncing (cap X ratio)
+                        if (Math.abs(ballVelocity.x) < Math.abs(ballVelocity.y) * 0.3) {
+                            ballVelocity.x = Math.sign(ballVelocity.x) * Math.abs(ballVelocity.y) * 0.3;
+                        }
+
+                        ballSpeed = Math.min(ballSpeed + speedIncrement, maxBallSpeed);
+                        ballVelocity.normalize().multiplyScalar(ballSpeed);
+                    }
+                }
+
+                // --- SCORING ---
+                if (ball.position.x < -GAME_WIDTH / 2 - 2) {
+                    rightScore++;
+                    flashLight(false);
+                    gameState = 'WAITING';
+                    updateScore();
+                    if (gameState !== 'OVER') setTimeout(() => { if (gameState !== 'OVER') { gameState = 'PLAYING'; resetBall(-1); } }, 1000);
+                } else if (ball.position.x > GAME_WIDTH / 2 + 2) {
+                    leftScore++;
+                    flashLight(true);
+                    gameState = 'WAITING';
+                    updateScore();
+                    if (gameState !== 'OVER') setTimeout(() => { if (gameState !== 'OVER') { gameState = 'PLAYING'; resetBall(1); } }, 1000);
+                }
+
+                // Update mirrored reflections
+                updateReflections();
+            } else if (gameState === 'OVER' && discoBall.visible) {
+                // Animate disco ball
+                discoBall.rotation.y += 0.02;
+                discoBall.rotation.x += 0.01;
+                discoBall.position.z = 10 + Math.sin(clock.getElapsedTime() * 3) * 1.5; // Levitating bounce
+            }
+
+            composer.render();
+        }
+
+        animate();
+
+    </script>
+</body>
+
+</html>
