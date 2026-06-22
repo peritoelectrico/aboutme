@@ -571,6 +571,7 @@
         let touchRightY = 0;
         let touchLeftActive = false;
         let touchRightActive = false;
+        let lastTapTime = 0;
 
         // Track paddle velocities for accentuated physics
         let leftPaddleLastY = 0;
@@ -1180,6 +1181,12 @@
         }
 
         function togglePause() {
+            // Do not allow resuming via Spacebar if the about panel is open
+            const aboutPanel = document.getElementById('about-panel');
+            if (aboutPanel && aboutPanel.style.display === 'flex') {
+                return;
+            }
+
             if (gameState === 'PLAYING') {
                 gameState = 'PAUSED';
                 pauseScreen.style.display = 'flex';
@@ -1335,6 +1342,11 @@
                 return;
             }
             if (e.key === 'Escape') {
+                const aboutPanel = document.getElementById('about-panel');
+                if (aboutPanel && aboutPanel.style.display === 'flex') {
+                    closeAboutPanel();
+                    return;
+                }
                 if (gameState === 'PLAYING' || gameState === 'PAUSED') {
                     // Pause game and open menu
                     gameState = 'START';
@@ -1423,6 +1435,38 @@
 
         // Touch Input Event Handlers
         function handleTouch(e) {
+            if (e.type === 'touchstart' && e.touches.length === 1) {
+                const currentTime = Date.now();
+                const tapLength = currentTime - lastTapTime;
+                if (tapLength < 300 && tapLength > 0) {
+                    // Double tap detected!
+                    if (gameState === 'PLAYING' || gameState === 'PAUSED') {
+                        // Pause game and open menu
+                        gameState = 'START';
+                        pauseScreen.style.display = 'none';
+                        gameOverScreen.style.display = 'none';
+                        startScreen.style.display = 'flex';
+                        if (e.cancelable) e.preventDefault();
+                        return;
+                    } else if (gameState === 'START' && gameInProgress) {
+                        // Resume game
+                        gameState = 'PLAYING';
+                        startScreen.style.display = 'none';
+                        if (e.cancelable) e.preventDefault();
+                        return;
+                    }
+                }
+                lastTapTime = currentTime;
+            }
+
+            // Exclude info-bar and about-panel touches from preventing default
+            const target = e.target;
+            const infoBar = document.getElementById('info-bar');
+            const aboutPanel = document.getElementById('about-panel');
+            if ((infoBar && infoBar.contains(target)) || (aboutPanel && aboutPanel.contains(target))) {
+                return;
+            }
+
             if (gameState !== 'PLAYING') return;
             if (e.cancelable) e.preventDefault();
 
