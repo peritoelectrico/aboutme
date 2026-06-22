@@ -540,6 +540,11 @@
         const BALL_RADIUS = 0.6;
         const WIN_SCORE = 10;
 
+        // Keyboard paddle physics constants
+        const KEYBOARD_MAX_SPEED = 60;
+        const KEYBOARD_ACCEL = 400;
+        const KEYBOARD_DECEL = 350;
+
         // --- STATE ---
         let gameState = 'START';
         let gameInProgress = false;
@@ -572,6 +577,8 @@
         let touchLeftActive = false;
         let touchRightActive = false;
         let lastTapTime = 0;
+        let leftPaddleKeyVel = 0;
+        let rightPaddleKeyVel = 0;
 
         // Track paddle velocities for accentuated physics
         let leftPaddleLastY = 0;
@@ -1397,6 +1404,48 @@
             mouseY = -(relativeY - 0.5) * (GAME_HEIGHT * 1.5);
         });
 
+        function enterFullscreen() {
+            const docEl = document.documentElement;
+            if (document.fullscreenElement) return;
+
+            const req = docEl.requestFullscreen ||
+                docEl.webkitRequestFullscreen ||
+                docEl.mozRequestFullScreen ||
+                docEl.msRequestFullscreen;
+            if (req) {
+                req.call(docEl).catch(err => {
+                    console.log("Fullscreen request deferred or blocked:", err);
+                });
+            }
+        }
+
+        function handleOutsideClick(e) {
+            if (gameState === 'START' && gameInProgress) {
+                const startScreen = document.getElementById('start-screen');
+                const infoBar = document.getElementById('info-bar');
+                const aboutPanel = document.getElementById('about-panel');
+
+                if (startScreen && !startScreen.contains(e.target) &&
+                    (!infoBar || !infoBar.contains(e.target)) &&
+                    (!aboutPanel || !aboutPanel.contains(e.target))) {
+
+                    gameState = 'PLAYING';
+                    startScreen.style.display = 'none';
+                    if (e.cancelable) e.preventDefault();
+                }
+            }
+        }
+
+        window.addEventListener('click', handleOutsideClick);
+        window.addEventListener('touchstart', handleOutsideClick);
+
+        // Also trigger fullscreen on user tap/touch when in portrait
+        window.addEventListener('touchstart', () => {
+            if (window.innerWidth < window.innerHeight) {
+                enterFullscreen();
+            }
+        }, { passive: true });
+
         window.addEventListener('resize', () => {
             const width = window.innerWidth;
             const height = window.innerHeight;
@@ -1407,6 +1456,10 @@
 
             const pixelRatio = graphicsQuality === 'High' ? Math.min(window.devicePixelRatio, 2) : 1;
             renderer.setPixelRatio(pixelRatio);
+
+            if (width < height) { // Portrait orientation
+                enterFullscreen();
+            }
         });
 
         document.getElementById('btn-mode-1p').addEventListener('click', () => setGameMode('1P'));
@@ -1573,7 +1626,6 @@
 
             if (gameState === 'PLAYING') {
                 const maxY = GAME_HEIGHT / 2 - PADDLE_HEIGHT / 2;
-                const paddleSpeed = 55; // Much more responsive keyboard movement
 
                 if (gameMode === '1P') {
                     const pPaddle = playerSide === 'left' ? leftPaddle : rightPaddle;
@@ -1581,14 +1633,51 @@
 
                     // --- PLAYER MOVEMENT ---
                     if (inputMode === 'keyboard') {
-                        if (keys.w || keys.ArrowUp) pPaddle.position.y += paddleSpeed * dt;
-                        if (keys.s || keys.ArrowDown) pPaddle.position.y -= paddleSpeed * dt;
-                    } else if (inputMode === 'mouse') {
-                        pPaddle.position.y += (mouseY - pPaddle.position.y) * 15 * dt;
-                    } else if (inputMode === 'touch') {
-                        pPaddle.position.y += (touchPlayerY - pPaddle.position.y) * 15 * dt;
+                        let moveDir = 0;
+                        if (keys.w || keys.ArrowUp) moveDir += 1;
+                        if (keys.s || keys.ArrowDown) moveDir -= 1;
+
+                        let pPaddleKeyVel = playerSide === 'left' ? leftPaddleKeyVel : rightPaddleKeyVel;
+
+                        if (moveDir > 0) {
+                            pPaddleKeyVel = Math.min(pPaddleKeyVel + KEYBOARD_ACCEL * dt, KEYBOARD_MAX_SPEED);
+                        } else if (moveDir < 0) {
+                            pPaddleKeyVel = Math.max(pPaddleKeyVel - KEYBOARD_ACCEL * dt, -KEYBOARD_MAX_SPEED);
+                        } else {
+                            if (pPaddleKeyVel > 0) {
+                                pPaddleKeyVel = Math.max(pPaddleKeyVel - KEYBOARD_DECEL * dt, 0);
+                            } else if (pPaddleKeyVel < 0) {
+                                pPaddleKeyVel = Math.min(pPaddleKeyVel + KEYBOARD_DECEL * dt, 0);
+                            }
+                        }
+
+                        if (playerSide === 'left') {
+                            leftPaddleKeyVel = pPaddleKeyVel;
+                        } else {
+                            rightPaddleKeyVel = pPaddleKeyVel;
+                        }
+
+                        pPaddle.position.y += pPaddleKeyVel * dt;
+                    } else {
+                        leftPaddleKeyVel = 0;
+                        rightPaddleKeyVel = 0;
+                        if (inputMode === 'mouse') {
+                            pPaddle.position.y += (mouseY - pPaddle.position.y) * 15 * dt;
+                        } else if (inputMode === 'touch') {
+                            pPaddle.position.y += (touchPlayerY - pPaddle.position.y) * 15 * dt;
+                        }
                     }
+
                     pPaddle.position.y = Math.max(-maxY, Math.min(maxY, pPaddle.position.y));
+
+                    // Reset key velocity on boundary hit to keep controls responsive
+                    if (playerSide === 'left') {
+                        if (pPaddle.position.y === maxY && leftPaddleKeyVel > 0) leftPaddleKeyVel = 0;
+                        if (pPaddle.position.y === -maxY && leftPaddleKeyVel < 0) leftPaddleKeyVel = 0;
+                    } else {
+                        if (pPaddle.position.y === maxY && rightPaddleKeyVel > 0) rightPaddleKeyVel = 0;
+                        if (pPaddle.position.y === -maxY && rightPaddleKeyVel < 0) rightPaddleKeyVel = 0;
+                    }
 
                     // --- AI MOVEMENT ---
                     const aiSpeed = initialBallSpeed * 0.9 + (ballSpeed - initialBallSpeed) * 0.7;
@@ -1608,23 +1697,58 @@
                 } else if (gameMode === '2P') {
                     // Left Paddle movement: Touch or Keyboard
                     if (touchLeftActive) {
+                        leftPaddleKeyVel = 0;
                         leftPaddle.position.y += (touchLeftY - leftPaddle.position.y) * 15 * dt;
                     } else {
-                        if (keys.w) leftPaddle.position.y += paddleSpeed * dt;
-                        if (keys.s) leftPaddle.position.y -= paddleSpeed * dt;
+                        let leftMoveDir = 0;
+                        if (keys.w) leftMoveDir += 1;
+                        if (keys.s) leftMoveDir -= 1;
+
+                        if (leftMoveDir > 0) {
+                            leftPaddleKeyVel = Math.min(leftPaddleKeyVel + KEYBOARD_ACCEL * dt, KEYBOARD_MAX_SPEED);
+                        } else if (leftMoveDir < 0) {
+                            leftPaddleKeyVel = Math.max(leftPaddleKeyVel - KEYBOARD_ACCEL * dt, -KEYBOARD_MAX_SPEED);
+                        } else {
+                            if (leftPaddleKeyVel > 0) {
+                                leftPaddleKeyVel = Math.max(leftPaddleKeyVel - KEYBOARD_DECEL * dt, 0);
+                            } else if (leftPaddleKeyVel < 0) {
+                                leftPaddleKeyVel = Math.min(leftPaddleKeyVel + KEYBOARD_DECEL * dt, 0);
+                            }
+                        }
+                        leftPaddle.position.y += leftPaddleKeyVel * dt;
                     }
                     leftPaddle.position.y = Math.max(-maxY, Math.min(maxY, leftPaddle.position.y));
+                    if (leftPaddle.position.y === maxY && leftPaddleKeyVel > 0) leftPaddleKeyVel = 0;
+                    if (leftPaddle.position.y === -maxY && leftPaddleKeyVel < 0) leftPaddleKeyVel = 0;
 
                     // Right Paddle movement: Touch or Keyboard or Mouse
                     if (touchRightActive) {
+                        rightPaddleKeyVel = 0;
                         rightPaddle.position.y += (touchRightY - rightPaddle.position.y) * 15 * dt;
                     } else if (inputMode === 'keyboard') {
-                        if (keys.ArrowUp) rightPaddle.position.y += paddleSpeed * dt;
-                        if (keys.ArrowDown) rightPaddle.position.y -= paddleSpeed * dt;
+                        let rightMoveDir = 0;
+                        if (keys.ArrowUp) rightMoveDir += 1;
+                        if (keys.ArrowDown) rightMoveDir -= 1;
+
+                        if (rightMoveDir > 0) {
+                            rightPaddleKeyVel = Math.min(rightPaddleKeyVel + KEYBOARD_ACCEL * dt, KEYBOARD_MAX_SPEED);
+                        } else if (rightMoveDir < 0) {
+                            rightPaddleKeyVel = Math.max(rightPaddleKeyVel - KEYBOARD_ACCEL * dt, -KEYBOARD_MAX_SPEED);
+                        } else {
+                            if (rightPaddleKeyVel > 0) {
+                                rightPaddleKeyVel = Math.max(rightPaddleKeyVel - KEYBOARD_DECEL * dt, 0);
+                            } else if (rightPaddleKeyVel < 0) {
+                                rightPaddleKeyVel = Math.min(rightPaddleKeyVel + KEYBOARD_DECEL * dt, 0);
+                            }
+                        }
+                        rightPaddle.position.y += rightPaddleKeyVel * dt;
                     } else if (inputMode === 'mouse') {
+                        rightPaddleKeyVel = 0;
                         rightPaddle.position.y += (mouseY - rightPaddle.position.y) * 15 * dt;
                     }
                     rightPaddle.position.y = Math.max(-maxY, Math.min(maxY, rightPaddle.position.y));
+                    if (rightPaddle.position.y === maxY && rightPaddleKeyVel > 0) rightPaddleKeyVel = 0;
+                    if (rightPaddle.position.y === -maxY && rightPaddleKeyVel < 0) rightPaddleKeyVel = 0;
                 }
 
                 // Calculate paddle velocities
