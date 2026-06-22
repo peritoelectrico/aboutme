@@ -16,6 +16,8 @@
             background-color: #020205;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
+            -webkit-text-size-adjust: 100%;
+            touch-action: none;
         }
 
         #ui-layer {
@@ -176,6 +178,237 @@
         #game-over-screen {
             display: none;
         }
+
+        #portrait-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 2, 5, 0.95);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        @media (orientation: portrait) {
+            #portrait-overlay {
+                display: flex;
+            }
+        }
+
+        .phone-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .phone-icon {
+            width: 40px;
+            height: 70px;
+            border: 3px solid #00ffff;
+            border-radius: 8px;
+            position: relative;
+            animation: rotatePhone 2s ease-in-out infinite;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+        }
+
+        .phone-icon::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff00ff;
+            box-shadow: 0 0 8px rgba(255, 0, 255, 0.6);
+        }
+
+        @keyframes rotatePhone {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            50% {
+                transform: rotate(-90deg);
+            }
+
+            100% {
+                transform: rotate(-90deg);
+            }
+        }
+
+        .gfx-btn {
+            min-width: 200px;
+            text-align: center;
+        }
+
+        @media (max-height: 550px) {
+            .gfx-btn {
+                min-width: 140px;
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+
+            .glass-panel {
+                padding: 15px 30px;
+                gap: 8px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+
+            h1 {
+                font-size: 2rem;
+                letter-spacing: 3px;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+                letter-spacing: 2px;
+            }
+
+            p {
+                font-size: 0.9rem;
+                margin: 2px 0;
+            }
+
+            button {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+                border-radius: 8px;
+            }
+
+            .diff-btn {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
+
+            .score-board {
+                margin-top: 1vh;
+                font-size: 3rem;
+            }
+
+            #info-bar {
+                top: 10px;
+                right: 10px;
+                padding: 4px 10px;
+                gap: 8px;
+            }
+
+            #info-bar span {
+                font-size: 0.7rem;
+                letter-spacing: 1px;
+            }
+
+            .info-light {
+                width: 10px;
+                height: 10px;
+            }
+        }
+
+        /* Info lights bar and indicator styling */
+        #info-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(15, 15, 20, 0.75);
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        #info-bar.gpu-mode {
+            background: rgba(25, 25, 40, 0.4);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            /* Inset shadows simulate beveled 3D glass edges, outer shadows simulate dual-neon illumination reflections */
+            box-shadow:
+                inset 0 1px 3px rgba(255, 255, 255, 0.5),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.4),
+                0 0 15px rgba(0, 255, 255, 0.15),
+                0 0 25px rgba(255, 0, 255, 0.1),
+                0 8px 32px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+        }
+
+        #info-bar span {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .info-light {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            position: relative;
+        }
+
+        .info-light.cyan {
+            border-color: #00ffff;
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5), inset 0 0 4px rgba(0, 255, 255, 0.5);
+        }
+
+        .info-light.cyan:hover {
+            transform: scale(1.25);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.9), inset 0 0 6px rgba(0, 255, 255, 0.8);
+        }
+
+        .info-light.white {
+            border-color: #ffffff;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), inset 0 0 4px rgba(255, 255, 255, 0.5);
+        }
+
+        .info-light.white:hover {
+            transform: scale(1.25);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.9), inset 0 0 6px rgba(255, 255, 255, 0.8);
+        }
+
+        .info-light.magenta {
+            border-color: #ff00ff;
+            background: rgba(255, 0, 255, 0.2);
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5), inset 0 0 4px rgba(255, 0, 255, 0.5);
+        }
+
+        .info-light.magenta:hover {
+            transform: scale(1.25);
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.9), inset 0 0 6px rgba(255, 0, 255, 0.8);
+        }
+
+        /* About Panel custom transition styling */
+        .about-section {
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border-left: 3px solid transparent;
+            padding-left: 15px;
+        }
     </style>
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
@@ -189,6 +422,14 @@
 </head>
 
 <body>
+
+    <div id="portrait-overlay">
+        <div class="phone-icon-wrapper">
+            <div class="phone-icon"></div>
+        </div>
+        <h2>Please Rotate Your Device</h2>
+        <p>This game is designed to be played in landscape mode.</p>
+    </div>
 
     <div id="ui-layer">
         <div class="score-board">
@@ -212,6 +453,12 @@
                 <button id="btn-diff-easy" class="diff-btn">Easy</button>
                 <button id="btn-diff-med" class="diff-btn active">Medium</button>
                 <button id="btn-diff-hard" class="diff-btn">Hard</button>
+            </div>
+
+            <p style="font-size: 0.8rem; letter-spacing: 2px; margin-top: 15px;">GRAPHICS</p>
+            <div class="btn-group" style="margin-top: 0; margin-bottom: 10px;">
+                <button id="btn-gfx-high" class="diff-btn gfx-btn active">High (GPU Render)</button>
+                <button id="btn-gfx-low" class="diff-btn gfx-btn">Performance</button>
             </div>
 
             <!-- 1P Controls -->
@@ -247,6 +494,33 @@
             <h1 id="winner-text">You Win!</h1>
             <button id="btn-restart" style="margin-top: 20px;">Play Again</button>
         </div>
+
+        <!-- Info lights top-right bar -->
+        <div id="info-bar">
+            <span>Info</span>
+            <div class="info-light cyan" id="info-physics" title="Ball Physics & Momentum"></div>
+            <div class="info-light white" id="info-performance" title="Performance Mode Details"></div>
+            <div class="info-light magenta" id="info-gpu" title="GPU Rendering Details"></div>
+        </div>
+
+        <!-- About Box / Educational Panel -->
+        <div id="about-panel" class="glass-panel"
+            style="display: none; max-width: 600px; max-height: 85vh; overflow-y: auto; text-align: left; align-items: stretch; padding: 30px 40px; box-sizing: border-box;">
+            <h2
+                style="text-align: center; font-size: 2rem; margin-bottom: 5px; background: linear-gradient(90deg, #00ffff, #ff00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Ricardo Hernandez-Chang</h2>
+            <p id="about-subtitle"
+                style="text-align: center; font-size: 0.95rem; letter-spacing: 2px; margin-top: 0; margin-bottom: 20px; font-weight: bold; text-transform: uppercase;">
+            </p>
+
+            <div id="about-content" style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Content gets dynamically populated here -->
+            </div>
+
+            <button id="btn-close-about"
+                style="margin-top: 25px; align-self: center; border-color: #ff00ff; box-shadow: 0 0 10px rgba(255,0,255,0.2);">Close
+                Info</button>
+        </div>
     </div>
 
     <canvas id="game-canvas"></canvas>
@@ -273,6 +547,7 @@
         let playerSide = 'left'; // Used only in 1P
         let leftScore = 0;
         let rightScore = 0;
+        let ballScored = false;
 
         let ballVelocity = new THREE.Vector3(0, 0, 0);
         let selectedDifficulty = 'Medium';
@@ -281,17 +556,36 @@
         let speedIncrement = 1.0;
         let maxBallSpeed = 45;
 
+        // Graphics quality state
+        let graphicsQuality = 'High'; // 'High' or 'Low'
+
         // Inputs
         const keys = { w: false, s: false, ArrowUp: false, ArrowDown: false };
         let mouseY = 0;
         let inputMode = 'mouse'; // Track active input source (mouse or keyboard)
         let lastMouseYPos = null;
 
+        // Touch positions
+        let touchPlayerY = 0;
+        let touchLeftY = 0;
+        let touchRightY = 0;
+        let touchLeftActive = false;
+        let touchRightActive = false;
+
         // Track paddle velocities for accentuated physics
         let leftPaddleLastY = 0;
         let leftPaddleVelY = 0;
         let rightPaddleLastY = 0;
         let rightPaddleVelY = 0;
+
+        // Particle sparks state
+        const sparks = [];
+        const sparkGeo = new THREE.BoxGeometry(0.18, 0.18, 0.18);
+
+        // Floor grid helper glow state
+        let gridGlowIntensity = 0.0;
+        const gridGlowColor = new THREE.Color(1, 1, 1);
+
 
         // UI Elements
         const startScreen = document.getElementById('start-screen');
@@ -309,6 +603,10 @@
             '1P': document.getElementById('btn-mode-1p'),
             '2P': document.getElementById('btn-mode-2p')
         };
+        const gfxBtns = {
+            'High': document.getElementById('btn-gfx-high'),
+            'Low': document.getElementById('btn-gfx-low')
+        };
         const controls1P = document.getElementById('controls-1p');
         const controls2P = document.getElementById('controls-2p');
 
@@ -317,6 +615,8 @@
         const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x020205, 0.015);
@@ -400,24 +700,23 @@
         const boardMat = new THREE.MeshPhysicalMaterial({
             color: 0x111a22, // Darker color toward black
             metalness: 0.2,  // Slight metallic sheen to catch highlights better
-
-            roughness: 0.85,
+            roughness: 0.75,
             bumpMap: frostTex,
-            bumpScale: 0.08, // Gives the light that scattered, heavily textured look
-            transmission: 0.85,
-            ior: 1.3,
-            thickness: 2.0,
+            bumpScale: 0.06, // Gives the light that scattered, heavily textured look
+            clearcoat: 0.8,
+            clearcoatRoughness: 0.45,
             transparent: true,
-            opacity: 0.95
+            opacity: 0.75
         });
 
         const wallMat = new THREE.MeshPhysicalMaterial({
-            color: 0x111122,
-            metalness: 0.2,
-            roughness: 0.1,
-            transmission: 0.6,
-            ior: 1.5,
-            transparent: true
+            color: 0x090b14,      // Very dark frosted glass (dark navy/black)
+            metalness: 0.2,       // Glass characteristics
+            roughness: 0.3,       // Glass gloss
+            clearcoat: 1.0,       // Outer shine
+            clearcoatRoughness: 0.05,
+            transparent: true,
+            opacity: 0.65
         });
 
         const leftMat = new THREE.MeshStandardMaterial({
@@ -434,6 +733,35 @@
             metalness: 0.8
         });
 
+        // --- LOW QUALITY MATERIALS ---
+        const boardMatLow = new THREE.MeshStandardMaterial({
+            color: 0x050c12, // Deep navy/black
+            roughness: 0.5,
+            metalness: 0.2
+        });
+
+        const wallMatLow = new THREE.MeshStandardMaterial({
+            color: 0x111122,
+            roughness: 0.3,
+            metalness: 0.2,
+            transparent: true,
+            opacity: 0.7
+        });
+
+        const leftMatLow = new THREE.MeshBasicMaterial({
+            color: 0x00ffff
+        });
+
+        const rightMatLow = new THREE.MeshBasicMaterial({
+            color: 0xff00ff
+        });
+
+        const ballMatLow = new THREE.MeshStandardMaterial({
+            color: 0xaaaaaa,
+            roughness: 0.3,
+            metalness: 0.8
+        });
+
         // --- OBJECTS ---
 
         const gridHelper = new THREE.GridHelper(300, 100, 0x00aaaa, 0x222244);
@@ -441,20 +769,54 @@
         gridHelper.position.z = -2;
         gridHelper.material.transparent = true;
         gridHelper.material.opacity = 0.3;
+        gridHelper.material.toneMapped = false;
+
+        // Apply a radial falloff to the grid helper lines at startup so they are
+        // dimmer toward the center board game and more intense at the edges of the window.
+        const posAttr = gridHelper.geometry.attributes.position;
+        const colorAttr = gridHelper.geometry.attributes.color;
+        if (posAttr && colorAttr) {
+            for (let i = 0; i < posAttr.count; i++) {
+                const x = posAttr.getX(i);
+                const y = posAttr.getY(i);
+                const dist = Math.sqrt(x * x + y * y);
+                // Dim near the board (within dist < 22), fading in as we move toward the edges
+                let factor = (dist - 22) / 60;
+                factor = Math.max(0.02, Math.min(1.0, factor)); // Small baseline, full brightness far away
+                colorAttr.setX(i, colorAttr.getX(i) * factor);
+                colorAttr.setY(i, colorAttr.getY(i) * factor);
+                colorAttr.setZ(i, colorAttr.getZ(i) * factor);
+            }
+            colorAttr.needsUpdate = true;
+        }
         scene.add(gridHelper);
+
+        // Board backing mask to block the grid helper lines from showing behind/under the board
+        const boardBackGeo = new THREE.BoxGeometry(GAME_WIDTH, GAME_HEIGHT, 0.4);
+        const boardBackMat = new THREE.MeshBasicMaterial({ color: 0x020205 }); // Matches scene background
+        const boardBack = new THREE.Mesh(boardBackGeo, boardBackMat);
+        boardBack.position.set(0, 0, -0.22); // Placed within board volume (behind front surface)
+        boardBack.renderOrder = 1; // Render before front board mesh
+        scene.add(boardBack);
 
         const boardGeo = new THREE.BoxGeometry(GAME_WIDTH, GAME_HEIGHT, 0.5);
         const board = new THREE.Mesh(boardGeo, boardMat);
         board.position.z = 0;
+        board.receiveShadow = true;
+        board.renderOrder = 2; // Render after default meshes (LEDs at order 0)
         scene.add(board);
 
         const wallGeo = new THREE.BoxGeometry(GAME_WIDTH + 2, 1, 2);
         const wallTop = new THREE.Mesh(wallGeo, wallMat);
         wallTop.position.set(0, GAME_HEIGHT / 2 + 0.5, 0.5);
+        wallTop.receiveShadow = true;
+        wallTop.renderOrder = 2; // Render after LEDs inside (order 0)
         scene.add(wallTop);
 
         const wallBot = new THREE.Mesh(wallGeo, wallMat);
         wallBot.position.set(0, -GAME_HEIGHT / 2 - 0.5, 0.5);
+        wallBot.receiveShadow = true;
+        wallBot.renderOrder = 2; // Render after LEDs inside (order 0)
         scene.add(wallBot);
 
         const lineGeo = new THREE.BoxGeometry(0.2, GAME_HEIGHT, 0.1);
@@ -466,15 +828,21 @@
         const paddleGeo = new THREE.BoxGeometry(PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_DEPTH);
         const leftPaddle = new THREE.Mesh(paddleGeo, leftMat);
         leftPaddle.position.set(-GAME_WIDTH / 2 + 1, 0, PADDLE_DEPTH / 2);
+        leftPaddle.castShadow = true;
+        leftPaddle.receiveShadow = true;
         scene.add(leftPaddle);
 
         const rightPaddle = new THREE.Mesh(paddleGeo, rightMat);
         rightPaddle.position.set(GAME_WIDTH / 2 - 1, 0, PADDLE_DEPTH / 2);
+        rightPaddle.castShadow = true;
+        rightPaddle.receiveShadow = true;
         scene.add(rightPaddle);
 
         const ballGeo = new THREE.SphereGeometry(BALL_RADIUS, 64, 64);
         const ball = new THREE.Mesh(ballGeo, ballMat);
         ball.position.set(0, 0, BALL_RADIUS);
+        ball.castShadow = true;
+        ball.receiveShadow = true;
         scene.add(ball);
 
         // --- FAKE REFLECTIONS ---
@@ -491,6 +859,41 @@
         const refLeftPaddle = createReflection(leftPaddle, paddleGeo, leftMat);
         const refRightPaddle = createReflection(rightPaddle, paddleGeo, rightMat);
         const refBall = createReflection(ball, ballGeo, ballMat);
+
+        // --- WALL EMBEDDED LED LIGHTS ---
+        const wallLeds = [];
+        const refWallLeds = [];
+
+        function initWallLeds() {
+            const ledGeo = new THREE.BoxGeometry(1.5, 0.15, 0.15); // discrete small LED boxes
+            const ledXs = [-16, -8, 0, 8, 16];
+            const colors = [0x00ffff, 0x00bbff, 0xffffff, 0xff00bb, 0xff00ff];
+            const wallYs = [GAME_HEIGHT / 2 + 0.5, -GAME_HEIGHT / 2 - 0.5];
+
+            wallYs.forEach(y => {
+                ledXs.forEach((x, idx) => {
+                    const color = colors[idx];
+                    const ledMat = new THREE.MeshBasicMaterial({
+                        color: color,
+                        toneMapped: false
+                    });
+
+                    // Embed inside wall
+                    const led = new THREE.Mesh(ledGeo, ledMat);
+                    led.position.set(x, y, 0.5);
+                    scene.add(led);
+                    wallLeds.push(led);
+
+                    // Mirrored reflection below board surface
+                    const refLed = new THREE.Mesh(ledGeo, ledMat);
+                    refLed.position.set(x, y, 2 * SURFACE_Z - 0.5);
+                    scene.add(refLed);
+                    refWallLeds.push(refLed);
+                });
+            });
+        }
+
+        initWallLeds();
 
         function updateReflections() {
             // Mirror position across SURFACE_Z
@@ -513,33 +916,19 @@
         const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // Much brighter ambient light
         scene.add(ambientLight);
 
-        // Point lights moved closer to the center (half center of each side)
-        const leftLight = new THREE.PointLight(0x00ffff, 4, 30);
-        leftLight.position.set(-GAME_WIDTH / 4, 0, 5);
+        // Point lights positioned towards the top and with high clearcoat roughness on the board
+        // to create a wide, diffuse atmospheric wash without forming sharp circular spots.
+        const leftLight = new THREE.PointLight(0x00ffff, 3.5, 40);
+        leftLight.position.set(-GAME_WIDTH / 4, 10, 8);
         scene.add(leftLight);
 
-        const rightLight = new THREE.PointLight(0xff00ff, 4, 30);
-        rightLight.position.set(GAME_WIDTH / 4, 0, 5);
+        const rightLight = new THREE.PointLight(0xff00ff, 3.5, 40);
+        rightLight.position.set(GAME_WIDTH / 4, 10, 8);
         scene.add(rightLight);
 
         // Tracking Spotlights
-        const leftSpotLight = new THREE.SpotLight(0x00ffff, 2.5); // Reduced intensity
-        leftSpotLight.position.set(-GAME_WIDTH / 2 + 5, 0, 25);
-        leftSpotLight.angle = Math.PI / 7;
-        leftSpotLight.penumbra = 0.8; // Softer edges
-        leftSpotLight.decay = 2;
-        leftSpotLight.distance = 100;
-        leftSpotLight.target = ball;
-        scene.add(leftSpotLight);
+        // Tracking Spotlights removed to eliminate distracting moving glowing spots on the board surface
 
-        const rightSpotLight = new THREE.SpotLight(0xff00ff, 2.5); // Reduced intensity
-        rightSpotLight.position.set(GAME_WIDTH / 2 - 5, 0, 25);
-        rightSpotLight.angle = Math.PI / 7;
-        rightSpotLight.penumbra = 0.8;
-        rightSpotLight.decay = 2;
-        rightSpotLight.distance = 100;
-        rightSpotLight.target = ball;
-        scene.add(rightSpotLight);
 
         const ballLight = new THREE.PointLight(0xffffff, 1.5, 10);
         scene.add(ballLight);
@@ -634,6 +1023,7 @@
         function resetBall(direction = 0) {
             ball.position.set(0, 0, BALL_RADIUS);
             ballSpeed = initialBallSpeed;
+            ballScored = false;
 
             const angle = (Math.random() - 0.5) * Math.PI / 2.5;
 
@@ -668,16 +1058,12 @@
 
         function flashLight(isLeft) {
             const lightToFlash = isLeft ? leftLight : rightLight;
-            const spotToFlash = isLeft ? leftSpotLight : rightSpotLight;
             const originalIntensity = lightToFlash.intensity;
-            const originalSpotIntensity = spotToFlash.intensity;
 
             lightToFlash.intensity = 15;
-            spotToFlash.intensity = 25;
 
             setTimeout(() => {
                 lightToFlash.intensity = originalIntensity;
-                spotToFlash.intensity = originalSpotIntensity;
             }, 200);
         }
 
@@ -693,6 +1079,72 @@
                 controls1P.style.display = 'none';
                 controls2P.style.display = 'block';
             }
+        }
+
+        function setGraphicsQuality(quality) {
+            graphicsQuality = quality;
+            Object.values(gfxBtns).forEach(btn => btn.classList.remove('active'));
+            gfxBtns[quality].classList.add('active');
+
+            if (quality === 'High') {
+                board.material = boardMat;
+                wallTop.material = wallMat;
+                wallBot.material = wallMat;
+                leftPaddle.material = leftMat;
+                rightPaddle.material = rightMat;
+                ball.material = ballMat;
+
+                refLeftPaddle.visible = true;
+                refRightPaddle.visible = true;
+                refBall.visible = true;
+
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.shadowMap.enabled = true;
+
+                // Show embedded LEDs and their reflections
+                wallLeds.forEach(led => led.visible = true);
+                refWallLeds.forEach(led => led.visible = true);
+
+                // Add frosty glow effects on info bar in High Graphics
+                const infoBar = document.getElementById('info-bar');
+                if (infoBar) infoBar.classList.add('gpu-mode');
+            } else {
+                board.material = boardMatLow;
+                wallTop.material = wallMatLow;
+                wallBot.material = wallMatLow;
+                leftPaddle.material = leftMatLow;
+                rightPaddle.material = rightMatLow;
+                ball.material = ballMatLow;
+
+                refLeftPaddle.visible = false;
+                refRightPaddle.visible = false;
+                refBall.visible = false;
+
+                renderer.setPixelRatio(1);
+                renderer.shadowMap.enabled = false;
+
+                // Hide embedded LEDs and their reflections
+                wallLeds.forEach(led => led.visible = false);
+                refWallLeds.forEach(led => led.visible = false);
+
+                // Remove frosty glow effects on info bar in Low Graphics
+                const infoBar = document.getElementById('info-bar');
+                if (infoBar) infoBar.classList.remove('gpu-mode');
+
+                // Clear active sparks
+                sparks.forEach(s => {
+                    scene.remove(s.mesh);
+                    s.mesh.geometry.dispose();
+                    s.mesh.material.dispose();
+                });
+                sparks.length = 0;
+            }
+
+            // Trigger size update to match pixel ratio and layout
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            renderer.setSize(width, height);
+            composer.setSize(width, height);
         }
 
         function startGame(side = 'left') {
@@ -734,6 +1186,145 @@
             } else if (gameState === 'PAUSED') {
                 gameState = 'PLAYING';
                 pauseScreen.style.display = 'none';
+            }
+        }
+
+        // --- ABOUT INFO POPUP LOGIC ---
+        let wasPlayingBeforeAbout = false;
+
+        function openAboutPanel(sectionIndex) {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                wasPlayingBeforeAbout = true;
+            } else {
+                wasPlayingBeforeAbout = false;
+            }
+
+            // Hide other screens
+            startScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+
+            const panel = document.getElementById('about-panel');
+            const subtitleEl = document.getElementById('about-subtitle');
+            const contentEl = document.getElementById('about-content');
+
+            // Populate content dynamically based on topic
+            if (sectionIndex === 1) {
+                subtitleEl.innerText = "Ball Physics & Collision Math";
+                subtitleEl.style.color = "#00ffff";
+                contentEl.innerHTML = `
+                    <div style="border-left: 3px solid #00ffff; padding-left: 15px; display: flex; flex-direction: column; gap: 12px;">
+                        <p style="font-size: 0.95rem; line-height: 1.45; margin: 0; color: rgba(255,255,255,0.9);">
+                            The game implements custom ball kinematics instead of simple mirror reflection ($V_{new} = -V_{old}$). Rebound vectors are computed dynamically using the following equations:
+                        </p>
+                        <div style="font-size: 0.9rem; line-height: 1.5; color: rgba(255,255,255,0.85); display: flex; flex-direction: column; gap: 10px;">
+                            <div>
+                                <strong>1. Relative Contact Hit Factor ($H_f$):</strong>
+                                Calculates contact position along the paddle's vertical height to define the baseline Y direction:
+                                <code style="display: block; background: rgba(0,0,0,0.3); padding: 6px 10px; margin: 6px 0; border-radius: 4px; font-family: monospace; color: #00ffff; font-size: 0.85rem;">
+                                    H_f = (Y_ball - Y_paddle) / (Paddle_Height / 2)
+                                </code>
+                                Normalizes contact to a range between <code>-1.0</code> (bottom edge) and <code>+1.0</code> (top edge).
+                            </div>
+                            <div>
+                                <strong>2. Y-Velocity Impulse Equation:</strong>
+                                Adds angular deflection and transfers mechanical vertical momentum from the moving paddle:
+                                <code style="display: block; background: rgba(0,0,0,0.3); padding: 6px 10px; margin: 6px 0; border-radius: 4px; font-family: monospace; color: #00ffff; font-size: 0.85rem;">
+                                    V_y_new = V_y_old + (H_f * 8.0) + (Paddle_Velocity_Y * 0.15)
+                                </code>
+                                The scalar multiplier <code>8.0</code> shapes the rebound curve, while <code>0.15</code> scales the velocity drag from the moving paddle.
+                            </div>
+                            <div>
+                                <strong>3. Anti-Vertical Trajectory Clamping:</strong>
+                                To prevent pure vertical trajectories (which trap the ball), the horizontal component ($V_x$) is locked to a minimum of 30% of the Y component:
+                                <code style="display: block; background: rgba(0,0,0,0.3); padding: 6px 10px; margin: 6px 0; border-radius: 4px; font-family: monospace; color: #00ffff; font-size: 0.85rem;">
+                                    if (|V_x| &lt; 0.3 * |V_y|) { V_x = sign(V_x) * 0.3 * |V_y| }
+                                </code>
+                            </div>
+                            <div>
+                                <strong>4. Normalization & Speed Scaling:</strong>
+                                Upon paddle hits, speed ($S$) increases by a set difficulty scalar and is capped. The velocity vector is updated:
+                                <code style="display: block; background: rgba(0,0,0,0.3); padding: 6px 10px; margin: 6px 0; border-radius: 4px; font-family: monospace; color: #00ffff; font-size: 0.85rem;">
+                                    S_new = min(S_current + S_increment, S_max)<br>
+                                    V_new = normalize(V_direction) * S_new
+                                </code>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (sectionIndex === 2) {
+                subtitleEl.innerText = "Performance Mode Architecture";
+                subtitleEl.style.color = "#ffffff";
+                contentEl.innerHTML = `
+                    <div style="border-left: 3px solid #ffffff; padding-left: 15px; display: flex; flex-direction: column; gap: 12px;">
+                        <p style="font-size: 0.95rem; line-height: 1.45; margin: 0; color: rgba(255,255,255,0.9);">
+                            Performance Mode optimizes frame rates on lower-end devices by dismantling high-compute GPU overhead:
+                        </p>
+                        <div style="font-size: 0.9rem; line-height: 1.5; color: rgba(255,255,255,0.85); display: flex; flex-direction: column; gap: 10px;">
+                            <div>
+                                <strong>1. Single-Pass Direct Buffer Render:</strong>
+                                Completely bypasses Three.js post-processing pipelines (such as <code>EffectComposer</code> and multi-pass bloom buffers). The engine draws all meshes directly onto the web canvas in a single draw call, avoiding render target swaps.
+                            </div>
+                            <div>
+                                <strong>2. Flat Material Shaders:</strong>
+                                Swaps advanced physically-based materials for standard standard/basic materials. This removes complex formulas like refraction, roughness maps, and clearcoat calculations from the fragment shader.
+                            </div>
+                            <div>
+                                <strong>3. Resolution Pixel Ratio Cap:</strong>
+                                Limits the renderer's pixel ratio to <code>1.0</code>. On modern high-DPI displays (retina screens), rendering at native resolution requires up to 4x the pixel fragment calculations. Clamping this preserves massive GPU processing power.
+                            </div>
+                            <div>
+                                <strong>4. Disabling Secondary Systems:</strong>
+                                Shuts off real-time depth shadow map matrices calculations, particle physics engines (scoring and boundary sparks), and fake reflective mirror mesh translations.
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (sectionIndex === 3) {
+                subtitleEl.innerText = "GPU Render Mode (High Compute)";
+                subtitleEl.style.color = "#ff00ff";
+                contentEl.innerHTML = `
+                    <div style="border-left: 3px solid #ff00ff; padding-left: 15px; display: flex; flex-direction: column; gap: 12px;">
+                        <p style="font-size: 0.95rem; line-height: 1.45; margin: 0; color: rgba(255,255,255,0.9);">
+                            GPU Render Mode utilizes premium real-time rendering features to achieve high-end neon aesthetics:
+                        </p>
+                        <div style="font-size: 0.9rem; line-height: 1.5; color: rgba(255,255,255,0.85); display: flex; flex-direction: column; gap: 10px;">
+                            <div>
+                                <strong>1. Post-Process Bloom Haloes:</strong>
+                                Renders the scene to an HDR texture and processes it through a multi-pass <code>UnrealBloomPass</code>. By setting <code>toneMapped = false</code> on glowing objects, colors bloom in vibrant neon halos.
+                            </div>
+                            <div>
+                                <strong>2. Physical Materials & Procedural Textures:</strong>
+                                Creates a custom frost noise pattern dynamically on a canvas, uploads it to the GPU as a <code>CanvasTexture</code>, and maps it to a <code>MeshPhysicalMaterial</code> as a specular bump map to scatter specular light reflections.
+                            </div>
+                            <div>
+                                <strong>3. Clearcoat Substrate Calculations:</strong>
+                                Adds a secondary reflective top-coat on the board with <code>clearcoat = 0.8</code> and <code>clearcoatRoughness = 0.45</code> to simulate highly polished, dark frosted glass.
+                            </div>
+                            <div>
+                                <strong>4. Real-time Particle Spark System:</strong>
+                                Instantiates up to 50 active spark meshes per bounce/score. Evaluates gravity pull, air drag friction, scale reduction, and alpha opacity decay in real-time in the animation loop.
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            panel.style.display = 'flex';
+        }
+
+        function closeAboutPanel() {
+            document.getElementById('about-panel').style.display = 'none';
+
+            if (gameInProgress) {
+                if (wasPlayingBeforeAbout) {
+                    gameState = 'PLAYING';
+                } else {
+                    pauseScreen.style.display = 'flex';
+                }
+            } else {
+                startScreen.style.display = 'flex';
             }
         }
 
@@ -795,10 +1386,15 @@
         });
 
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            camera.aspect = width / height;
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(width, height);
+            composer.setSize(width, height);
+
+            const pixelRatio = graphicsQuality === 'High' ? Math.min(window.devicePixelRatio, 2) : 1;
+            renderer.setPixelRatio(pixelRatio);
         });
 
         document.getElementById('btn-mode-1p').addEventListener('click', () => setGameMode('1P'));
@@ -808,6 +1404,9 @@
         document.getElementById('btn-diff-med').addEventListener('click', () => setDifficulty('Medium'));
         document.getElementById('btn-diff-hard').addEventListener('click', () => setDifficulty('Hard'));
 
+        document.getElementById('btn-gfx-high').addEventListener('click', () => setGraphicsQuality('High'));
+        document.getElementById('btn-gfx-low').addEventListener('click', () => setGraphicsQuality('Low'));
+
         document.getElementById('btn-left').addEventListener('click', () => startGame('left'));
         document.getElementById('btn-right').addEventListener('click', () => startGame('right'));
         document.getElementById('btn-start-2p').addEventListener('click', () => startGame());
@@ -816,9 +1415,88 @@
             startScreen.style.display = 'flex';
         });
 
+        // About Panel Listeners
+        document.getElementById('btn-close-about').addEventListener('click', closeAboutPanel);
+        document.getElementById('info-physics').addEventListener('click', () => openAboutPanel(1));
+        document.getElementById('info-performance').addEventListener('click', () => openAboutPanel(2));
+        document.getElementById('info-gpu').addEventListener('click', () => openAboutPanel(3));
+
+        // Touch Input Event Handlers
+        function handleTouch(e) {
+            if (gameState !== 'PLAYING') return;
+            if (e.cancelable) e.preventDefault();
+
+            inputMode = 'touch';
+            const rect = canvas.getBoundingClientRect();
+
+            // Clear active touch states first, they will be set if there are active touches in the list
+            touchLeftActive = false;
+            touchRightActive = false;
+
+            for (let i = 0; i < e.touches.length; i++) {
+                const touch = e.touches[i];
+                const relativeY = (touch.clientY - rect.top) / rect.height;
+                const mappedY = -(relativeY - 0.5) * (GAME_HEIGHT * 1.5);
+
+                if (gameMode === '1P') {
+                    touchPlayerY = mappedY;
+                } else {
+                    if (touch.clientX < window.innerWidth / 2) {
+                        touchLeftY = mappedY;
+                        touchLeftActive = true;
+                    } else {
+                        touchRightY = mappedY;
+                        touchRightActive = true;
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('touchstart', handleTouch, { passive: false });
+        window.addEventListener('touchmove', handleTouch, { passive: false });
+        window.addEventListener('touchend', handleTouch, { passive: false });
+        window.addEventListener('touchcancel', handleTouch, { passive: false });
+
         // Initialize defaults
         setDifficulty('Medium');
         setGameMode('1P');
+        setGraphicsQuality('High');
+
+        // Sparks generator for bounces & scores
+        function createSparks(position, colorHex, count = 20) {
+            if (graphicsQuality !== 'High') return;
+            for (let i = 0; i < count; i++) {
+                const sparkMat = new THREE.MeshBasicMaterial({
+                    color: colorHex,
+                    transparent: true,
+                    opacity: 1.0,
+                    blending: THREE.AdditiveBlending
+                });
+                const spark = new THREE.Mesh(sparkGeo, sparkMat);
+                spark.position.copy(position);
+
+                // Eject outwards
+                const velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 16,
+                    (Math.random() - 0.5) * 16,
+                    (Math.random() - 0.2) * 8
+                );
+
+                sparks.push({
+                    mesh: spark,
+                    velocity: velocity,
+                    life: 1.0,
+                    decay: 1.2 + Math.random() * 1.8
+                });
+                scene.add(spark);
+            }
+        }
+        // Floor grid glow trigger
+        function triggerGridGlow(colorHex) {
+            if (graphicsQuality !== 'High') return;
+            gridGlowIntensity = 1.0;
+            gridGlowColor.setHex(colorHex);
+        }
 
         // --- MAIN LOOP ---
         const clock = new THREE.Clock();
@@ -827,6 +1505,27 @@
             requestAnimationFrame(animate);
 
             const dt = Math.min(clock.getDelta(), 0.1);
+
+            // Update floor grid lines matrix glow (GPU mode only)
+            if (graphicsQuality === 'High') {
+                if (gridGlowIntensity > 0) {
+                    gridGlowIntensity -= dt * 0.8; // Fades out over ~1.25 seconds
+                    if (gridGlowIntensity < 0) gridGlowIntensity = 0;
+
+                    // Interpolate color and boost for HDR bloom (intensity multiplier 4.0)
+                    const r = THREE.MathUtils.lerp(1.0, gridGlowColor.r * 4.0, gridGlowIntensity);
+                    const g = THREE.MathUtils.lerp(1.0, gridGlowColor.g * 4.0, gridGlowIntensity);
+                    const b = THREE.MathUtils.lerp(1.0, gridGlowColor.b * 4.0, gridGlowIntensity);
+                    gridHelper.material.color.setRGB(r, g, b);
+                    gridHelper.material.opacity = THREE.MathUtils.lerp(0.3, 0.9, gridGlowIntensity);
+                } else {
+                    gridHelper.material.color.setRGB(1.0, 1.0, 1.0);
+                    gridHelper.material.opacity = 0.3;
+                }
+            } else {
+                gridHelper.material.color.setRGB(1.0, 1.0, 1.0);
+                gridHelper.material.opacity = 0.15;
+            }
 
             if (gameState === 'PLAYING') {
                 const maxY = GAME_HEIGHT / 2 - PADDLE_HEIGHT / 2;
@@ -842,6 +1541,8 @@
                         if (keys.s || keys.ArrowDown) pPaddle.position.y -= paddleSpeed * dt;
                     } else if (inputMode === 'mouse') {
                         pPaddle.position.y += (mouseY - pPaddle.position.y) * 15 * dt;
+                    } else if (inputMode === 'touch') {
+                        pPaddle.position.y += (touchPlayerY - pPaddle.position.y) * 15 * dt;
                     }
                     pPaddle.position.y = Math.max(-maxY, Math.min(maxY, pPaddle.position.y));
 
@@ -861,13 +1562,19 @@
                     aiPaddle.position.y = Math.max(-maxY, Math.min(maxY, aiPaddle.position.y));
 
                 } else if (gameMode === '2P') {
-                    // Left Player ALWAYS uses W/S
-                    if (keys.w) leftPaddle.position.y += paddleSpeed * dt;
-                    if (keys.s) leftPaddle.position.y -= paddleSpeed * dt;
+                    // Left Paddle movement: Touch or Keyboard
+                    if (touchLeftActive) {
+                        leftPaddle.position.y += (touchLeftY - leftPaddle.position.y) * 15 * dt;
+                    } else {
+                        if (keys.w) leftPaddle.position.y += paddleSpeed * dt;
+                        if (keys.s) leftPaddle.position.y -= paddleSpeed * dt;
+                    }
                     leftPaddle.position.y = Math.max(-maxY, Math.min(maxY, leftPaddle.position.y));
 
-                    // Right Player uses Arrows OR Mouse
-                    if (inputMode === 'keyboard') {
+                    // Right Paddle movement: Touch or Keyboard or Mouse
+                    if (touchRightActive) {
+                        rightPaddle.position.y += (touchRightY - rightPaddle.position.y) * 15 * dt;
+                    } else if (inputMode === 'keyboard') {
                         if (keys.ArrowUp) rightPaddle.position.y += paddleSpeed * dt;
                         if (keys.ArrowDown) rightPaddle.position.y -= paddleSpeed * dt;
                     } else if (inputMode === 'mouse') {
@@ -905,73 +1612,92 @@
                     // Gain a bit of speed on wall bounces to end vertical loops faster
                     ballSpeed = Math.min(ballSpeed + (speedIncrement * 0.5), maxBallSpeed);
                     ballVelocity.normalize().multiplyScalar(ballSpeed);
+                    createSparks(ball.position, ballVelocity.x < 0 ? 0x00ffff : 0xff00ff, 8); // cyber spark eject on wall hit
                 }
 
                 // --- PADDLE COLLISIONS ---
+                if (!ballScored) {
+                    // Left Paddle
+                    if (ballVelocity.x < 0 &&
+                        ball.position.x - BALL_RADIUS <= leftPaddle.position.x + PADDLE_WIDTH / 2 &&
+                        ball.position.x + BALL_RADIUS >= leftPaddle.position.x - PADDLE_WIDTH / 2) {
 
-                // Left Paddle
-                if (ballVelocity.x < 0 &&
-                    ball.position.x - BALL_RADIUS <= leftPaddle.position.x + PADDLE_WIDTH / 2 &&
-                    ball.position.x + BALL_RADIUS >= leftPaddle.position.x - PADDLE_WIDTH / 2) {
+                        if (ball.position.y >= leftPaddle.position.y - PADDLE_HEIGHT / 2 &&
+                            ball.position.y <= leftPaddle.position.y + PADDLE_HEIGHT / 2) {
 
-                    if (ball.position.y >= leftPaddle.position.y - PADDLE_HEIGHT / 2 &&
-                        ball.position.y <= leftPaddle.position.y + PADDLE_HEIGHT / 2) {
+                            ball.position.x = leftPaddle.position.x + PADDLE_WIDTH / 2 + BALL_RADIUS;
+                            ballVelocity.x *= -1;
 
-                        ball.position.x = leftPaddle.position.x + PADDLE_WIDTH / 2 + BALL_RADIUS;
-                        ballVelocity.x *= -1;
+                            // Accentuated physics: add english based on hit position AND paddle velocity
+                            const hitFactor = (ball.position.y - leftPaddle.position.y) / (PADDLE_HEIGHT / 2);
+                            ballVelocity.y += (hitFactor * 8) + (leftPaddleVelY * 0.15); // Toned down effect
 
-                        // Accentuated physics: add english based on hit position AND paddle velocity
-                        const hitFactor = (ball.position.y - leftPaddle.position.y) / (PADDLE_HEIGHT / 2);
-                        ballVelocity.y += (hitFactor * 8) + (leftPaddleVelY * 0.15); // Toned down effect
+                            // Prevent pure vertical bouncing (cap X ratio)
+                            if (Math.abs(ballVelocity.x) < Math.abs(ballVelocity.y) * 0.3) {
+                                ballVelocity.x = Math.sign(ballVelocity.x) * Math.abs(ballVelocity.y) * 0.3;
+                            }
 
-                        // Prevent pure vertical bouncing (cap X ratio)
-                        if (Math.abs(ballVelocity.x) < Math.abs(ballVelocity.y) * 0.3) {
-                            ballVelocity.x = Math.sign(ballVelocity.x) * Math.abs(ballVelocity.y) * 0.3;
+                            ballSpeed = Math.min(ballSpeed + speedIncrement, maxBallSpeed);
+                            ballVelocity.normalize().multiplyScalar(ballSpeed);
+                            createSparks(ball.position, 0x00ffff, 25); // Cyan sparks on left paddle hit
                         }
+                    }
 
-                        ballSpeed = Math.min(ballSpeed + speedIncrement, maxBallSpeed);
-                        ballVelocity.normalize().multiplyScalar(ballSpeed);
+                    // Right Paddle
+                    if (ballVelocity.x > 0 &&
+                        ball.position.x + BALL_RADIUS >= rightPaddle.position.x - PADDLE_WIDTH / 2 &&
+                        ball.position.x - BALL_RADIUS <= rightPaddle.position.x + PADDLE_WIDTH / 2) {
+
+                        if (ball.position.y >= rightPaddle.position.y - PADDLE_HEIGHT / 2 &&
+                            ball.position.y <= rightPaddle.position.y + PADDLE_HEIGHT / 2) {
+
+                            ball.position.x = rightPaddle.position.x - PADDLE_WIDTH / 2 - BALL_RADIUS;
+                            ballVelocity.x *= -1;
+
+                            // Accentuated physics: add english based on hit position AND paddle velocity
+                            const hitFactor = (ball.position.y - rightPaddle.position.y) / (PADDLE_HEIGHT / 2);
+                            ballVelocity.y += (hitFactor * 8) + (rightPaddleVelY * 0.15); // Toned down effect
+
+                            // Prevent pure vertical bouncing (cap X ratio)
+                            if (Math.abs(ballVelocity.x) < Math.abs(ballVelocity.y) * 0.3) {
+                                ballVelocity.x = Math.sign(ballVelocity.x) * Math.abs(ballVelocity.y) * 0.3;
+                            }
+
+                            ballSpeed = Math.min(ballSpeed + speedIncrement, maxBallSpeed);
+                            ballVelocity.normalize().multiplyScalar(ballSpeed);
+                            createSparks(ball.position, 0xff00ff, 25); // Magenta sparks on right paddle hit
+                        }
                     }
                 }
 
-                // Right Paddle
-                if (ballVelocity.x > 0 &&
-                    ball.position.x + BALL_RADIUS >= rightPaddle.position.x - PADDLE_WIDTH / 2 &&
-                    ball.position.x - BALL_RADIUS <= rightPaddle.position.x + PADDLE_WIDTH / 2) {
-
-                    if (ball.position.y >= rightPaddle.position.y - PADDLE_HEIGHT / 2 &&
-                        ball.position.y <= rightPaddle.position.y + PADDLE_HEIGHT / 2) {
-
-                        ball.position.x = rightPaddle.position.x - PADDLE_WIDTH / 2 - BALL_RADIUS;
-                        ballVelocity.x *= -1;
-
-                        // Accentuated physics: add english based on hit position AND paddle velocity
-                        const hitFactor = (ball.position.y - rightPaddle.position.y) / (PADDLE_HEIGHT / 2);
-                        ballVelocity.y += (hitFactor * 8) + (rightPaddleVelY * 0.15); // Toned down effect
-
-                        // Prevent pure vertical bouncing (cap X ratio)
-                        if (Math.abs(ballVelocity.x) < Math.abs(ballVelocity.y) * 0.3) {
-                            ballVelocity.x = Math.sign(ballVelocity.x) * Math.abs(ballVelocity.y) * 0.3;
-                        }
-
-                        ballSpeed = Math.min(ballSpeed + speedIncrement, maxBallSpeed);
-                        ballVelocity.normalize().multiplyScalar(ballSpeed);
+                // --- SCORING & OFF-SCREEN RESET ---
+                if (!ballScored) {
+                    if (ball.position.x < -GAME_WIDTH / 2 - 0.5) {
+                        rightScore++;
+                        flashLight(false);
+                        updateScore();
+                        createSparks(ball.position, 0xff00ff, 45); // Big Magenta spark explosion on score
+                        ballScored = true;
+                        triggerGridGlow(0xff00ff); // Magenta glow on matrix lines
+                    } else if (ball.position.x > GAME_WIDTH / 2 + 0.5) {
+                        leftScore++;
+                        flashLight(true);
+                        updateScore();
+                        createSparks(ball.position, 0x00ffff, 45); // Big Cyan spark explosion on score
+                        ballScored = true;
+                        triggerGridGlow(0x00ffff); // Cyan glow on matrix lines
                     }
-                }
-
-                // --- SCORING ---
-                if (ball.position.x < -GAME_WIDTH / 2 - 2) {
-                    rightScore++;
-                    flashLight(false);
-                    gameState = 'WAITING';
-                    updateScore();
-                    if (gameState !== 'OVER') setTimeout(() => { if (gameState !== 'OVER') { gameState = 'PLAYING'; resetBall(-1); } }, 1000);
-                } else if (ball.position.x > GAME_WIDTH / 2 + 2) {
-                    leftScore++;
-                    flashLight(true);
-                    gameState = 'WAITING';
-                    updateScore();
-                    if (gameState !== 'OVER') setTimeout(() => { if (gameState !== 'OVER') { gameState = 'PLAYING'; resetBall(1); } }, 1000);
+                } else {
+                    // Ball keeps animating off-screen. Once it leaves the screen range, reset it.
+                    if (graphicsQuality === 'High' && Math.random() < 0.35) {
+                        createSparks(ball.position, ball.position.x < 0 ? 0xff00ff : 0x00ffff, 2);
+                    }
+                    if (Math.abs(ball.position.x) > GAME_WIDTH / 2 + 15) {
+                        ballScored = false;
+                        if (gameState !== 'OVER') {
+                            resetBall(ball.position.x < 0 ? 1 : -1);
+                        }
+                    }
                 }
 
                 // Update mirrored reflections
@@ -983,7 +1709,29 @@
                 discoBall.position.z = 10 + Math.sin(clock.getElapsedTime() * 3) * 1.5; // Levitating bounce
             }
 
-            composer.render();
+            // Update active sparks (physics and fade decay)
+            for (let i = sparks.length - 1; i >= 0; i--) {
+                const s = sparks[i];
+                s.life -= dt * s.decay;
+                if (s.life <= 0) {
+                    scene.remove(s.mesh);
+                    s.mesh.geometry.dispose();
+                    s.mesh.material.dispose();
+                    sparks.splice(i, 1);
+                } else {
+                    s.mesh.position.addScaledVector(s.velocity, dt);
+                    s.velocity.y -= 9.8 * dt; // Gravity
+                    s.velocity.multiplyScalar(0.97); // Drag/air resistance
+                    s.mesh.scale.setScalar(s.life);
+                    s.mesh.material.opacity = s.life;
+                }
+            }
+
+            if (graphicsQuality === 'High') {
+                composer.render();
+            } else {
+                renderer.render(scene, camera);
+            }
         }
 
         animate();
