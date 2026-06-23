@@ -86,6 +86,7 @@
             letter-spacing: -0.03em;
             background: linear-gradient(135deg, var(--yellow-main), var(--red-main));
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             display: flex;
             align-items: center;
@@ -1161,6 +1162,7 @@
             font-weight: 800;
             background: linear-gradient(135deg, var(--yellow-main), var(--red-main));
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 1rem;
         }
@@ -1557,6 +1559,12 @@
         #rule-notification .rule-icon {
             font-size: 1.5rem;
         }
+
+        /* Info variant (green) for rule clarifications */
+        #rule-notification.info {
+            border: 1px solid rgba(80, 220, 120, 0.45);
+            border-left: 4px solid var(--green-main);
+        }
     </style>
 </head>
 
@@ -1592,7 +1600,7 @@
                 <div class="panel-card"
                     style="max-width: 400px; padding: 2rem; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(25, 30, 48, 0.8); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);">
                     <div
-                        style="font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--yellow-main), var(--red-main)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.75rem;">
+                        style="font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--yellow-main), var(--red-main)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.75rem;">
                         Restart Game?</div>
                     <div style="font-size: 1rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.5;">Are
                         you sure you want to end this match and return to the setup screen? All current progress will be
@@ -2485,12 +2493,30 @@
         let ruleNotifyTimeout = null;
         function showRuleViolationNotification(msg) {
             const panel = document.getElementById('rule-notification');
+            const iconEl = panel.querySelector('.rule-icon');
+            if (iconEl) iconEl.textContent = '⚠️';
+            panel.classList.remove('info');
             document.getElementById('rule-notification-text').textContent = msg;
             panel.classList.add('show');
             if (ruleNotifyTimeout) clearTimeout(ruleNotifyTimeout);
             ruleNotifyTimeout = setTimeout(() => {
                 panel.classList.remove('show');
             }, 5500);
+        }
+
+        // Friendly info banner used to clarify why an unusual move is legal.
+        function showRuleInfoNotification(msg) {
+            const panel = document.getElementById('rule-notification');
+            const iconEl = panel.querySelector('.rule-icon');
+            if (iconEl) iconEl.textContent = 'ℹ️';
+            panel.classList.add('info');
+            document.getElementById('rule-notification-text').textContent = msg;
+            panel.classList.add('show');
+            if (ruleNotifyTimeout) clearTimeout(ruleNotifyTimeout);
+            ruleNotifyTimeout = setTimeout(() => {
+                panel.classList.remove('show');
+                panel.classList.remove('info');
+            }, 6500);
         }
 
         // Query Occupants
@@ -2526,11 +2552,10 @@
                 if (activeRuleset === 'american') {
                     return roll === 5 && exitPawnFromNestAllowed(playerIdx);
                 } else {
-                    // Cuban/PR: 5 or combined 5 (sum to 5 checked outside or here)
+                    // Cuban/PR: require a natural 5 on a single die.
+                    // A combined sum-to-5 (e.g. 4+1, 3+2) is handled by the combination-exit
+                    // path (canExitNestWithCombination) with roll === 0, not here.
                     if (roll === 5) {
-                        return exitPawnFromNestAllowed(playerIdx);
-                    }
-                    if (activeRuleset === 'puertorican' && rolledDoublesThisTurn) {
                         return exitPawnFromNestAllowed(playerIdx);
                     }
                     return false;
@@ -2613,12 +2638,6 @@
                 }
             }
 
-            // Puerto Rican doubles exit check
-            if (activeRuleset === 'puertorican' && playDiceCount === 2 && rolledDoublesThisTurn) {
-                const unused = diceState.filter(d => !d.used);
-                if (unused.length > 0) return true; // any doubles releases
-            }
-
             return false;
         }
 
@@ -2637,14 +2656,9 @@
 
             // 1. Mandatory exits priority
             if (pawnInNestMustExit(playerIdx) && pawn.pathIndex !== -1) {
-                // If it is a combined 5 exit or doubles exit, and we select a board piece, it's illegal.
+                // If it is a combined 5 exit, and we select a board piece, it's illegal.
                 // If this roll is a 5, and we have nest pawns, it is invalid to move a board piece.
                 if (roll === 5) return false;
-
-                // PR doubles check
-                if (activeRuleset === 'puertorican' && rolledDoublesThisTurn) {
-                    return false;
-                }
 
                 // Sum 5 check
                 const unused = diceState.filter(d => !d.used);
@@ -2687,10 +2701,9 @@
                 } else {
                     const unused = diceState.filter(d => !d.used);
                     const sumTo5 = unused.length === 2 && (unused[0].val + unused[1].val === 5);
-                    const prDouble = activeRuleset === 'puertorican' && rolledDoublesThisTurn && unused.length > 0;
-                    if (roll !== 5 && !sumTo5 && !prDouble) {
+                    if (roll !== 5 && !sumTo5) {
                         if (activeRuleset === 'puertorican') {
-                            return "Puerto Rican Rules: Exit requires rolling a 5, combinations summing to 5, or doubles.";
+                            return "Puerto Rican Rules: Exit requires rolling a 5 on a single die, or a combination of both dice summing to 5.";
                         } else {
                             return "Cuban Rules: Exit requires rolling a 5 or combinations summing to 5.";
                         }
@@ -2851,11 +2864,9 @@
                     if (roll === 0) {
                         // sum of 5 exit consumed all rolls
                         diceState.forEach(d => d.used = true);
-                    } else if (activeRuleset === 'puertorican' && rolledDoublesThisTurn) {
-                        // PR double exit exits 2 pawns if rolled doubles
-                        // consumes one roll or both depending on whether we exited one or two
-                        const unused = diceState.filter(d => !d.used);
-                        if (unused.length > 0) unused[0].used = true;
+                        if (players[playerIdx].type === 'human') {
+                            showRuleInfoNotification("Combination exit: both dice summed to 5, so the pawn left the nest and both dice were consumed.");
+                        }
                     } else {
                         // consume die roll
                         const die = diceState.find(d => d.val === roll && !d.used);
@@ -3016,11 +3027,6 @@
                     if (validIndex !== -1) {
                         selectDie(validIndex);
                     } else if (activeRuleset !== 'american' && canExitNestWithCombination(activeTurn)) {
-                        currentMovingRollIndex = -1;
-                        updateDashboard();
-                        highlightActivePawns();
-                    } else if (activeRuleset === 'puertorican' && rolledDoublesThisTurn && exitPawnFromNestAllowed(activeTurn)) {
-                        // PR doubles release highlight
                         currentMovingRollIndex = -1;
                         updateDashboard();
                         highlightActivePawns();
@@ -3319,16 +3325,6 @@
                     }
                 });
             }
-
-            // PR doubles release exits highlights
-            if (activeRuleset === 'puertorican' && rolledDoublesThisTurn && exitPawnFromNestAllowed(activeTurn)) {
-                player.pawns.forEach((p, idx) => {
-                    if (p.pathIndex === -1) {
-                        const g = document.getElementById(`pawn-g-${activeTurn}-${idx}`);
-                        if (g) g.classList.add('pawn-active');
-                    }
-                });
-            }
         }
 
         function highlightRestrictedPawns(allowedIds) {
@@ -3438,15 +3434,6 @@
                                     // exit from nest using combination
                                     if (pawn.pathIndex === -1 && canExitNestWithCombination(activeTurn)) {
                                         executeMovePawn(activeTurn, pawn.id, 0);
-                                    } else if (pawn.pathIndex === -1 && activeRuleset === 'puertorican' && rolledDoublesThisTurn) {
-                                        // PR doubles exit
-                                        const die = diceState.find(d => !d.used);
-                                        if (die) {
-                                            die.used = true;
-                                            renderPawns();
-                                            updateDashboard();
-                                            executeMovePawn(activeTurn, pawn.id, die.val);
-                                        }
                                     } else {
                                         const unused = diceState.find(d => !d.used);
                                         if (unused) {
@@ -3776,7 +3763,7 @@
                 const mustExit = pawnInNestMustExit(activeTurn);
 
                 // Option A: d1 then d2
-                if (!mustExit || d1.val === 5 || (activeRuleset === 'puertorican' && rolledDoublesThisTurn)) {
+                if (!mustExit || d1.val === 5) {
                     player.pawns.forEach((p1, idx1) => {
                         if (canPawnMove(activeTurn, idx1, d1.val)) {
                             const sim1 = simulateMove(activeTurn, idx1, d1.val, currentPawnsState);
@@ -3795,7 +3782,7 @@
                 }
 
                 // Option B: d2 then d1
-                if (!mustExit || d2.val === 5 || (activeRuleset === 'puertorican' && rolledDoublesThisTurn)) {
+                if (!mustExit || d2.val === 5) {
                     player.pawns.forEach((p1, idx1) => {
                         if (canPawnMove(activeTurn, idx1, d2.val)) {
                             const sim1 = simulateMove(activeTurn, idx1, d2.val, currentPawnsState);
