@@ -2867,11 +2867,10 @@
                         if (players[playerIdx].type === 'human') {
                             showRuleInfoNotification("Combination exit: both dice summed to 5, so the pawn left the nest and both dice were consumed.");
                         }
-                    } else {
-                        // consume die roll
-                        const die = diceState.find(d => d.val === roll && !d.used);
-                        if (die) die.used = true;
                     }
+                    // For roll > 0, the caller has already marked its specific die used.
+                    // Do NOT consume another matching die here (with doubles like 5-5 that
+                    // would incorrectly burn the second 5 you need to release a 2nd pawn).
 
                     renderPawns();
                     checkTurnSequence();
