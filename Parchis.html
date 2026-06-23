@@ -128,6 +128,7 @@
             font-weight: 600;
             font-family: inherit;
             letter-spacing: 0.02em;
+            touch-action: manipulation;
             white-space: nowrap;
             position: relative;
             overflow: hidden;
@@ -328,10 +329,15 @@
             filter: drop-shadow(0 0 10px currentColor);
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            touch-action: manipulation;
         }
 
-        .pawn-glow:hover {
-            transform: scale(1.15) translateY(-5px);
+        /* Only apply hover scale on devices with a real hover-capable pointer
+           (otherwise it gets stuck on touchscreens after a tap). */
+        @media (hover: hover) {
+            .pawn-glow:hover {
+                transform: scale(1.15) translateY(-5px);
+            }
         }
 
         .pawn-active {
@@ -512,6 +518,7 @@
             justify-content: center;
             align-items: center;
             perspective: 500px;
+            touch-action: manipulation;
         }
 
         .dice-overlay {
@@ -925,6 +932,7 @@
             gap: 0.5rem;
             width: 100%;
             font-family: inherit;
+            touch-action: manipulation;
         }
 
         .btn-primary:hover {
@@ -1565,6 +1573,17 @@
             border: 1px solid rgba(80, 220, 120, 0.45);
             border-left: 4px solid var(--green-main);
         }
+
+        /* Push the notification below the header on phones so it does not
+           overlap the logo / controls. */
+        @media (max-width: 600px) {
+            #rule-notification {
+                top: 70px;
+                font-size: 0.85rem;
+                padding: 0.75rem 1rem;
+                max-width: 94%;
+            }
+        }
     </style>
 </head>
 
@@ -1596,9 +1615,9 @@
 
             <!-- Restart Modal -->
             <div id="restart-modal" class="overlay"
-                style="background: rgba(15, 18, 29, 0.6); backdrop-filter: blur(12px);">
+                style="background: rgba(15, 18, 29, 0.6); backdrop-filter: blur(12px); padding: 1rem;">
                 <div class="panel-card"
-                    style="max-width: 400px; padding: 2rem; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(25, 30, 48, 0.8); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);">
+                    style="max-width: min(400px, 100%); padding: 1.5rem; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(25, 30, 48, 0.8); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);">
                     <div
                         style="font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--yellow-main), var(--red-main)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.75rem;">
                         Restart Game?</div>
@@ -3394,6 +3413,16 @@
                     g.setAttribute('class', 'pawn-glow');
                     g.setAttribute('color', pawn.color);
                     g.style.transformOrigin = `${px}px ${py}px`;
+
+                    // Invisible enlarged hit-area for finger taps on mobile.
+                    // (~28 SVG units ≈ 22px on a 360px-wide phone — close to a 44px touch target
+                    // since the actual tap goes anywhere inside this circle.)
+                    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    hit.setAttribute('cx', px); hit.setAttribute('cy', py);
+                    hit.setAttribute('r', 28);
+                    hit.setAttribute('fill', 'transparent');
+                    hit.setAttribute('pointer-events', 'all');
+                    g.appendChild(hit);
 
                     const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                     shadow.setAttribute('cx', px); shadow.setAttribute('cy', py + 2);
