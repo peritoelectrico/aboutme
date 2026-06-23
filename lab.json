@@ -2,7 +2,7 @@
   { "title": "Tic-Tac-Toe",                       "url": "tictactoe.html",                       "icon": "fa-gamepad",   "category": "Game"         },
   { "title": "Connect Four 3D",                   "url": "Connect4.html",                        "icon": "fa-gamepad",   "category": "Game"         },
   { "title": "Pong Game 3D",                      "url": "PongGame.html",                        "icon": "fa-gamepad",   "category": "Physics Demo" },
-  { "title": "Three Phases Motor Simulation",     "url": "ThreePhaseMotor.html",                 "icon": "fa-bullseye",  "category": "Simulation"   },
+  { "title": "Cuban, PR or American Parchis",     "url": "Parchis.html",                         "icon": "fa-gamepad",   "category": "Game"   },
   { "title": "Wire Size Calculator 1",            "url": "WireSizeCalculation.html",             "icon": "fa-bolt",      "category": "Calculator"   },
   { "title": "Wire Size Calculator 2",            "url": "WireSizeCalculator2.html",             "icon": "fa-bolt",      "category": "Calculator"   },
   { "title": "Conduit Calculator",                "url": "Conduit_Calculator.html",              "icon": "fa-ruler",     "category": "Calculator"   },
