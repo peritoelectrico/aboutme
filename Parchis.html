@@ -3018,6 +3018,10 @@
                     }
                 } else {
                     addLog(`No legal moves available for the bonus. Bonus move of ${bonus} is lost.`, players[activeTurn].color);
+                    activeBonusMoveValue = 0; // Bug fix: clear stale bonus value so the next pawn click
+                                              // doesn't silently apply the forfeited bonus move (e.g. a
+                                              // +20 capture bonus that was blocked by a bridge) and
+                                              // bypass blockade/path validation.
                     checkTurnSequence();
                 }
                 return;
@@ -3866,6 +3870,10 @@
             const movable = player.pawns.filter((p, idx) => canPawnMove(activeTurn, idx, bonus));
 
             if (movable.length === 0) {
+                // Defensive: same leak as the human path — if the bonus becomes
+                // unplayable here, clear the stale value before recursing so it
+                // can't bleed into a subsequent click/turn.
+                activeBonusMoveValue = 0;
                 checkTurnSequence();
                 return;
             }
