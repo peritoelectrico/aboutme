@@ -8,7 +8,9 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap"
+        rel="stylesheet">
 
     <style>
         :root {
@@ -140,7 +142,7 @@
             left: -60%;
             width: 60%;
             height: 200%;
-            background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.16) 50%, transparent 80%);
+            background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.16) 50%, transparent 80%);
             transform: skewX(-20deg);
             transition: left 0.5s ease;
             pointer-events: none;
@@ -278,14 +280,17 @@
             fill: var(--yellow-bg);
             stroke: var(--yellow-main);
         }
+
         .safe-occupied-blue {
             fill: var(--blue-bg);
             stroke: var(--blue-main);
         }
+
         .safe-occupied-red {
             fill: var(--red-bg);
             stroke: var(--red-main);
         }
+
         .safe-occupied-green {
             fill: var(--green-bg);
             stroke: var(--green-main);
@@ -519,41 +524,50 @@
             cursor: default;
         }
 
-        .dice-cube.active-roll ~ .dice-overlay {
+        .dice-cube.active-roll~.dice-overlay {
             cursor: pointer;
         }
 
-        .dice-cube.selected-roll ~ .dice-overlay {
+        .dice-cube.selected-roll~.dice-overlay {
             cursor: default;
         }
 
-        .dice-cube.used-roll ~ .dice-overlay {
+        .dice-cube.used-roll~.dice-overlay {
             cursor: not-allowed;
         }
 
-        .dice-question-cube {
+        .dice-question-container {
             position: absolute;
             width: 70px;
             height: 70px;
             top: calc(50% - 35px);
             left: calc(50% - 35px);
             transform-style: preserve-3d;
-            animation: question-cube-spin 5s linear infinite;
             display: none;
             z-index: 30;
             pointer-events: none;
+            animation: question-float 2.5s ease-in-out infinite;
         }
-        
+
+        .dice-question-cube-wrapper {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            animation: question-cube-spin 3.2s linear infinite;
+        }
+
         .q-face {
             position: absolute;
             width: 70px;
             height: 70px;
-            background: rgba(255, 255, 255, 0.15); /* see-thru frosted glass */
+            background: rgba(255, 255, 255, 0.15);
+            /* see-thru frosted glass */
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
             border: 1px solid rgba(255, 255, 255, 0.25);
             border-radius: 12px;
-            box-shadow: 
+            box-shadow:
                 0 8px 32px rgba(0, 0, 0, 0.37),
                 inset 0 1px 0 rgba(255, 255, 255, 0.2);
             backface-visibility: visible;
@@ -563,8 +577,8 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 70px;
-            height: 70px;
+            width: 100%;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -578,17 +592,56 @@
             pointer-events: none;
         }
 
-        .q-face-1 { transform: rotateY(0deg) translateZ(35px); }
-        .q-face-2 { transform: rotateY(90deg) translateZ(35px); }
-        .q-face-3 { transform: rotateY(180deg) translateZ(35px); }
-        .q-face-4 { transform: rotateY(-90deg) translateZ(35px); }
-        .q-face-5 { transform: rotateX(90deg) translateZ(35px); }
-        .q-face-6 { transform: rotateX(-90deg) translateZ(35px); }
+        .q-face-1 {
+            transform: rotateY(0deg) translateZ(35px);
+        }
+
+        .q-face-2 {
+            transform: rotateY(90deg) translateZ(35px);
+        }
+
+        .q-face-3 {
+            transform: rotateY(180deg) translateZ(35px);
+        }
+
+        .q-face-4 {
+            transform: rotateY(-90deg) translateZ(35px);
+        }
+
+        .q-face-5 {
+            transform: rotateX(90deg) translateZ(35px);
+        }
+
+        .q-face-6 {
+            transform: rotateX(-90deg) translateZ(35px);
+        }
 
         @keyframes question-cube-spin {
-            0% { transform: rotateX(12deg) rotateY(0deg) translateZ(45px); }
-            50% { transform: rotateX(-12deg) rotateY(180deg) translateZ(45px); }
-            100% { transform: rotateX(12deg) rotateY(360deg) translateZ(45px); }
+            0% {
+                transform: rotateX(20deg) rotateY(0deg);
+            }
+
+            50% {
+                transform: rotateX(-20deg) rotateY(180deg);
+            }
+
+            100% {
+                transform: rotateX(20deg) rotateY(360deg);
+            }
+        }
+
+        @keyframes question-float {
+            0% {
+                transform: translateZ(45px) translateY(0);
+            }
+
+            50% {
+                transform: translateZ(45px) translateY(-6px);
+            }
+
+            100% {
+                transform: translateZ(45px) translateY(0);
+            }
         }
 
         .dice-cube {
@@ -608,6 +661,7 @@
             scale: 0.9;
             border-radius: 12px;
         }
+
         .dice-cube.active-roll .dice-face {
             opacity: 0.85;
         }
@@ -621,9 +675,17 @@
         }
 
         @keyframes mandatory-flash {
-            0% { opacity: 0.5; filter: blur(30px); }
-            100% { opacity: 1; filter: blur(50px); }
+            0% {
+                opacity: 0.5;
+                filter: blur(30px);
+            }
+
+            100% {
+                opacity: 1;
+                filter: blur(50px);
+            }
         }
+
         .mandatory-nest-flash {
             animation: mandatory-flash 0.5s infinite alternate !important;
         }
@@ -632,6 +694,7 @@
             scale: 0.85;
             cursor: not-allowed;
         }
+
         .dice-cube.used-roll .dice-face {
             opacity: 0.35;
         }
@@ -640,6 +703,7 @@
             0% {
                 box-shadow: 0 0 20px var(--active-color), 0 0 30px var(--active-color);
             }
+
             100% {
                 box-shadow: 0 0 35px var(--active-color), 0 0 60px var(--active-color);
             }
@@ -649,12 +713,10 @@
             position: absolute;
             width: 70px;
             height: 70px;
-            background: linear-gradient(
-                145deg,
-                rgba(0, 140, 160, 0.18) 0%,
-                rgba(0, 70, 100, 0.65) 55%,
-                rgba(0, 20, 40, 0.88) 100%
-            );
+            background: linear-gradient(145deg,
+                    rgba(0, 140, 160, 0.18) 0%,
+                    rgba(0, 70, 100, 0.65) 55%,
+                    rgba(0, 20, 40, 0.88) 100%);
             border: 1px solid rgba(0, 200, 235, 0.28);
             border-radius: 13px;
             box-shadow:
@@ -676,12 +738,10 @@
             left: 5px;
             width: 45%;
             height: 38%;
-            background: linear-gradient(
-                135deg,
-                rgba(255, 255, 255, 0.28) 0%,
-                rgba(255, 255, 255, 0.06) 60%,
-                transparent 100%
-            );
+            background: linear-gradient(135deg,
+                    rgba(255, 255, 255, 0.28) 0%,
+                    rgba(255, 255, 255, 0.06) 60%,
+                    transparent 100%);
             border-radius: 8px 4px 4px 4px;
             pointer-events: none;
         }
@@ -693,51 +753,157 @@
             height: 10px;
             align-self: center;
             justify-self: center;
-            box-shadow: 0 0 4px rgba(200, 248, 255, 0.7), 0 1px 2px rgba(0,0,0,0.4);
+            box-shadow: 0 0 4px rgba(200, 248, 255, 0.7), 0 1px 2px rgba(0, 0, 0, 0.4);
             position: relative;
             z-index: 1;
         }
 
-        .dice-face-1 .dot { grid-area: 2 / 2; }
-        .dice-face-2 .dot:nth-child(1) { grid-area: 1 / 1; }
-        .dice-face-2 .dot:nth-child(2) { grid-area: 3 / 3; }
-        .dice-face-3 .dot:nth-child(1) { grid-area: 1 / 1; }
-        .dice-face-3 .dot:nth-child(2) { grid-area: 2 / 2; }
-        .dice-face-3 .dot:nth-child(3) { grid-area: 3 / 3; }
-        .dice-face-4 .dot:nth-child(1) { grid-area: 1 / 1; }
-        .dice-face-4 .dot:nth-child(2) { grid-area: 1 / 3; }
-        .dice-face-4 .dot:nth-child(3) { grid-area: 3 / 1; }
-        .dice-face-4 .dot:nth-child(4) { grid-area: 3 / 3; }
-        .dice-face-5 .dot:nth-child(1) { grid-area: 1 / 1; }
-        .dice-face-5 .dot:nth-child(2) { grid-area: 1 / 3; }
-        .dice-face-5 .dot:nth-child(3) { grid-area: 2 / 2; }
-        .dice-face-5 .dot:nth-child(4) { grid-area: 3 / 1; }
-        .dice-face-5 .dot:nth-child(5) { grid-area: 3 / 3; }
-        .dice-face-6 .dot:nth-child(1) { grid-area: 1 / 1; }
-        .dice-face-6 .dot:nth-child(2) { grid-area: 1 / 3; }
-        .dice-face-6 .dot:nth-child(3) { grid-area: 2 / 1; }
-        .dice-face-6 .dot:nth-child(4) { grid-area: 2 / 3; }
-        .dice-face-6 .dot:nth-child(5) { grid-area: 3 / 1; }
-        .dice-face-6 .dot:nth-child(6) { grid-area: 3 / 3; }
+        .dice-face-1 .dot {
+            grid-area: 2 / 2;
+        }
 
-        .show-1 { transform: rotateX(0deg) rotateY(0deg); }
-        .show-2 { transform: rotateX(-90deg) rotateY(0deg); }
-        .show-3 { transform: rotateX(0deg) rotateY(90deg); }
-        .show-4 { transform: rotateX(0deg) rotateY(-90deg); }
-        .show-5 { transform: rotateX(90deg) rotateY(0deg); }
-        .show-6 { transform: rotateX(180deg) rotateY(0deg); }
-        .show-7 { transform: rotateX(180deg) rotateY(0deg); } /* Cuban empty nest: 6 -> 7 uses 6's face visually */
+        .dice-face-2 .dot:nth-child(1) {
+            grid-area: 1 / 1;
+        }
 
-        .dice-face-1 { transform: rotateY(0deg) translateZ(35px); }
-        .dice-face-2 { transform: rotateX(90deg) translateZ(35px); }
-        .dice-face-3 { transform: rotateY(-90deg) translateZ(35px); }
-        .dice-face-4 { transform: rotateY(90deg) translateZ(35px); }
-        .dice-face-5 { transform: rotateX(-90deg) translateZ(35px); }
-        .dice-face-6 { transform: rotateX(180deg) translateZ(35px); }
+        .dice-face-2 .dot:nth-child(2) {
+            grid-area: 3 / 3;
+        }
+
+        .dice-face-3 .dot:nth-child(1) {
+            grid-area: 1 / 1;
+        }
+
+        .dice-face-3 .dot:nth-child(2) {
+            grid-area: 2 / 2;
+        }
+
+        .dice-face-3 .dot:nth-child(3) {
+            grid-area: 3 / 3;
+        }
+
+        .dice-face-4 .dot:nth-child(1) {
+            grid-area: 1 / 1;
+        }
+
+        .dice-face-4 .dot:nth-child(2) {
+            grid-area: 1 / 3;
+        }
+
+        .dice-face-4 .dot:nth-child(3) {
+            grid-area: 3 / 1;
+        }
+
+        .dice-face-4 .dot:nth-child(4) {
+            grid-area: 3 / 3;
+        }
+
+        .dice-face-5 .dot:nth-child(1) {
+            grid-area: 1 / 1;
+        }
+
+        .dice-face-5 .dot:nth-child(2) {
+            grid-area: 1 / 3;
+        }
+
+        .dice-face-5 .dot:nth-child(3) {
+            grid-area: 2 / 2;
+        }
+
+        .dice-face-5 .dot:nth-child(4) {
+            grid-area: 3 / 1;
+        }
+
+        .dice-face-5 .dot:nth-child(5) {
+            grid-area: 3 / 3;
+        }
+
+        .dice-face-6 .dot:nth-child(1) {
+            grid-area: 1 / 1;
+        }
+
+        .dice-face-6 .dot:nth-child(2) {
+            grid-area: 1 / 3;
+        }
+
+        .dice-face-6 .dot:nth-child(3) {
+            grid-area: 2 / 1;
+        }
+
+        .dice-face-6 .dot:nth-child(4) {
+            grid-area: 2 / 3;
+        }
+
+        .dice-face-6 .dot:nth-child(5) {
+            grid-area: 3 / 1;
+        }
+
+        .dice-face-6 .dot:nth-child(6) {
+            grid-area: 3 / 3;
+        }
+
+        .show-1 {
+            transform: rotateX(0deg) rotateY(0deg);
+        }
+
+        .show-2 {
+            transform: rotateX(-90deg) rotateY(0deg);
+        }
+
+        .show-3 {
+            transform: rotateX(0deg) rotateY(90deg);
+        }
+
+        .show-4 {
+            transform: rotateX(0deg) rotateY(-90deg);
+        }
+
+        .show-5 {
+            transform: rotateX(90deg) rotateY(0deg);
+        }
+
+        .show-6 {
+            transform: rotateX(180deg) rotateY(0deg);
+        }
+
+        .show-7 {
+            transform: rotateX(180deg) rotateY(0deg);
+        }
+
+        /* Cuban empty nest: 6 -> 7 uses 6's face visually */
+
+        .dice-face-1 {
+            transform: rotateY(0deg) translateZ(35px);
+        }
+
+        .dice-face-2 {
+            transform: rotateX(90deg) translateZ(35px);
+        }
+
+        .dice-face-3 {
+            transform: rotateY(-90deg) translateZ(35px);
+        }
+
+        .dice-face-4 {
+            transform: rotateY(90deg) translateZ(35px);
+        }
+
+        .dice-face-5 {
+            transform: rotateX(-90deg) translateZ(35px);
+        }
+
+        .dice-face-6 {
+            transform: rotateX(180deg) translateZ(35px);
+        }
 
         @keyframes roll-animation {
-            0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-            100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+            0% {
+                transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+            }
+
+            100% {
+                transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg);
+            }
         }
 
         /* Large glowing play button */
@@ -832,17 +998,38 @@
                 opacity: 0;
                 transform: translateY(4px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
 
-        .log-yellow { border-left-color: var(--yellow-main); background: var(--yellow-bg); }
-        .log-blue { border-left-color: var(--blue-main); background: var(--blue-bg); }
-        .log-red { border-left-color: var(--red-main); background: var(--red-bg); }
-        .log-green { border-left-color: var(--green-main); background: var(--green-bg); }
-        .log-system { border-left-color: #fff; background: rgba(255, 255, 255, 0.08); font-weight: 600; }
+        .log-yellow {
+            border-left-color: var(--yellow-main);
+            background: var(--yellow-bg);
+        }
+
+        .log-blue {
+            border-left-color: var(--blue-main);
+            background: var(--blue-bg);
+        }
+
+        .log-red {
+            border-left-color: var(--red-main);
+            background: var(--red-bg);
+        }
+
+        .log-green {
+            border-left-color: var(--green-main);
+            background: var(--green-bg);
+        }
+
+        .log-system {
+            border-left-color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            font-weight: 600;
+        }
 
         /* Scoreboard Panel */
         .scoreboard {
@@ -863,15 +1050,17 @@
             position: relative;
             overflow: hidden;
             transition: border-color 0.3s, box-shadow 0.3s;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 12px rgba(0,0,0,0.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.4);
         }
 
         .score-box::before {
             content: '';
             position: absolute;
-            top: 0; left: 0; right: 0;
+            top: 0;
+            left: 0;
+            right: 0;
             height: 40%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.07), transparent);
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.07), transparent);
             border-radius: 14px 14px 0 0;
             pointer-events: none;
         }
@@ -879,41 +1068,49 @@
         .score-box-yellow {
             background: linear-gradient(160deg, hsla(45, 100%, 50%, 0.18) 0%, hsla(45, 100%, 20%, 0.22) 50%, rgba(0, 0, 0, 0.65) 100%);
             border-color: hsla(45, 100%, 55%, 0.35);
-            box-shadow: inset 0 1px 0 rgba(255, 220, 80, 0.18), 0 4px 14px rgba(0,0,0,0.5);
+            box-shadow: inset 0 1px 0 rgba(255, 220, 80, 0.18), 0 4px 14px rgba(0, 0, 0, 0.5);
         }
-        .score-box-yellow:hover, .score-box-yellow.active-score {
+
+        .score-box-yellow:hover,
+        .score-box-yellow.active-score {
             border-color: hsla(45, 100%, 65%, 0.7);
-            box-shadow: 0 0 16px hsla(45,100%,55%,0.35), inset 0 1px 0 rgba(255,220,80,0.25);
+            box-shadow: 0 0 16px hsla(45, 100%, 55%, 0.35), inset 0 1px 0 rgba(255, 220, 80, 0.25);
         }
 
         .score-box-blue {
             background: linear-gradient(160deg, hsla(210, 100%, 55%, 0.18) 0%, hsla(210, 100%, 25%, 0.22) 50%, rgba(0, 0, 0, 0.65) 100%);
             border-color: hsla(210, 100%, 55%, 0.35);
-            box-shadow: inset 0 1px 0 rgba(80, 160, 255, 0.18), 0 4px 14px rgba(0,0,0,0.5);
+            box-shadow: inset 0 1px 0 rgba(80, 160, 255, 0.18), 0 4px 14px rgba(0, 0, 0, 0.5);
         }
-        .score-box-blue:hover, .score-box-blue.active-score {
+
+        .score-box-blue:hover,
+        .score-box-blue.active-score {
             border-color: hsla(210, 100%, 65%, 0.7);
-            box-shadow: 0 0 16px hsla(210,100%,55%,0.35), inset 0 1px 0 rgba(80,160,255,0.25);
+            box-shadow: 0 0 16px hsla(210, 100%, 55%, 0.35), inset 0 1px 0 rgba(80, 160, 255, 0.25);
         }
 
         .score-box-red {
             background: linear-gradient(160deg, hsla(355, 100%, 55%, 0.18) 0%, hsla(355, 100%, 25%, 0.22) 50%, rgba(0, 0, 0, 0.65) 100%);
             border-color: hsla(355, 100%, 55%, 0.35);
-            box-shadow: inset 0 1px 0 rgba(255, 80, 100, 0.18), 0 4px 14px rgba(0,0,0,0.5);
+            box-shadow: inset 0 1px 0 rgba(255, 80, 100, 0.18), 0 4px 14px rgba(0, 0, 0, 0.5);
         }
-        .score-box-red:hover, .score-box-red.active-score {
+
+        .score-box-red:hover,
+        .score-box-red.active-score {
             border-color: hsla(355, 100%, 65%, 0.7);
-            box-shadow: 0 0 16px hsla(355,100%,55%,0.35), inset 0 1px 0 rgba(255,80,100,0.25);
+            box-shadow: 0 0 16px hsla(355, 100%, 55%, 0.35), inset 0 1px 0 rgba(255, 80, 100, 0.25);
         }
 
         .score-box-green {
             background: linear-gradient(160deg, hsla(135, 85%, 42%, 0.18) 0%, hsla(135, 85%, 20%, 0.22) 50%, rgba(0, 0, 0, 0.65) 100%);
             border-color: hsla(135, 85%, 48%, 0.35);
-            box-shadow: inset 0 1px 0 rgba(80, 220, 120, 0.18), 0 4px 14px rgba(0,0,0,0.5);
+            box-shadow: inset 0 1px 0 rgba(80, 220, 120, 0.18), 0 4px 14px rgba(0, 0, 0, 0.5);
         }
-        .score-box-green:hover, .score-box-green.active-score {
+
+        .score-box-green:hover,
+        .score-box-green.active-score {
             border-color: hsla(135, 85%, 60%, 0.7);
-            box-shadow: 0 0 16px hsla(135,85%,48%,0.35), inset 0 1px 0 rgba(80,220,120,0.25);
+            box-shadow: 0 0 16px hsla(135, 85%, 48%, 0.35), inset 0 1px 0 rgba(80, 220, 120, 0.25);
         }
 
         .score-color-title {
@@ -934,8 +1131,10 @@
         /* Overlay modal for game over & restart confirm */
         .overlay {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(15, 18, 29, 0.9);
             backdrop-filter: blur(10px);
             z-index: 100;
@@ -1007,29 +1206,43 @@
         }
 
         @keyframes roll-btn-glow {
-            0% { box-shadow: 0 8px 25px rgba(0, 240, 255, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5); }
-            100% { box-shadow: 0 12px 40px rgba(0, 240, 255, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.6); }
+            0% {
+                box-shadow: 0 8px 25px rgba(0, 240, 255, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+            }
+
+            100% {
+                box-shadow: 0 12px 40px rgba(0, 240, 255, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+            }
         }
 
         .btn-glass::before {
             content: '';
             position: absolute;
-            top: -60%; left: -60%;
-            width: 60%; height: 200%;
-            background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.18) 50%, transparent 80%);
+            top: -60%;
+            left: -60%;
+            width: 60%;
+            height: 200%;
+            background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.18) 50%, transparent 80%);
             transform: skewX(-20deg);
             transition: left 0.55s ease;
             pointer-events: none;
         }
 
-        .btn-glass:hover::before { left: 120%; }
+        .btn-glass:hover::before {
+            left: 120%;
+        }
+
         .btn-glass:hover {
             background: rgba(255, 255, 255, 0.13);
             border-color: rgba(255, 255, 255, 0.32);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.22);
             transform: translateY(-2px);
         }
-        .btn-glass:active { transform: translateY(1px); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); }
+
+        .btn-glass:active {
+            transform: translateY(1px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
 
         /* Soplado Penalty Warning Button */
         #soplado-btn {
@@ -1049,22 +1262,27 @@
                 padding: 1rem;
                 gap: 1rem;
             }
+
             .board-container {
                 width: 100%;
                 min-height: 0;
                 padding: 1rem;
             }
+
             svg#parchis-board {
                 max-width: 100%;
             }
+
             .panel-container {
                 width: 100%;
                 max-height: initial;
                 gap: 1rem;
             }
+
             .panel-card {
                 padding: 1.25rem;
             }
+
             .log-card {
                 min-height: 160px;
                 max-height: 220px;
@@ -1073,70 +1291,235 @@
 
         /* ── Mobile phones (≤600px) ─────────────────────────────── */
         @media (max-width: 600px) {
-            header { padding: 0.75rem 1rem; }
-            .logo { font-size: 1.3rem; }
-            .logo span { display: none; }
-            .btn-icon { padding: 0.5rem 0.65rem; font-size: 1rem; }
-            .btn-icon .btn-label { display: none; }
-            .main-container { padding: 0.6rem; gap: 0.75rem; }
-            .board-container { border-radius: 16px; padding: 0.6rem; }
-            .panel-card { border-radius: 16px; padding: 1rem; }
-            .player-row { flex-wrap: wrap; gap: 0.5rem; padding: 0.6rem; margin-bottom: 0.6rem; }
-            .player-name-input { min-width: 0; flex: 1 1 120px; font-size: 0.9rem; padding: 0.5rem; }
-            .player-type-select { flex: 0 0 auto; font-size: 0.8rem; padding: 0.4rem 0.35rem; }
-            .dashboard { padding: 0.9rem 0.75rem; }
-            .current-player-name { font-size: 1.2rem; margin-bottom: 0.6rem; }
-            .dice-area { height: 90px; gap: 1.5rem !important; margin-bottom: 0.6rem; }
-            .dice-cube { width: 54px; height: 54px; }
-            .dice-face { width: 54px; height: 54px; }
-            .dice-container { width: 62px; height: 62px; }
-            .dice-overlay { top: -8px; left: -8px; width: 78px; height: 78px; }
-            .dice-question-cube {
+            header {
+                padding: 0.75rem 1rem;
+            }
+
+            .logo {
+                font-size: 1.3rem;
+            }
+
+            .logo span {
+                display: none;
+            }
+
+            .btn-icon {
+                padding: 0.5rem 0.65rem;
+                font-size: 1rem;
+            }
+
+            .btn-icon .btn-label {
+                display: none;
+            }
+
+            .main-container {
+                padding: 0.6rem;
+                gap: 0.75rem;
+            }
+
+            .board-container {
+                border-radius: 16px;
+                padding: 0.6rem;
+            }
+
+            .panel-card {
+                border-radius: 16px;
+                padding: 1rem;
+            }
+
+            .player-row {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 0.6rem;
+                margin-bottom: 0.6rem;
+            }
+
+            .player-name-input {
+                min-width: 0;
+                flex: 1 1 120px;
+                font-size: 0.9rem;
+                padding: 0.5rem;
+            }
+
+            .player-type-select {
+                flex: 0 0 auto;
+                font-size: 0.8rem;
+                padding: 0.4rem 0.35rem;
+            }
+
+            .dashboard {
+                padding: 0.9rem 0.75rem;
+            }
+
+            .current-player-name {
+                font-size: 1.2rem;
+                margin-bottom: 0.6rem;
+            }
+
+            .dice-area {
+                height: 90px;
+                gap: 1.5rem !important;
+                margin-bottom: 0.6rem;
+            }
+
+            .dice-cube {
+                width: 54px;
+                height: 54px;
+            }
+
+            .dice-face {
+                width: 54px;
+                height: 54px;
+            }
+
+            .dice-container {
+                width: 62px;
+                height: 62px;
+            }
+
+            .dice-overlay {
+                top: -8px;
+                left: -8px;
+                width: 78px;
+                height: 78px;
+            }
+
+            .dice-question-container {
                 width: 54px;
                 height: 54px;
                 top: calc(50% - 27px);
                 left: calc(50% - 27px);
-                animation: question-cube-spin-mobile 5s linear infinite;
+                animation: question-float-mobile 2.5s ease-in-out infinite;
             }
+
             .q-face {
                 width: 54px;
                 height: 54px;
             }
+
             .q-center-text {
-                width: 54px;
-                height: 54px;
                 font-size: 2.5rem;
             }
-            .q-face-1 { transform: rotateY(0deg) translateZ(27px); }
-            .q-face-2 { transform: rotateY(90deg) translateZ(27px); }
-            .q-face-3 { transform: rotateY(180deg) translateZ(27px); }
-            .q-face-4 { transform: rotateY(-90deg) translateZ(27px); }
-            .q-face-5 { transform: rotateX(90deg) translateZ(27px); }
-            .q-face-6 { transform: rotateX(-90deg) translateZ(27px); }
 
-            @keyframes question-cube-spin-mobile {
-                0% { transform: rotateX(12deg) rotateY(0deg) translateZ(35px); }
-                50% { transform: rotateX(-12deg) rotateY(180deg) translateZ(35px); }
-                100% { transform: rotateX(12deg) rotateY(360deg) translateZ(35px); }
+            .q-face-1 {
+                transform: rotateY(0deg) translateZ(27px);
             }
-            .dice-face-1  { transform: rotateY(0deg) translateZ(27px); }
-            .dice-face-2  { transform: rotateX(90deg) translateZ(27px); }
-            .dice-face-3  { transform: rotateY(-90deg) translateZ(27px); }
-            .dice-face-4  { transform: rotateY(90deg) translateZ(27px); }
-            .dice-face-5  { transform: rotateX(-90deg) translateZ(27px); }
-            .dice-face-6  { transform: rotateX(180deg) translateZ(27px); }
-            .dot { width: 8px; height: 8px; }
-            .scoreboard { gap: 0.35rem; margin-bottom: 0.6rem; }
-            .score-box { padding: 0.35rem 0.2rem; border-radius: 8px; }
-            .score-color-title { font-size: 0.6rem; }
-            .score-val { font-size: 0.95rem; }
-            .btn-primary { padding: 0.85rem 1rem; font-size: 1rem; border-radius: 12px; }
-            #dice-roll-desc { font-size: 0.82rem; margin-bottom: 0.6rem; }
-            .log-card { min-height: 120px; max-height: 180px; }
-            .log-list { font-size: 0.8rem; gap: 0.3rem; }
-            .log-entry { padding: 0.4rem 0.6rem; border-radius: 6px; }
-            .overlay-title { font-size: 2rem; }
-            .overlay-subtitle { font-size: 1rem; margin-bottom: 1.25rem; }
+
+            .q-face-2 {
+                transform: rotateY(90deg) translateZ(27px);
+            }
+
+            .q-face-3 {
+                transform: rotateY(180deg) translateZ(27px);
+            }
+
+            .q-face-4 {
+                transform: rotateY(-90deg) translateZ(27px);
+            }
+
+            .q-face-5 {
+                transform: rotateX(90deg) translateZ(27px);
+            }
+
+            .q-face-6 {
+                transform: rotateX(-90deg) translateZ(27px);
+            }
+
+            @keyframes question-float-mobile {
+                0% {
+                    transform: translateZ(35px) translateY(0);
+                }
+
+                50% {
+                    transform: translateZ(35px) translateY(-4px);
+                }
+
+                100% {
+                    transform: translateZ(35px) translateY(0);
+                }
+            }
+
+            .dice-face-1 {
+                transform: rotateY(0deg) translateZ(27px);
+            }
+
+            .dice-face-2 {
+                transform: rotateX(90deg) translateZ(27px);
+            }
+
+            .dice-face-3 {
+                transform: rotateY(-90deg) translateZ(27px);
+            }
+
+            .dice-face-4 {
+                transform: rotateY(90deg) translateZ(27px);
+            }
+
+            .dice-face-5 {
+                transform: rotateX(-90deg) translateZ(27px);
+            }
+
+            .dice-face-6 {
+                transform: rotateX(180deg) translateZ(27px);
+            }
+
+            .dot {
+                width: 8px;
+                height: 8px;
+            }
+
+            .scoreboard {
+                gap: 0.35rem;
+                margin-bottom: 0.6rem;
+            }
+
+            .score-box {
+                padding: 0.35rem 0.2rem;
+                border-radius: 8px;
+            }
+
+            .score-color-title {
+                font-size: 0.6rem;
+            }
+
+            .score-val {
+                font-size: 0.95rem;
+            }
+
+            .btn-primary {
+                padding: 0.85rem 1rem;
+                font-size: 1rem;
+                border-radius: 12px;
+            }
+
+            #dice-roll-desc {
+                font-size: 0.82rem;
+                margin-bottom: 0.6rem;
+            }
+
+            .log-card {
+                min-height: 120px;
+                max-height: 180px;
+            }
+
+            .log-list {
+                font-size: 0.8rem;
+                gap: 0.3rem;
+            }
+
+            .log-entry {
+                padding: 0.4rem 0.6rem;
+                border-radius: 6px;
+            }
+
+            .overlay-title {
+                font-size: 2rem;
+            }
+
+            .overlay-subtitle {
+                font-size: 1rem;
+                margin-bottom: 1.25rem;
+            }
         }
 
         /* Rule Notification Panel */
@@ -1182,8 +1565,10 @@
     <header>
         <div class="logo">Caribbean/American <span>Parchis</span></div>
         <div class="nav-controls">
-            <button id="sound-btn" class="btn-icon" title="Toggle Sound">🔊 <span class="btn-label">Sound</span></button>
-            <button id="restart-btn" class="btn-icon" title="Restart Game">🔄 <span class="btn-label">Restart</span></button>
+            <button id="sound-btn" class="btn-icon" title="Toggle Sound">🔊 <span
+                    class="btn-label">Sound</span></button>
+            <button id="restart-btn" class="btn-icon" title="Restart Game">🔄 <span
+                    class="btn-label">Restart</span></button>
         </div>
     </header>
 
@@ -1202,13 +1587,22 @@
             </div>
 
             <!-- Restart Modal -->
-            <div id="restart-modal" class="overlay" style="background: rgba(15, 18, 29, 0.6); backdrop-filter: blur(12px);">
-                <div class="panel-card" style="max-width: 400px; padding: 2rem; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(25, 30, 48, 0.8); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);">
-                    <div style="font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--yellow-main), var(--red-main)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.75rem;">Restart Game?</div>
-                    <div style="font-size: 1rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.5;">Are you sure you want to end this match and return to the setup screen? All current progress will be lost.</div>
+            <div id="restart-modal" class="overlay"
+                style="background: rgba(15, 18, 29, 0.6); backdrop-filter: blur(12px);">
+                <div class="panel-card"
+                    style="max-width: 400px; padding: 2rem; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(25, 30, 48, 0.8); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);">
+                    <div
+                        style="font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--yellow-main), var(--red-main)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.75rem;">
+                        Restart Game?</div>
+                    <div style="font-size: 1rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.5;">Are
+                        you sure you want to end this match and return to the setup screen? All current progress will be
+                        lost.</div>
                     <div style="display: flex; gap: 1rem; width: 100%;">
-                        <button id="restart-confirm-btn" class="btn-primary" style="flex: 1.2; background: linear-gradient(135deg, var(--red-main) 0%, #ff5252 100%);">Yes, Restart</button>
-                        <button id="restart-cancel-btn" class="btn-primary" style="flex: 0.8; background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-card); box-shadow: none;">Cancel</button>
+                        <button id="restart-confirm-btn" class="btn-primary"
+                            style="flex: 1.2; background: linear-gradient(135deg, var(--red-main) 0%, #ff5252 100%);">Yes,
+                            Restart</button>
+                        <button id="restart-cancel-btn" class="btn-primary"
+                            style="flex: 0.8; background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-card); box-shadow: none;">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -1224,26 +1618,32 @@
 
                     <div class="player-row" style="flex-direction: column; align-items: stretch; gap: 0.75rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <label for="ruleset-select" style="font-weight: 600; font-size: 0.95rem;">Game Ruleset:</label>
+                            <label for="ruleset-select" style="font-weight: 600; font-size: 0.95rem;">Game
+                                Ruleset:</label>
                             <select id="ruleset-select" class="player-type-select" style="min-width: 150px;">
                                 <option value="cuban" selected>Cuban Parchís</option>
                                 <option value="puertorican">Puerto Rican Parchís</option>
                                 <option value="american">American Parcheesi</option>
                             </select>
                         </div>
-                        <div id="rules-options-container" style="display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.5rem;">
-                            <div id="dice-count-row" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div id="rules-options-container"
+                            style="display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.5rem;">
+                            <div id="dice-count-row"
+                                style="display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-size: 0.85rem; color: var(--text-muted);">Dice Play Style:</span>
-                                <select id="dice-count-select" class="player-type-select" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                <select id="dice-count-select" class="player-type-select"
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
                                     <option value="2" selected>2 Dice</option>
                                     <option value="1">1 Die</option>
                                 </select>
                             </div>
-                            <div id="rule-empty-nest-row" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div id="rule-empty-nest-row"
+                                style="display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-size: 0.85rem; color: var(--text-muted);">Nest Empty (6 ➔ 7):</span>
                                 <input type="checkbox" id="rule-empty-nest" checked style="width: 16px; height: 16px;">
                             </div>
-                            <div id="rule-soplado-row" style="display: flex; justify-content: space-between; align-items: center; display: none;">
+                            <div id="rule-soplado-row"
+                                style="display: flex; justify-content: space-between; align-items: center; display: none;">
                                 <span style="font-size: 0.85rem; color: var(--text-muted);">Soplado Rule:</span>
                                 <input type="checkbox" id="rule-soplado" checked style="width: 16px; height: 16px;">
                             </div>
@@ -1322,66 +1722,178 @@
                             <!-- Die 1 -->
                             <div class="dice-container" id="dice-container-0">
                                 <div id="dice" class="dice-cube show-1">
-                                    <div class="dice-face dice-face-1"><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-2"><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-3"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-4"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-5"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-6"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                                    <div class="dice-face dice-face-1">
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-2">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-3">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-4">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-5">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-6">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
                                 </div>
                                 <div id="dice-overlay-0" class="dice-overlay"></div>
                             </div>
-                            
+
                             <!-- 3D Question Mark Die -->
-                            <div id="dice-question-mark" class="dice-question-cube">
-                                <div class="q-face q-face-1"></div>
-                                <div class="q-face q-face-2"></div>
-                                <div class="q-face q-face-3"></div>
-                                <div class="q-face q-face-4"></div>
-                                <div class="q-face q-face-5"></div>
-                                <div class="q-face q-face-6"></div>
+                            <div id="dice-question-mark" class="dice-question-container">
+                                <div class="dice-question-cube-wrapper">
+                                    <div class="q-face q-face-1"></div>
+                                    <div class="q-face q-face-2"></div>
+                                    <div class="q-face q-face-3"></div>
+                                    <div class="q-face q-face-4"></div>
+                                    <div class="q-face q-face-5"></div>
+                                    <div class="q-face q-face-6"></div>
+                                </div>
                                 <div class="q-center-text">?</div>
                             </div>
 
                             <!-- Die 2 -->
                             <div class="dice-container" id="dice-container-1">
                                 <div id="dice2" class="dice-cube show-1">
-                                    <div class="dice-face dice-face-1"><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-2"><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-3"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-4"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-5"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-6"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                                    <div class="dice-face dice-face-1">
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-2">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-3">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-4">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-5">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-6">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
                                 </div>
                                 <div id="dice-overlay-1" class="dice-overlay"></div>
                             </div>
                             <!-- Die 3 -->
                             <div class="dice-container" id="dice-container-2" style="display: none;">
                                 <div id="dice3" class="dice-cube show-1">
-                                    <div class="dice-face dice-face-1"><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-2"><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-3"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-4"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-5"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-6"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                                    <div class="dice-face dice-face-1">
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-2">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-3">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-4">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-5">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-6">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
                                 </div>
                                 <div id="dice-overlay-2" class="dice-overlay"></div>
                             </div>
                             <!-- Die 4 -->
                             <div class="dice-container" id="dice-container-3" style="display: none;">
                                 <div id="dice4" class="dice-cube show-1">
-                                    <div class="dice-face dice-face-1"><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-2"><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-3"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-4"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-5"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-                                    <div class="dice-face dice-face-6"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                                    <div class="dice-face dice-face-1">
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-2">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-3">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-4">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-5">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-6">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
                                 </div>
                                 <div id="dice-overlay-3" class="dice-overlay"></div>
                             </div>
                         </div>
 
-                        <div id="dice-roll-desc" style="font-size: 0.9rem; color: var(--text-muted); min-height: 1.5rem; margin-bottom: 1rem;">Roll the dice to start your turn</div>
+                        <div id="dice-roll-desc"
+                            style="font-size: 0.9rem; color: var(--text-muted); min-height: 1.5rem; margin-bottom: 1rem;">
+                            Roll the dice to start your turn</div>
                         <button id="soplado-btn" class="btn-glass">💨 Soplado! (Missed Capture Penalty)</button>
                         <button id="roll-btn" class="btn-glass">🎲 Roll Dice</button>
                     </div>
@@ -2128,7 +2640,7 @@
                 // If it is a combined 5 exit or doubles exit, and we select a board piece, it's illegal.
                 // If this roll is a 5, and we have nest pawns, it is invalid to move a board piece.
                 if (roll === 5) return false;
-                
+
                 // PR doubles check
                 if (activeRuleset === 'puertorican' && rolledDoublesThisTurn) {
                     return false;
@@ -2153,8 +2665,8 @@
                         const spaceId = player.path[pawn.pathIndex];
                         const occupants = getPawnsOnSpace(spaceId);
                         const isBlock = occupants.length === 2 &&
-                                        occupants[0].playerIndex === playerIdx &&
-                                        occupants[1].playerIndex === playerIdx;
+                            occupants[0].playerIndex === playerIdx &&
+                            occupants[1].playerIndex === playerIdx;
                         if (!isBlock) return false; // Must move the blockade pawn!
                     } else {
                         return false;
@@ -2334,7 +2846,7 @@
                 const success = releasePawnFromNest(playerIdx);
                 if (success) {
                     lastMovedPawnId = pawnId;
-                    
+
                     // Consume rolls
                     if (roll === 0) {
                         // sum of 5 exit consumed all rolls
@@ -2420,12 +2932,12 @@
             if (!sopladoCandidate) return;
             const player = players[sopladoCandidate.playerIdx];
             const pawn = player.pawns[sopladoCandidate.pawnId];
-            
+
             pawn.pathIndex = -1; // send back to nest
             sounds.playCapture();
 
             addLog(`💨 SOPLADO! ${player.name}'s pawn ${pawn.id + 1} was sent back to nest for missing an eat opportunity!`, 'system');
-            
+
             // clear candidate
             sopladoCandidate = null;
             document.getElementById('soplado-btn').style.display = 'none';
@@ -2610,7 +3122,7 @@
                     rolledDoublesThisTurn = v1 === v2;
                     if (rolledDoublesThisTurn) {
                         consecutiveDoubles++;
-                        
+
                         // Three doubles check
                         if (consecutiveDoubles === 3) {
                             addLog(`🚨 Three consecutive doubles! Penalty triggered.`, 'system');
