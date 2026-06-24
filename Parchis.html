@@ -573,6 +573,7 @@
             z-index: 30;
             pointer-events: auto;
             cursor: pointer;
+            transform: translateZ(45px);
             animation: question-float 2.5s ease-in-out infinite;
         }
 
@@ -659,15 +660,15 @@
 
         @keyframes question-float {
             0% {
-                transform: translateZ(45px) translateY(0);
+                top: calc(50% - 35px);
             }
 
             50% {
-                transform: translateZ(45px) translateY(-6px);
+                top: calc(50% - 41px);
             }
 
             100% {
-                transform: translateZ(45px) translateY(0);
+                top: calc(50% - 35px);
             }
         }
 
@@ -1418,6 +1419,7 @@
                 height: 54px;
                 top: calc(50% - 27px);
                 left: calc(50% - 27px);
+                transform: translateZ(35px);
                 animation: question-float-mobile 2.5s ease-in-out infinite;
             }
 
@@ -1456,15 +1458,15 @@
 
             @keyframes question-float-mobile {
                 0% {
-                    transform: translateZ(35px) translateY(0);
+                    top: calc(50% - 27px);
                 }
 
                 50% {
-                    transform: translateZ(35px) translateY(-4px);
+                    top: calc(50% - 31px);
                 }
 
                 100% {
-                    transform: translateZ(35px) translateY(0);
+                    top: calc(50% - 27px);
                 }
             }
 
@@ -2151,6 +2153,13 @@
         function unlockAudio() {
             sounds.init();
             if (sounds.ctx) {
+                sounds.ctx.resume().then(() => {
+                    if (sounds.ctx.state === 'running') {
+                        window.removeEventListener('click', unlockAudio);
+                        window.removeEventListener('touchend', unlockAudio);
+                    }
+                }).catch(e => console.warn(e));
+
                 try {
                     const buffer = sounds.ctx.createBuffer(1, 1, 22050);
                     const source = sounds.ctx.createBufferSource();
@@ -2161,12 +2170,8 @@
                     console.warn("Failed to play silent buffer", e);
                 }
             }
-            window.removeEventListener('click', unlockAudio);
-            window.removeEventListener('touchstart', unlockAudio, { passive: true });
-            window.removeEventListener('touchend', unlockAudio);
         }
         window.addEventListener('click', unlockAudio);
-        window.addEventListener('touchstart', unlockAudio, { passive: true });
         window.addEventListener('touchend', unlockAudio);
 
         // Sound button toggle
