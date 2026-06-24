@@ -3596,7 +3596,7 @@
 
             // Question mark visibility
             const qEl = document.getElementById('dice-question-mark');
-            if (gameState === 'waiting_for_roll' && player.type === 'human' && isFirstRollOfTurn) {
+            if (gameState === 'waiting_for_roll' && player.type === 'human') {
                 qEl.style.display = 'flex';
             } else {
                 qEl.style.display = 'none';
