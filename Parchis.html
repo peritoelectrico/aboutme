@@ -1420,16 +1420,12 @@
                 top: calc(50% - 27px);
                 left: calc(50% - 27px);
                 transform: translateZ(35px);
-                animation: question-cube-spin-mobile 3.2s linear infinite, question-float-mobile 2.5s ease-in-out infinite;
-            }
-            .dice-question-cube-wrapper {
-                animation: question-cube-spin-mobile 3.2s linear infinite;
+                animation: question-float-mobile 2.5s ease-in-out infinite;
             }
 
             .q-face {
                 width: 54px;
                 height: 54px;
-                backface-visibility: visible;
             }
 
             .q-center-text {
@@ -1471,20 +1467,6 @@
 
                 100% {
                     top: calc(50% - 27px);
-                }
-            }
-
-            @keyframes question-cube-spin-mobile {
-                0% {
-                    transform: rotateX(20deg) rotateY(0deg);
-                }
-
-                50% {
-                    transform: rotateX(-20deg) rotateY(180deg);
-                }
-
-                100% {
-                    transform: rotateX(20deg) rotateY(360deg);
                 }
             }
 
@@ -1994,9 +1976,7 @@
                 try {
                     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                     if (this.ctx.state === 'suspended') {
-                        this.ctx.resume().then(() => {
-                            console.log('AudioContext resumed from init');
-                        }).catch(e => console.warn('Init resume failed:', e));
+                        this.ctx.resume();
                     }
                 } catch (e) {
                     console.error("AudioContext not supported", e);
@@ -2171,29 +2151,22 @@
 
         // One-time listeners to unlock web audio on mobile devices
         function unlockAudio() {
-            if (!sounds.ctx) {
-                try {
-                    sounds.init();
-                } catch (e) {
-                    return;
-                }
-            }
-            if (sounds.ctx && sounds.ctx.state !== 'running') {
-                sounds.ctx.resume().then(() => {
-                    console.log('AudioContext state:', sounds.ctx.state);
-                }).catch(e => {
-                    console.warn('AudioContext resume failed:', e);
-                });
-            }
+            sounds.init();
             if (sounds.ctx) {
-                try {
-                    if (sounds.ctx.state === 'running' || sounds.ctx.state === 'suspended') {
-                        const buffer = sounds.ctx.createBuffer(1, 1, 22050);
-                        const source = sounds.ctx.createBufferSource();
-                        source.buffer = buffer;
-                        source.connect(sounds.ctx.destination);
-                        source.start(0);
+                sounds.ctx.resume().then(() => {
+                    if (sounds.ctx.state === 'running') {
+                        window.removeEventListener('click', unlockAudio);
+                        window.removeEventListener('touchend', unlockAudio);
+                        window.removeEventListener('touchstart', unlockAudio);
                     }
+                }).catch(e => console.warn(e));
+
+                try {
+                    const buffer = sounds.ctx.createBuffer(1, 1, 22050);
+                    const source = sounds.ctx.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(sounds.ctx.destination);
+                    source.start(0);
                 } catch (e) {
                     console.warn("Failed to play silent buffer", e);
                 }
@@ -2202,23 +2175,14 @@
         window.addEventListener('click', unlockAudio);
         window.addEventListener('touchend', unlockAudio);
         window.addEventListener('touchstart', unlockAudio);
-        window.addEventListener('touchmove', unlockAudio);
-        window.addEventListener('touchcancel', unlockAudio);
 
-        // Ensure sound button also works properly on iOS
-        const soundBtn = document.getElementById('sound-btn');
-        if (soundBtn) {
-            soundBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                sounds.init();
-                if (sounds.ctx && sounds.ctx.state !== 'running') {
-                    sounds.ctx.resume().catch(e => console.warn(e));
-                }
-                let muted = sounds.toggleMute();
-                const btn = document.getElementById('sound-btn');
-                btn.childNodes[0].textContent = muted ? '🔇 ' : '🔊 ';
-            }, { passive: true });
-        }
+        // Sound button toggle
+        document.getElementById('sound-btn').addEventListener('click', () => {
+            sounds.init();
+            let muted = sounds.toggleMute();
+            const btn = document.getElementById('sound-btn');
+            btn.childNodes[0].textContent = muted ? '🔇 ' : '🔊 ';
+        });
 
         // Initialize welcome message
         document.addEventListener('DOMContentLoaded', () => {
@@ -3571,10 +3535,7 @@
                                             renderPawns();
                                             updateDashboard();
                                             executeMovePawn(activeTurn, pawn.id, unused.val);
-}
-            .dice-question-cube-wrapper {
-                animation: question-cube-spin-mobile 3.2s linear infinite;
-            }
+                                        }
                                     }
                                 }
                             } else {
