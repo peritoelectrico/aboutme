@@ -1,0 +1,4068 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caribbean/American Parchis - Premium Board Game</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #0f121d;
+            --bg-card: rgba(25, 30, 48, 0.65);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+
+            /* Player Colors - Vibrant HSL Gradients */
+            --yellow-main: hsl(45, 100%, 55%);
+            --yellow-glow: hsla(45, 100%, 55%, 0.4);
+            --yellow-bg: hsla(45, 100%, 55%, 0.15);
+
+            --blue-main: hsl(210, 100%, 55%);
+            --blue-glow: hsla(210, 100%, 55%, 0.4);
+            --blue-bg: hsla(210, 100%, 55%, 0.15);
+
+            --red-main: hsl(355, 100%, 55%);
+            --red-glow: hsla(355, 100%, 55%, 0.4);
+            --red-bg: hsla(355, 100%, 55%, 0.15);
+
+            --green-main: hsl(135, 85%, 48%);
+            --green-glow: hsla(135, 85%, 48%, 0.4);
+            --green-bg: hsla(135, 85%, 48%, 0.15);
+
+            --safe-color: #3b4252;
+            --safe-glow: rgba(255, 255, 255, 0.15);
+
+            --neon-shadow: 0 0 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 10%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 9%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(210, 100%, 5%, 1) 0, transparent 50%),
+                radial-gradient(at 0% 100%, hsla(135, 50%, 5%, 1) 0, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-card);
+            backdrop-filter: blur(10px);
+            background: rgba(15, 18, 29, 0.4);
+            z-index: 10;
+        }
+
+        .logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, var(--yellow-main), var(--red-main));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo span {
+            font-size: 0.8rem;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            border: 1px solid var(--border-card);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            color: var(--text-muted);
+            -webkit-text-fill-color: initial;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: var(--text-main);
+            padding: 0.55rem 1rem;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: inherit;
+            letter-spacing: 0.02em;
+            touch-action: manipulation;
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                0 4px 16px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-icon::before {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -60%;
+            width: 60%;
+            height: 200%;
+            background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.16) 50%, transparent 80%);
+            transform: skewX(-20deg);
+            transition: left 0.5s ease;
+            pointer-events: none;
+        }
+
+        .btn-icon:hover::before {
+            left: 130%;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.32);
+            box-shadow:
+                0 8px 28px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-icon:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 2rem;
+            gap: 2rem;
+        }
+
+        .board-container {
+            flex: 1.2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 24px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        /* SVG Board styling */
+        svg#parchis-board {
+            width: 100%;
+            height: auto;
+            max-width: 650px;
+            aspect-ratio: 1 / 1;
+            filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.4));
+        }
+
+        /* Cell Styling */
+        .board-cell {
+            fill: #161b2a;
+            stroke: #252b3d;
+            stroke-width: 1.5;
+            transition: all 0.3s;
+        }
+
+        .board-cell:hover {
+            fill: #1e253a;
+        }
+
+        .cell-yellow {
+            fill: var(--yellow-bg);
+            stroke: var(--yellow-main);
+            stroke-width: 1;
+        }
+
+        .cell-blue {
+            fill: var(--blue-bg);
+            stroke: var(--blue-main);
+            stroke-width: 1;
+        }
+
+        .cell-red {
+            fill: var(--red-bg);
+            stroke: var(--red-main);
+            stroke-width: 1;
+        }
+
+        .cell-green {
+            fill: var(--green-bg);
+            stroke: var(--green-main);
+            stroke-width: 1;
+        }
+
+        .start-cell-yellow {
+            fill: var(--yellow-main);
+            fill-opacity: 0.3;
+            stroke: var(--yellow-main);
+            stroke-width: 2;
+        }
+
+        .start-cell-blue {
+            fill: var(--blue-main);
+            fill-opacity: 0.3;
+            stroke: var(--blue-main);
+            stroke-width: 2;
+        }
+
+        .start-cell-red {
+            fill: var(--red-main);
+            fill-opacity: 0.3;
+            stroke: var(--red-main);
+            stroke-width: 2;
+        }
+
+        .start-cell-green {
+            fill: var(--green-main);
+            fill-opacity: 0.3;
+            stroke: var(--green-main);
+            stroke-width: 2;
+        }
+
+        .safe-indicator {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.4);
+            stroke-width: 1.5;
+            stroke-dasharray: 4 2;
+        }
+
+        .safe-cell {
+            stroke: rgba(255, 255, 255, 0.25);
+            stroke-width: 1.8;
+        }
+
+        /* Safe occupier indicator in American mode */
+        .safe-occupied-yellow {
+            fill: var(--yellow-bg);
+            stroke: var(--yellow-main);
+        }
+
+        .safe-occupied-blue {
+            fill: var(--blue-bg);
+            stroke: var(--blue-main);
+        }
+
+        .safe-occupied-red {
+            fill: var(--red-bg);
+            stroke: var(--red-main);
+        }
+
+        .safe-occupied-green {
+            fill: var(--green-bg);
+            stroke: var(--green-main);
+        }
+
+        /* Home Triangles */
+        .home-triangle {
+            stroke: #252b3d;
+            stroke-width: 2;
+        }
+
+        /* Nests */
+        .nest-bg {
+            fill: #121625;
+            stroke: var(--border-card);
+            stroke-width: 3;
+            rx: 16px;
+        }
+
+        .nest-circle {
+            fill: none;
+            stroke-width: 6;
+            stroke-linecap: round;
+        }
+
+        .nest-pad {
+            fill: rgba(0, 0, 0, 0.4);
+            stroke-width: 2;
+            transition: all 0.3s;
+        }
+
+        /* Pawns */
+        .pawn-glow {
+            filter: drop-shadow(0 0 10px currentColor);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            touch-action: manipulation;
+        }
+
+        /* Only apply hover scale on devices with a real hover-capable pointer
+           (otherwise it gets stuck on touchscreens after a tap). */
+        @media (hover: hover) {
+            .pawn-glow:hover {
+                transform: scale(1.15) translateY(-5px);
+            }
+        }
+
+        .pawn-active {
+            animation: pawn-bounce 1s infinite alternate;
+            filter: drop-shadow(0 0 15px currentColor);
+            stroke: #fff !important;
+            stroke-width: 2.5 !important;
+        }
+
+        @keyframes pawn-bounce {
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(-8px);
+            }
+        }
+
+        /* Control Panel */
+        .panel-container {
+            flex: 0.8;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-height: 80vh;
+        }
+
+        .panel-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 24px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Setup Screen Controls */
+        .player-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+
+        .player-row.active {
+            border-color: var(--active-color);
+            background: var(--active-bg);
+        }
+
+        .color-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-yellow {
+            background-color: var(--yellow-main);
+            box-shadow: 0 0 10px var(--yellow-glow);
+        }
+
+        .dot-blue {
+            background-color: var(--blue-main);
+            box-shadow: 0 0 10px var(--blue-glow);
+        }
+
+        .dot-red {
+            background-color: var(--red-main);
+            box-shadow: 0 0 10px var(--red-glow);
+        }
+
+        .dot-green {
+            background-color: var(--green-main);
+            box-shadow: 0 0 10px var(--green-glow);
+        }
+
+        .player-name-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-card);
+            color: var(--text-main);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-family: inherit;
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        .player-name-input:focus {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .player-type-select {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-card);
+            color: var(--text-main);
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        /* Dashboard turn state */
+        .dashboard {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .dashboard::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--active-color);
+        }
+
+        .current-player-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .current-player-name {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--active-color);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 15px var(--active-glow);
+        }
+
+        /* 3D Dice styling */
+        .dice-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 120px;
+            margin-bottom: 1rem;
+            position: relative;
+            perspective: 600px;
+            transform-style: preserve-3d;
+        }
+
+        .dice-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 500px;
+            touch-action: manipulation;
+        }
+
+        .dice-overlay {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 100px;
+            height: 100px;
+            background: transparent;
+            z-index: 20;
+            cursor: default;
+        }
+
+        .dice-cube.active-roll~.dice-overlay {
+            cursor: pointer;
+        }
+
+        .dice-cube.selected-roll~.dice-overlay {
+            cursor: default;
+        }
+
+        .dice-cube.used-roll~.dice-overlay {
+            cursor: not-allowed;
+        }
+
+        .dice-question-container {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            top: calc(50% - 35px);
+            left: calc(50% - 35px);
+            transform-style: preserve-3d;
+            display: none;
+            z-index: 30;
+            pointer-events: none;
+            animation: question-float 2.5s ease-in-out infinite;
+        }
+
+        .dice-question-cube-wrapper {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            animation: question-cube-spin 3.2s linear infinite;
+        }
+
+        .q-face {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.15);
+            /* see-thru frosted glass */
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 12px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.37),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            backface-visibility: visible;
+        }
+
+        .q-center-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 3.2rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.85), 0 0 24px rgba(0, 240, 255, 0.65);
+            transform: translateZ(0px);
+            backface-visibility: visible;
+            pointer-events: none;
+        }
+
+        .q-face-1 {
+            transform: rotateY(0deg) translateZ(35px);
+        }
+
+        .q-face-2 {
+            transform: rotateY(90deg) translateZ(35px);
+        }
+
+        .q-face-3 {
+            transform: rotateY(180deg) translateZ(35px);
+        }
+
+        .q-face-4 {
+            transform: rotateY(-90deg) translateZ(35px);
+        }
+
+        .q-face-5 {
+            transform: rotateX(90deg) translateZ(35px);
+        }
+
+        .q-face-6 {
+            transform: rotateX(-90deg) translateZ(35px);
+        }
+
+        @keyframes question-cube-spin {
+            0% {
+                transform: rotateX(20deg) rotateY(0deg);
+            }
+
+            50% {
+                transform: rotateX(-20deg) rotateY(180deg);
+            }
+
+            100% {
+                transform: rotateX(20deg) rotateY(360deg);
+            }
+        }
+
+        @keyframes question-float {
+            0% {
+                transform: translateZ(45px) translateY(0);
+            }
+
+            50% {
+                transform: translateZ(45px) translateY(-6px);
+            }
+
+            100% {
+                transform: translateZ(45px) translateY(0);
+            }
+        }
+
+        .dice-cube {
+            width: 70px;
+            height: 70px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease-out, scale 0.3s ease-out;
+            scale: 1;
+        }
+
+        .dice-cube.rolling {
+            animation: roll-animation 0.8s ease-in-out infinite;
+        }
+
+        .dice-cube.active-roll {
+            scale: 0.9;
+            border-radius: 12px;
+        }
+
+        .dice-cube.active-roll .dice-face {
+            opacity: 0.85;
+        }
+
+        .dice-cube.selected-roll {
+            border-radius: 12px;
+            scale: 1.25;
+            border: 2px solid #fff;
+            opacity: 1;
+            z-index: 10;
+        }
+
+        @keyframes mandatory-flash {
+            0% {
+                opacity: 0.5;
+                filter: blur(30px);
+            }
+
+            100% {
+                opacity: 1;
+                filter: blur(50px);
+            }
+        }
+
+        .mandatory-nest-flash {
+            animation: mandatory-flash 0.5s infinite alternate !important;
+        }
+
+        .dice-cube.used-roll {
+            scale: 0.85;
+            cursor: not-allowed;
+        }
+
+        .dice-cube.used-roll .dice-face {
+            opacity: 0.35;
+        }
+
+        @keyframes pulse-die-selected {
+            0% {
+                box-shadow: 0 0 20px var(--active-color), 0 0 30px var(--active-color);
+            }
+
+            100% {
+                box-shadow: 0 0 35px var(--active-color), 0 0 60px var(--active-color);
+            }
+        }
+
+        .dice-face {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(145deg,
+                    rgba(0, 140, 160, 0.18) 0%,
+                    rgba(0, 70, 100, 0.65) 55%,
+                    rgba(0, 20, 40, 0.88) 100%);
+            border: 1px solid rgba(0, 200, 235, 0.28);
+            border-radius: 13px;
+            box-shadow:
+                0 10px 28px rgba(0, 0, 0, 0.75),
+                inset 0 1px 0 rgba(160, 240, 255, 0.22),
+                inset 0 -3px 8px rgba(0, 0, 0, 0.55);
+            display: grid;
+            grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+            padding: 8px;
+            backface-visibility: hidden;
+            position: absolute;
+            overflow: hidden;
+        }
+
+        .dice-face::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 5px;
+            width: 45%;
+            height: 38%;
+            background: linear-gradient(135deg,
+                    rgba(255, 255, 255, 0.28) 0%,
+                    rgba(255, 255, 255, 0.06) 60%,
+                    transparent 100%);
+            border-radius: 8px 4px 4px 4px;
+            pointer-events: none;
+        }
+
+        .dot {
+            background: radial-gradient(circle at 35% 35%, #ffffff, #c8f8ff);
+            border-radius: 50%;
+            width: 10px;
+            height: 10px;
+            align-self: center;
+            justify-self: center;
+            box-shadow: 0 0 4px rgba(200, 248, 255, 0.7), 0 1px 2px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+        .dice-face-1 .dot {
+            grid-area: 2 / 2;
+        }
+
+        .dice-face-2 .dot:nth-child(1) {
+            grid-area: 1 / 1;
+        }
+
+        .dice-face-2 .dot:nth-child(2) {
+            grid-area: 3 / 3;
+        }
+
+        .dice-face-3 .dot:nth-child(1) {
+            grid-area: 1 / 1;
+        }
+
+        .dice-face-3 .dot:nth-child(2) {
+            grid-area: 2 / 2;
+        }
+
+        .dice-face-3 .dot:nth-child(3) {
+            grid-area: 3 / 3;
+        }
+
+        .dice-face-4 .dot:nth-child(1) {
+            grid-area: 1 / 1;
+        }
+
+        .dice-face-4 .dot:nth-child(2) {
+            grid-area: 1 / 3;
+        }
+
+        .dice-face-4 .dot:nth-child(3) {
+            grid-area: 3 / 1;
+        }
+
+        .dice-face-4 .dot:nth-child(4) {
+            grid-area: 3 / 3;
+        }
+
+        .dice-face-5 .dot:nth-child(1) {
+            grid-area: 1 / 1;
+        }
+
+        .dice-face-5 .dot:nth-child(2) {
+            grid-area: 1 / 3;
+        }
+
+        .dice-face-5 .dot:nth-child(3) {
+            grid-area: 2 / 2;
+        }
+
+        .dice-face-5 .dot:nth-child(4) {
+            grid-area: 3 / 1;
+        }
+
+        .dice-face-5 .dot:nth-child(5) {
+            grid-area: 3 / 3;
+        }
+
+        .dice-face-6 .dot:nth-child(1) {
+            grid-area: 1 / 1;
+        }
+
+        .dice-face-6 .dot:nth-child(2) {
+            grid-area: 1 / 3;
+        }
+
+        .dice-face-6 .dot:nth-child(3) {
+            grid-area: 2 / 1;
+        }
+
+        .dice-face-6 .dot:nth-child(4) {
+            grid-area: 2 / 3;
+        }
+
+        .dice-face-6 .dot:nth-child(5) {
+            grid-area: 3 / 1;
+        }
+
+        .dice-face-6 .dot:nth-child(6) {
+            grid-area: 3 / 3;
+        }
+
+        .show-1 {
+            transform: rotateX(0deg) rotateY(0deg);
+        }
+
+        .show-2 {
+            transform: rotateX(-90deg) rotateY(0deg);
+        }
+
+        .show-3 {
+            transform: rotateX(0deg) rotateY(90deg);
+        }
+
+        .show-4 {
+            transform: rotateX(0deg) rotateY(-90deg);
+        }
+
+        .show-5 {
+            transform: rotateX(90deg) rotateY(0deg);
+        }
+
+        .show-6 {
+            transform: rotateX(180deg) rotateY(0deg);
+        }
+
+        .show-7 {
+            transform: rotateX(180deg) rotateY(0deg);
+        }
+
+        /* Cuban empty nest: 6 -> 7 uses 6's face visually */
+
+        .dice-face-1 {
+            transform: rotateY(0deg) translateZ(35px);
+        }
+
+        .dice-face-2 {
+            transform: rotateX(90deg) translateZ(35px);
+        }
+
+        .dice-face-3 {
+            transform: rotateY(-90deg) translateZ(35px);
+        }
+
+        .dice-face-4 {
+            transform: rotateY(90deg) translateZ(35px);
+        }
+
+        .dice-face-5 {
+            transform: rotateX(-90deg) translateZ(35px);
+        }
+
+        .dice-face-6 {
+            transform: rotateX(180deg) translateZ(35px);
+        }
+
+        @keyframes roll-animation {
+            0% {
+                transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+            }
+
+            100% {
+                transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg);
+            }
+        }
+
+        /* Large glowing play button */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--red-main) 0%, #ff5252 100%);
+            border: none;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 1rem 2rem;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(255, 46, 76, 0.4);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            font-family: inherit;
+            touch-action: manipulation;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(255, 46, 76, 0.6);
+            background: linear-gradient(135deg, #ff1a3c 0%, #ff6666 100%);
+        }
+
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary:disabled {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            box-shadow: none;
+            cursor: not-allowed;
+            border: 1px solid var(--border-card);
+        }
+
+        .btn-glass:disabled {
+            opacity: 0.38;
+            cursor: not-allowed;
+            pointer-events: none;
+            filter: grayscale(0.4);
+        }
+
+        /* Game Logs */
+        .log-card {
+            flex: 1;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .log-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding-right: 0.5rem;
+            font-size: 0.9rem;
+            scroll-behavior: smooth;
+        }
+
+        .log-list::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .log-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .log-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .log-entry {
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid #6b7280;
+            line-height: 1.4;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .log-yellow {
+            border-left-color: var(--yellow-main);
+            background: var(--yellow-bg);
+        }
+
+        .log-blue {
+            border-left-color: var(--blue-main);
+            background: var(--blue-bg);
+        }
+
+        .log-red {
+            border-left-color: var(--red-main);
+            background: var(--red-bg);
+        }
+
+        .log-green {
+            border-left-color: var(--green-main);
+            background: var(--green-bg);
+        }
+
+        .log-system {
+            border-left-color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            font-weight: 600;
+        }
+
+        /* Scoreboard Panel */
+        .scoreboard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .score-box {
+            padding: 0.6rem 0.4rem;
+            border-radius: 14px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .score-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.07), transparent);
+            border-radius: 14px 14px 0 0;
+            pointer-events: none;
+        }
+
+        .score-box-yellow {
+            background: linear-gradient(160deg, hsla(45, 100%, 50%, 0.18) 0%, hsla(45, 100%, 20%, 0.22) 50%, rgba(0, 0, 0, 0.65) 100%);
+            border-color: hsla(45, 100%, 55%, 0.35);
+            box-shadow: inset 0 1px 0 rgba(255, 220, 80, 0.18), 0 4px 14px rgba(0, 0, 0, 0.5);
+        }
+
+        .score-box-yellow:hover,
+        .score-box-yellow.active-score {
+            border-color: hsla(45, 100%, 65%, 0.7);
+            box-shadow: 0 0 16px hsla(45, 100%, 55%, 0.35), inset 0 1px 0 rgba(255, 220, 80, 0.25);
+        }
+
+        .score-box-blue {
+            background: linear-gradient(160deg, hsla(210, 100%, 55%, 0.18) 0%, hsla(210, 100%, 25%, 0.22) 50%, rgba(0, 0, 0, 0.65) 100%);
+            border-color: hsla(210, 100%, 55%, 0.35);
+            box-shadow: inset 0 1px 0 rgba(80, 160, 255, 0.18), 0 4px 14px rgba(0, 0, 0, 0.5);
+        }
+
+        .score-box-blue:hover,
+        .score-box-blue.active-score {
+            border-color: hsla(210, 100%, 65%, 0.7);
+            box-shadow: 0 0 16px hsla(210, 100%, 55%, 0.35), inset 0 1px 0 rgba(80, 160, 255, 0.25);
+        }
+
+        .score-box-red {
+            background: linear-gradient(160deg, hsla(355, 100%, 55%, 0.18) 0%, hsla(355, 100%, 25%, 0.22) 50%, rgba(0, 0, 0, 0.65) 100%);
+            border-color: hsla(355, 100%, 55%, 0.35);
+            box-shadow: inset 0 1px 0 rgba(255, 80, 100, 0.18), 0 4px 14px rgba(0, 0, 0, 0.5);
+        }
+
+        .score-box-red:hover,
+        .score-box-red.active-score {
+            border-color: hsla(355, 100%, 65%, 0.7);
+            box-shadow: 0 0 16px hsla(355, 100%, 55%, 0.35), inset 0 1px 0 rgba(255, 80, 100, 0.25);
+        }
+
+        .score-box-green {
+            background: linear-gradient(160deg, hsla(135, 85%, 42%, 0.18) 0%, hsla(135, 85%, 20%, 0.22) 50%, rgba(0, 0, 0, 0.65) 100%);
+            border-color: hsla(135, 85%, 48%, 0.35);
+            box-shadow: inset 0 1px 0 rgba(80, 220, 120, 0.18), 0 4px 14px rgba(0, 0, 0, 0.5);
+        }
+
+        .score-box-green:hover,
+        .score-box-green.active-score {
+            border-color: hsla(135, 85%, 60%, 0.7);
+            box-shadow: 0 0 16px hsla(135, 85%, 48%, 0.35), inset 0 1px 0 rgba(80, 220, 120, 0.25);
+        }
+
+        .score-color-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+            position: relative;
+        }
+
+        .score-val {
+            font-size: 1.2rem;
+            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
+            position: relative;
+        }
+
+        /* Overlay modal for game over & restart confirm */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 18, 29, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .overlay-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--yellow-main), var(--red-main));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .overlay-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            max-width: 400px;
+        }
+
+        /* Frosted glass buttons */
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: var(--text-main);
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 1rem 2rem;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.02em;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        #roll-btn {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: rgba(0, 240, 255, 0.95);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.6), 0 2px 4px rgba(0, 0, 0, 0.5);
+            animation: roll-btn-glow 2s infinite alternate;
+        }
+
+        @keyframes roll-btn-glow {
+            0% {
+                box-shadow: 0 8px 25px rgba(0, 240, 255, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+            }
+
+            100% {
+                box-shadow: 0 12px 40px rgba(0, 240, 255, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+            }
+        }
+
+        .btn-glass::before {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -60%;
+            width: 60%;
+            height: 200%;
+            background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.18) 50%, transparent 80%);
+            transform: skewX(-20deg);
+            transition: left 0.55s ease;
+            pointer-events: none;
+        }
+
+        .btn-glass:hover::before {
+            left: 120%;
+        }
+
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.13);
+            border-color: rgba(255, 255, 255, 0.32);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+            transform: translateY(-2px);
+        }
+
+        .btn-glass:active {
+            transform: translateY(1px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Soplado Penalty Warning Button */
+        #soplado-btn {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            border: 1px solid rgba(251, 191, 36, 0.4);
+            color: #fff;
+            font-size: 1.05rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 15px rgba(217, 119, 6, 0.35);
+            display: none;
+        }
+
+        /* ── Tablet & below (≤1024px) ──────────────────────────── */
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .board-container {
+                width: 100%;
+                min-height: 0;
+                padding: 1rem;
+            }
+
+            svg#parchis-board {
+                max-width: 100%;
+            }
+
+            .panel-container {
+                width: 100%;
+                max-height: initial;
+                gap: 1rem;
+            }
+
+            .panel-card {
+                padding: 1.25rem;
+            }
+
+            .log-card {
+                min-height: 160px;
+                max-height: 220px;
+            }
+        }
+
+        /* ── Mobile phones (≤600px) ─────────────────────────────── */
+        @media (max-width: 600px) {
+            header {
+                padding: 0.75rem 1rem;
+            }
+
+            .logo {
+                font-size: 1.3rem;
+            }
+
+            .logo span {
+                display: none;
+            }
+
+            .btn-icon {
+                padding: 0.5rem 0.65rem;
+                font-size: 1rem;
+            }
+
+            .btn-icon .btn-label {
+                display: none;
+            }
+
+            .main-container {
+                padding: 0.6rem;
+                gap: 0.75rem;
+            }
+
+            .board-container {
+                border-radius: 16px;
+                padding: 0.6rem;
+            }
+
+            .panel-card {
+                border-radius: 16px;
+                padding: 1rem;
+            }
+
+            .player-row {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 0.6rem;
+                margin-bottom: 0.6rem;
+            }
+
+            .player-name-input {
+                min-width: 0;
+                flex: 1 1 120px;
+                font-size: 0.9rem;
+                padding: 0.5rem;
+            }
+
+            .player-type-select {
+                flex: 0 0 auto;
+                font-size: 0.8rem;
+                padding: 0.4rem 0.35rem;
+            }
+
+            .dashboard {
+                padding: 0.9rem 0.75rem;
+            }
+
+            .current-player-name {
+                font-size: 1.2rem;
+                margin-bottom: 0.6rem;
+            }
+
+            .dice-area {
+                height: 90px;
+                gap: 1.5rem !important;
+                margin-bottom: 0.6rem;
+            }
+
+            .dice-cube {
+                width: 54px;
+                height: 54px;
+            }
+
+            .dice-face {
+                width: 54px;
+                height: 54px;
+            }
+
+            .dice-container {
+                width: 62px;
+                height: 62px;
+            }
+
+            .dice-overlay {
+                top: -8px;
+                left: -8px;
+                width: 78px;
+                height: 78px;
+            }
+
+            .dice-question-container {
+                width: 54px;
+                height: 54px;
+                top: calc(50% - 27px);
+                left: calc(50% - 27px);
+                animation: question-float-mobile 2.5s ease-in-out infinite;
+            }
+
+            .q-face {
+                width: 54px;
+                height: 54px;
+            }
+
+            .q-center-text {
+                font-size: 2.5rem;
+            }
+
+            .q-face-1 {
+                transform: rotateY(0deg) translateZ(27px);
+            }
+
+            .q-face-2 {
+                transform: rotateY(90deg) translateZ(27px);
+            }
+
+            .q-face-3 {
+                transform: rotateY(180deg) translateZ(27px);
+            }
+
+            .q-face-4 {
+                transform: rotateY(-90deg) translateZ(27px);
+            }
+
+            .q-face-5 {
+                transform: rotateX(90deg) translateZ(27px);
+            }
+
+            .q-face-6 {
+                transform: rotateX(-90deg) translateZ(27px);
+            }
+
+            @keyframes question-float-mobile {
+                0% {
+                    transform: translateZ(35px) translateY(0);
+                }
+
+                50% {
+                    transform: translateZ(35px) translateY(-4px);
+                }
+
+                100% {
+                    transform: translateZ(35px) translateY(0);
+                }
+            }
+
+            .dice-face-1 {
+                transform: rotateY(0deg) translateZ(27px);
+            }
+
+            .dice-face-2 {
+                transform: rotateX(90deg) translateZ(27px);
+            }
+
+            .dice-face-3 {
+                transform: rotateY(-90deg) translateZ(27px);
+            }
+
+            .dice-face-4 {
+                transform: rotateY(90deg) translateZ(27px);
+            }
+
+            .dice-face-5 {
+                transform: rotateX(-90deg) translateZ(27px);
+            }
+
+            .dice-face-6 {
+                transform: rotateX(180deg) translateZ(27px);
+            }
+
+            .dot {
+                width: 8px;
+                height: 8px;
+            }
+
+            .scoreboard {
+                gap: 0.35rem;
+                margin-bottom: 0.6rem;
+            }
+
+            .score-box {
+                padding: 0.35rem 0.2rem;
+                border-radius: 8px;
+            }
+
+            .score-color-title {
+                font-size: 0.6rem;
+            }
+
+            .score-val {
+                font-size: 0.95rem;
+            }
+
+            .btn-primary {
+                padding: 0.85rem 1rem;
+                font-size: 1rem;
+                border-radius: 12px;
+            }
+
+            #dice-roll-desc {
+                font-size: 0.82rem;
+                margin-bottom: 0.6rem;
+            }
+
+            .log-card {
+                min-height: 120px;
+                max-height: 180px;
+            }
+
+            .log-list {
+                font-size: 0.8rem;
+                gap: 0.3rem;
+            }
+
+            .log-entry {
+                padding: 0.4rem 0.6rem;
+                border-radius: 6px;
+            }
+
+            .overlay-title {
+                font-size: 2rem;
+            }
+
+            .overlay-subtitle {
+                font-size: 1rem;
+                margin-bottom: 1.25rem;
+            }
+        }
+
+        /* Rule Notification Panel */
+        #rule-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(15, 20, 35, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 60, 60, 0.4);
+            border-left: 4px solid var(--red-main);
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 90%;
+            text-align: left;
+        }
+
+        #rule-notification.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        #rule-notification .rule-icon {
+            font-size: 1.5rem;
+        }
+
+        /* Info variant (green) for rule clarifications */
+        #rule-notification.info {
+            border: 1px solid rgba(80, 220, 120, 0.45);
+            border-left: 4px solid var(--green-main);
+        }
+
+        /* Push the notification below the header on phones so it does not
+           overlap the logo / controls. */
+        @media (max-width: 600px) {
+            #rule-notification {
+                top: 70px;
+                font-size: 0.85rem;
+                padding: 0.75rem 1rem;
+                max-width: 94%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">Caribbean/American <span>Parchis</span></div>
+        <div class="nav-controls">
+            <button id="sound-btn" class="btn-icon" title="Toggle Sound">🔊 <span
+                    class="btn-label">Sound</span></button>
+            <button id="restart-btn" class="btn-icon" title="Restart Game">🔄 <span
+                    class="btn-label">Restart</span></button>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Parchis Board Column -->
+        <div class="board-container">
+            <svg id="parchis-board" viewBox="0 0 950 950">
+                <!-- Dynamically generated in JS -->
+            </svg>
+
+            <!-- Game Over Overlay -->
+            <div id="gameover-overlay" class="overlay">
+                <div class="overlay-title">VICTORY!</div>
+                <div id="winner-announcement" class="overlay-subtitle">Player Yellow wins the match!</div>
+                <button id="play-again-btn" class="btn-primary" style="max-width: 250px;">Play Again</button>
+            </div>
+
+            <!-- Restart Modal -->
+            <div id="restart-modal" class="overlay"
+                style="background: rgba(15, 18, 29, 0.6); backdrop-filter: blur(12px); padding: 1rem;">
+                <div class="panel-card"
+                    style="max-width: min(400px, 100%); padding: 1.5rem; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(25, 30, 48, 0.8); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);">
+                    <div
+                        style="font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--yellow-main), var(--red-main)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.75rem;">
+                        Restart Game?</div>
+                    <div style="font-size: 1rem; color: var(--text-muted); margin-bottom: 2rem; line-height: 1.5;">Are
+                        you sure you want to end this match and return to the setup screen? All current progress will be
+                        lost.</div>
+                    <div style="display: flex; gap: 1rem; width: 100%;">
+                        <button id="restart-confirm-btn" class="btn-primary"
+                            style="flex: 1.2; background: linear-gradient(135deg, var(--red-main) 0%, #ff5252 100%);">Yes,
+                            Restart</button>
+                        <button id="restart-cancel-btn" class="btn-primary"
+                            style="flex: 0.8; background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-card); box-shadow: none;">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Column -->
+        <div class="panel-container">
+            <!-- Setup & Control Panel -->
+            <div class="panel-card" id="control-card">
+                <!-- Game Setup Screen -->
+                <div id="setup-screen">
+                    <div class="card-title">Game Setup</div>
+
+                    <div class="player-row" style="flex-direction: column; align-items: stretch; gap: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label for="ruleset-select" style="font-weight: 600; font-size: 0.95rem;">Game
+                                Ruleset:</label>
+                            <select id="ruleset-select" class="player-type-select" style="min-width: 150px;">
+                                <option value="cuban" selected>Cuban Parchís</option>
+                                <option value="puertorican">Puerto Rican Parchís</option>
+                                <option value="american">American Parcheesi</option>
+                            </select>
+                        </div>
+                        <div id="rules-options-container"
+                            style="display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.5rem;">
+                            <div id="dice-count-row"
+                                style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">Dice Play Style:</span>
+                                <select id="dice-count-select" class="player-type-select"
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                    <option value="2" selected>2 Dice</option>
+                                    <option value="1">1 Die</option>
+                                </select>
+                            </div>
+                            <div id="rule-empty-nest-row"
+                                style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">Nest Empty (6 ➔ 7):</span>
+                                <input type="checkbox" id="rule-empty-nest" checked style="width: 16px; height: 16px;">
+                            </div>
+                            <div id="rule-soplado-row"
+                                style="display: flex; justify-content: space-between; align-items: center; display: none;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">Soplado Rule:</span>
+                                <input type="checkbox" id="rule-soplado" checked style="width: 16px; height: 16px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="player-row">
+                        <span class="color-dot dot-yellow"></span>
+                        <input type="text" id="p0-name" class="player-name-input" value="Player Yellow">
+                        <select id="p0-type" class="player-type-select">
+                            <option value="human" selected>Human</option>
+                            <option value="ai">AI (Computer)</option>
+                            <option value="off">Disabled</option>
+                        </select>
+                    </div>
+
+                    <div class="player-row">
+                        <span class="color-dot dot-blue"></span>
+                        <input type="text" id="p1-name" class="player-name-input" value="Player Blue">
+                        <select id="p1-type" class="player-type-select">
+                            <option value="human">Human</option>
+                            <option value="ai" selected>AI (Computer)</option>
+                            <option value="off">Disabled</option>
+                        </select>
+                    </div>
+
+                    <div class="player-row">
+                        <span class="color-dot dot-red"></span>
+                        <input type="text" id="p2-name" class="player-name-input" value="Player Red">
+                        <select id="p2-type" class="player-type-select">
+                            <option value="human">Human</option>
+                            <option value="ai" selected>AI (Computer)</option>
+                            <option value="off">Disabled</option>
+                        </select>
+                    </div>
+
+                    <div class="player-row">
+                        <span class="color-dot dot-green"></span>
+                        <input type="text" id="p3-name" class="player-name-input" value="Player Green">
+                        <select id="p3-type" class="player-type-select">
+                            <option value="human">Human</option>
+                            <option value="ai" selected>AI (Computer)</option>
+                            <option value="off">Disabled</option>
+                        </select>
+                    </div>
+
+                    <button id="start-game-btn" class="btn-glass" style="margin-top: 1rem;">🎮 Start Game</button>
+                </div>
+
+                <!-- Play Screen -->
+                <div id="play-screen" style="display: none;">
+                    <div class="scoreboard">
+                        <div class="score-box score-box-yellow">
+                            <div class="score-color-title" style="color: var(--yellow-main)">Yellow</div>
+                            <div class="score-val" id="score-p0">0/4</div>
+                        </div>
+                        <div class="score-box score-box-blue">
+                            <div class="score-color-title" style="color: var(--blue-main)">Blue</div>
+                            <div class="score-val" id="score-p1">0/4</div>
+                        </div>
+                        <div class="score-box score-box-red">
+                            <div class="score-color-title" style="color: var(--red-main)">Red</div>
+                            <div class="score-val" id="score-p2">0/4</div>
+                        </div>
+                        <div class="score-box score-box-green">
+                            <div class="score-color-title" style="color: var(--green-main)">Green</div>
+                            <div class="score-val" id="score-p3">0/4</div>
+                        </div>
+                    </div>
+
+                    <div id="turn-dashboard" class="dashboard">
+                        <div class="current-player-title">Current Turn</div>
+                        <div id="current-player-name" class="current-player-name">Player Yellow</div>
+
+                        <div class="dice-area" style="gap: 2rem;">
+                            <!-- Die 1 -->
+                            <div class="dice-container" id="dice-container-0">
+                                <div id="dice" class="dice-cube show-1">
+                                    <div class="dice-face dice-face-1">
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-2">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-3">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-4">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-5">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-6">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                </div>
+                                <div id="dice-overlay-0" class="dice-overlay"></div>
+                            </div>
+
+                            <!-- 3D Question Mark Die -->
+                            <div id="dice-question-mark" class="dice-question-container">
+                                <div class="dice-question-cube-wrapper">
+                                    <div class="q-face q-face-1"></div>
+                                    <div class="q-face q-face-2"></div>
+                                    <div class="q-face q-face-3"></div>
+                                    <div class="q-face q-face-4"></div>
+                                    <div class="q-face q-face-5"></div>
+                                    <div class="q-face q-face-6"></div>
+                                </div>
+                                <div class="q-center-text">?</div>
+                            </div>
+
+                            <!-- Die 2 -->
+                            <div class="dice-container" id="dice-container-1">
+                                <div id="dice2" class="dice-cube show-1">
+                                    <div class="dice-face dice-face-1">
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-2">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-3">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-4">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-5">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-6">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                </div>
+                                <div id="dice-overlay-1" class="dice-overlay"></div>
+                            </div>
+                            <!-- Die 3 -->
+                            <div class="dice-container" id="dice-container-2" style="display: none;">
+                                <div id="dice3" class="dice-cube show-1">
+                                    <div class="dice-face dice-face-1">
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-2">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-3">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-4">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-5">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-6">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                </div>
+                                <div id="dice-overlay-2" class="dice-overlay"></div>
+                            </div>
+                            <!-- Die 4 -->
+                            <div class="dice-container" id="dice-container-3" style="display: none;">
+                                <div id="dice4" class="dice-cube show-1">
+                                    <div class="dice-face dice-face-1">
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-2">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-3">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-4">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-5">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                    <div class="dice-face dice-face-6">
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                        <div class="dot"></div>
+                                    </div>
+                                </div>
+                                <div id="dice-overlay-3" class="dice-overlay"></div>
+                            </div>
+                        </div>
+
+                        <div id="dice-roll-desc"
+                            style="font-size: 0.9rem; color: var(--text-muted); min-height: 1.5rem; margin-bottom: 1rem;">
+                            Roll the dice to start your turn</div>
+                        <button id="soplado-btn" class="btn-glass">💨 Soplado! (Missed Capture Penalty)</button>
+                        <button id="roll-btn" class="btn-glass">🎲 Roll Dice</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Match Log Card -->
+            <div class="panel-card log-card">
+                <div class="card-title">Match Log</div>
+                <div class="log-list" id="log-list"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Synthetic Sound Synthesizer Engine -->
+    <script>
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (this.ctx) return;
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.error("AudioContext not supported", e);
+                }
+            }
+
+            toggleMute() {
+                this.muted = !this.muted;
+                return this.muted;
+            }
+
+            playRoll() {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                let now = this.ctx.currentTime;
+                let duration = 0.3;
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + duration);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + duration);
+            }
+
+            playMove() {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                let now = this.ctx.currentTime;
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.12);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+
+            playCapture() {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                let now = this.ctx.currentTime;
+
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.4);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                let noiseOsc = this.ctx.createOscillator();
+                let noiseGain = this.ctx.createGain();
+                noiseOsc.type = 'triangle';
+                noiseOsc.frequency.setValueAtTime(800, now);
+                noiseOsc.frequency.setValueAtTime(1200, now + 0.05);
+                noiseGain.gain.setValueAtTime(0.15, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                noiseOsc.connect(noiseGain);
+                noiseGain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.4);
+                noiseOsc.start(now);
+                noiseOsc.stop(now + 0.3);
+            }
+
+            playExit() {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                let now = this.ctx.currentTime;
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.25);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+
+            playBlock() {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                let now = this.ctx.currentTime;
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.linearRampToValueAtTime(80, now + 0.15);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+
+            playWin() {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                let now = this.ctx.currentTime;
+                const playBeep = (freq, startOffset, duration) => {
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + startOffset);
+                    gain.gain.setValueAtTime(0.2, now + startOffset);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + startOffset + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + startOffset);
+                    osc.stop(now + startOffset + duration);
+                };
+                playBeep(523.25, 0, 0.15); // C5
+                playBeep(659.25, 0.12, 0.15); // E5
+                playBeep(783.99, 0.24, 0.3); // G5
+            }
+
+            playGameOver() {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                let now = this.ctx.currentTime;
+                const playBeep = (freq, startOffset, duration) => {
+                    let osc = this.ctx.createOscillator();
+                    let gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + startOffset);
+                    gain.gain.setValueAtTime(0.25, now + startOffset);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + startOffset + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + startOffset);
+                    osc.stop(now + startOffset + duration);
+                };
+                playBeep(523.25, 0, 0.2); // C5
+                playBeep(659.25, 0.15, 0.2); // E5
+                playBeep(783.99, 0.3, 0.2); // G5
+                playBeep(1046.50, 0.45, 0.6); // C6
+            }
+        }
+
+        const sounds = new SoundEngine();
+
+        // Sound button toggle
+        document.getElementById('sound-btn').addEventListener('click', () => {
+            sounds.init();
+            let muted = sounds.toggleMute();
+            const btn = document.getElementById('sound-btn');
+            btn.childNodes[0].textContent = muted ? '🔇 ' : '🔊 ';
+        });
+
+        // Initialize welcome message
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('log-list').innerHTML = '<div class="log-entry log-system">Welcome to Caribbean/American Parchis. Configure your rulesets, set your players, and press Start Game!</div>';
+        });
+    </script>
+
+    <!-- Board Coordinate Definitions -->
+    <script>
+        const perimeterCells = [];
+
+        // Generate the 68 perimeter track cells counter-clockwise
+        for (let c = 7; c >= 0; c--) perimeterCells.push({ r: 8, c: c });
+        perimeterCells.push({ r: 9, c: 0 });
+        for (let c = 0; c <= 7; c++) perimeterCells.push({ r: 10, c: c });
+        for (let r = 11; r <= 18; r++) perimeterCells.push({ r: r, c: 8 });
+        perimeterCells.push({ r: 18, c: 9 });
+        for (let r = 18; r >= 11; r--) perimeterCells.push({ r: r, c: 10 });
+        for (let c = 11; c <= 18; c++) perimeterCells.push({ r: 10, c: c });
+        perimeterCells.push({ r: 9, c: 18 });
+        for (let c = 18; c >= 11; c--) perimeterCells.push({ r: 8, c: c });
+        for (let r = 7; r >= 0; r--) perimeterCells.push({ r: r, c: 10 });
+        perimeterCells.push({ r: 0, c: 9 });
+        for (let r = 0; r <= 7; r++) perimeterCells.push({ r: r, c: 8 });
+
+        function getCoordsForSpaceId(spaceId) {
+            if (!isNaN(spaceId)) {
+                const num = parseInt(spaceId);
+                // Shift indexing to map Space 68 to (9, 0)
+                return perimeterCells[(num + 8) % 68];
+            }
+
+            const parts = spaceId.split('_');
+            const color = parts[0];
+            const type = parts[1];
+            const index = parseInt(parts[2]);
+
+            if (type === 'home') {
+                if (color === 'yellow') return { r: 9, c: index };
+                if (color === 'blue') return { r: 18 - index, c: 9 };
+                if (color === 'red') return { r: 9, c: 18 - index };
+                if (color === 'green') return { r: index, c: 9 };
+            } else if (type === 'center') {
+                if (color === 'yellow') return { r: 9, c: 8 };
+                if (color === 'blue') return { r: 10, c: 9 };
+                if (color === 'red') return { r: 9, c: 10 };
+                if (color === 'green') return { r: 8, c: 9 };
+            } else if (type === 'nest') {
+                const coords = {
+                    yellow: [{ r: 13, c: 2 }, { r: 13, c: 5 }, { r: 16, c: 2 }, { r: 16, c: 5 }],
+                    blue: [{ r: 13, c: 13 }, { r: 13, c: 16 }, { r: 16, c: 13 }, { r: 16, c: 16 }],
+                    red: [{ r: 2, c: 13 }, { r: 2, c: 16 }, { r: 5, c: 13 }, { r: 5, c: 16 }],
+                    green: [{ r: 2, c: 2 }, { r: 2, c: 5 }, { r: 5, c: 2 }, { r: 5, c: 5 }]
+                };
+                return coords[color][index];
+            }
+            return null;
+        }
+
+        const safeSpacesList = [5, 12, 17, 22, 29, 34, 39, 46, 51, 56, 63, 68];
+
+        function isSafeSpace(spaceId) {
+            if (!isNaN(spaceId)) {
+                return safeSpacesList.includes(parseInt(spaceId));
+            }
+            return false;
+        }
+    </script>
+
+    <!-- Core Game Logic -->
+    <script>
+        const colors = ['yellow', 'blue', 'red', 'green'];
+        const startSpaces = [5, 22, 39, 56];
+        const homeEntries = [68, 17, 34, 51];
+
+        // Ruleset Configurations
+        let activeRuleset = 'cuban'; // 'cuban', 'puertorican', 'american'
+        let playDiceCount = 2; // 1 or 2
+        let configEmptyNestActive = true; // Toggle for 6 becomes 7 (Cuban only)
+        let configSopladoActive = true; // Toggle for missed capture penalty (PR only)
+
+        let players = [];
+        let activeTurn = 0;
+        let diceState = []; // Holds objects representing the rolled dice: { val: 1..7, used: boolean }
+        let currentMovingRollIndex = -1; // Index of selected die roll to be played
+        let rolledDoublesThisTurn = false;
+        let pendingBonusMove = 0; // Capture +20 or Goal Entry +10
+        let lastMovedPawnId = -1;
+        let consecutiveDoubles = 0;
+        let activeBonusMoveValue = 0; // Stores active capture/goal bonus move value
+        let gameState = 'setup'; // 'setup', 'waiting_for_roll', 'waiting_for_move', 'game_over'
+        let aiTimeoutId = null;
+        let speedMs = 800; // AI turn delay
+        let isFirstRollOfTurn = true;
+        let isAnimating = false; // Prevents double click movement bugs
+
+        // Soplado logic variables
+        let sopladoCandidate = null; // Stores { playerIdx, pawnId, rollValue, startSpaceId, targetSpaceId } if capture was missed
+
+        class Player {
+            constructor(id, name, color, type) {
+                this.id = id;
+                this.name = name;
+                this.color = color;
+                this.type = type; // 'human', 'ai', 'off'
+                this.pawns = [];
+                this.path = this.generatePath();
+
+                for (let i = 0; i < 4; i++) {
+                    this.pawns.push({
+                        id: i,
+                        pathIndex: -1, // -1 means in nest, 0 to 70 means along path, 71 means in center
+                        color: color,
+                        playerIndex: id
+                    });
+                }
+            }
+
+            generatePath() {
+                const path = [];
+                const start = startSpaces[this.id];
+
+                // 1. Perimeter path (64 cells)
+                for (let i = 0; i < 64; i++) {
+                    let spaceNum = (start + i - 1) % 68 + 1;
+                    path.push(spaceNum.toString());
+                }
+
+                // 2. Home corridor runway (7 cells)
+                for (let i = 1; i <= 7; i++) {
+                    path.push(`${this.color}_home_${i}`);
+                }
+
+                // 3. Center finish
+                path.push(`${this.color}_center`);
+                return path;
+            }
+
+            hasAllPawnsOut() {
+                return this.pawns.every(p => p.pathIndex >= 0);
+            }
+
+            hasWon() {
+                return this.pawns.every(p => p.pathIndex === 71);
+            }
+        }
+
+        // Setup screen dynamic selectors
+        const rulesetSelect = document.getElementById('ruleset-select');
+        const diceCountRow = document.getElementById('dice-count-row');
+        const emptyNestRow = document.getElementById('rule-empty-nest-row');
+        const sopladoRow = document.getElementById('rule-soplado-row');
+        const diceCountSelect = document.getElementById('dice-count-select');
+
+        rulesetSelect.addEventListener('change', () => {
+            const ruleset = rulesetSelect.value;
+            if (ruleset === 'cuban') {
+                diceCountRow.style.display = 'flex';
+                emptyNestRow.style.display = 'flex';
+                sopladoRow.style.display = 'none';
+            } else if (ruleset === 'puertorican') {
+                diceCountRow.style.display = 'flex';
+                emptyNestRow.style.display = 'none';
+                sopladoRow.style.display = 'flex';
+            } else if (ruleset === 'american') {
+                diceCountRow.style.display = 'none';
+                emptyNestRow.style.display = 'none';
+                sopladoRow.style.display = 'none';
+                diceCountSelect.value = "2"; // locked to 2 dice
+            }
+        });
+
+        // Board Drawing (SVG)
+        function drawBoard() {
+            const svg = document.getElementById('parchis-board');
+            svg.innerHTML = ''; // reset board content
+
+            const grid = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            grid.setAttribute('id', 'board-grid');
+            svg.appendChild(grid);
+
+            // Draw track cells
+            for (let i = 1; i <= 68; i++) {
+                const coords = getCoordsForSpaceId(i.toString());
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', coords.c * 50 + 1);
+                rect.setAttribute('y', coords.r * 50 + 1);
+                rect.setAttribute('width', 48);
+                rect.setAttribute('height', 48);
+                rect.setAttribute('rx', 4);
+                rect.setAttribute('class', 'board-cell');
+                rect.setAttribute('id', `space-${i}`);
+
+                if (isSafeSpace(i)) {
+                    rect.classList.add('safe-cell');
+                }
+
+                if (i === 5) rect.classList.add('start-cell-yellow');
+                else if (i === 22) rect.classList.add('start-cell-blue');
+                else if (i === 39) rect.classList.add('start-cell-red');
+                else if (i === 56) rect.classList.add('start-cell-green');
+
+                grid.appendChild(rect);
+
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', coords.c * 50 + 25);
+                text.setAttribute('y', coords.r * 50 + 28);
+                text.setAttribute('font-size', '10px');
+                text.setAttribute('font-family', 'Space Grotesk');
+                text.setAttribute('fill', 'rgba(255,255,255,0.25)');
+                text.setAttribute('text-anchor', 'middle');
+                text.textContent = i;
+                grid.appendChild(text);
+
+                if (isSafeSpace(i)) {
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', coords.c * 50 + 25);
+                    circle.setAttribute('cy', coords.r * 50 + 25);
+                    circle.setAttribute('r', 16);
+                    circle.setAttribute('class', 'safe-indicator');
+                    circle.setAttribute('id', `safe-ind-${i}`);
+                    grid.appendChild(circle);
+                }
+            }
+
+            // Draw home runways
+            colors.forEach(color => {
+                const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                group.setAttribute('id', `${color}-home-path`);
+                for (let i = 1; i <= 7; i++) {
+                    const id = `${color}_home_${i}`;
+                    const coords = getCoordsForSpaceId(id);
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('x', coords.c * 50 + 1);
+                    rect.setAttribute('y', coords.r * 50 + 1);
+                    rect.setAttribute('width', 48);
+                    rect.setAttribute('height', 48);
+                    rect.setAttribute('rx', 4);
+                    rect.setAttribute('class', `board-cell cell-${color}`);
+                    rect.setAttribute('id', `space-${id}`);
+                    group.appendChild(rect);
+
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', coords.c * 50 + 25);
+                    text.setAttribute('y', coords.r * 50 + 28);
+                    text.setAttribute('font-size', '10px');
+                    text.setAttribute('font-family', 'Space Grotesk');
+                    text.setAttribute('fill', 'rgba(255,255,255,0.25)');
+                    text.setAttribute('text-anchor', 'middle');
+                    text.textContent = i;
+                    group.appendChild(text);
+                }
+                svg.appendChild(group);
+            });
+
+            // Center triangles
+            const triangles = [
+                { color: 'green', points: '400,400 550,400 475,475', cellId: 'green_center' },
+                { color: 'red', points: '550,400 550,550 475,475', cellId: 'red_center' },
+                { color: 'blue', points: '400,550 550,550 475,475', cellId: 'blue_center' },
+                { color: 'yellow', points: '400,400 400,550 475,475', cellId: 'yellow_center' }
+            ];
+            triangles.forEach(t => {
+                const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                poly.setAttribute('points', t.points);
+                poly.setAttribute('class', `home-triangle cell-${t.color}`);
+                poly.setAttribute('id', `space-${t.cellId}`);
+                svg.appendChild(poly);
+            });
+
+            // Corner nests
+            const nestDefs = [
+                { color: 'green', x: 0, y: 0, glowColor: 'var(--green-glow)', padColor: 'var(--green-main)' },
+                { color: 'red', x: 550, y: 0, glowColor: 'var(--red-glow)', padColor: 'var(--red-main)' },
+                { color: 'blue', x: 550, y: 550, glowColor: 'var(--blue-glow)', padColor: 'var(--blue-main)' },
+                { color: 'yellow', x: 0, y: 550, glowColor: 'var(--yellow-glow)', padColor: 'var(--yellow-main)' }
+            ];
+            nestDefs.forEach((n, idx) => {
+                const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                group.setAttribute('id', `${n.color}-nest`);
+
+                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                const mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
+                mask.setAttribute('id', `mask-${n.color}`);
+
+                const maskRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                maskRect.setAttribute('x', n.x + 10); maskRect.setAttribute('y', n.y + 10);
+                maskRect.setAttribute('width', 380); maskRect.setAttribute('height', 380);
+                maskRect.setAttribute('fill', 'white');
+                mask.appendChild(maskRect);
+
+                const maskText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                maskText.setAttribute('x', n.x + 200); maskText.setAttribute('y', n.y + 200);
+                maskText.setAttribute('font-size', '42px'); maskText.setAttribute('font-weight', '800');
+                maskText.setAttribute('font-family', 'Space Grotesk'); maskText.setAttribute('fill', 'black');
+                maskText.setAttribute('text-anchor', 'middle'); maskText.setAttribute('dominant-baseline', 'middle');
+                maskText.setAttribute('letter-spacing', '0.15em');
+                maskText.textContent = n.color.toUpperCase();
+                mask.appendChild(maskText);
+                defs.appendChild(mask);
+                group.appendChild(defs);
+
+                const underGlow = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                underGlow.setAttribute('id', `nest-glow-${n.color}`);
+                underGlow.setAttribute('x', n.x + 20); underGlow.setAttribute('y', n.y + 20);
+                underGlow.setAttribute('width', 360); underGlow.setAttribute('height', 360);
+                underGlow.setAttribute('fill', n.padColor);
+                underGlow.style.filter = 'blur(40px)';
+                underGlow.style.opacity = '0.7';
+                group.appendChild(underGlow);
+
+                const dimmingGlass = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                dimmingGlass.setAttribute('x', n.x + 10); dimmingGlass.setAttribute('y', n.y + 10);
+                dimmingGlass.setAttribute('width', 380); dimmingGlass.setAttribute('height', 380);
+                dimmingGlass.setAttribute('fill', 'rgba(18, 22, 37, 0.55)');
+                dimmingGlass.setAttribute('rx', '16');
+                group.appendChild(dimmingGlass);
+
+                const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                bg.setAttribute('x', n.x + 10); bg.setAttribute('y', n.y + 10);
+                bg.setAttribute('width', 380); bg.setAttribute('height', 380);
+                bg.setAttribute('class', 'nest-bg');
+                bg.setAttribute('mask', `url(#mask-${n.color})`);
+                group.appendChild(bg);
+
+                const innerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                innerCircle.setAttribute('cx', n.x + 200); innerCircle.setAttribute('cy', n.y + 200);
+                innerCircle.setAttribute('r', 130);
+                innerCircle.setAttribute('class', 'nest-circle');
+                innerCircle.style.stroke = n.padColor;
+                innerCircle.style.strokeOpacity = 0.3;
+                group.appendChild(innerCircle);
+
+                const slots = [{ r: 2, c: 2 }, { r: 2, c: 5 }, { r: 5, c: 2 }, { r: 5, c: 5 }];
+                slots.forEach(s => {
+                    const padX = n.x === 0 ? s.c * 50 + 25 : 550 + s.c * 50 + 25;
+                    const padY = n.y === 0 ? s.r * 50 + 25 : 550 + s.r * 50 + 25;
+                    const pad = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    pad.setAttribute('cx', padX); pad.setAttribute('cy', padY);
+                    pad.setAttribute('r', 20);
+                    pad.setAttribute('class', 'nest-pad');
+                    pad.setAttribute('stroke', n.padColor);
+                    pad.setAttribute('stroke-opacity', 0.6);
+                    group.appendChild(pad);
+                });
+                svg.appendChild(group);
+            });
+
+            // Pawns layer
+            const pawnGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            pawnGroup.setAttribute('id', 'pawns-layer');
+            svg.appendChild(pawnGroup);
+        }
+
+        // Gradients Generator
+        function createGradients() {
+            const svg = document.getElementById('parchis-board');
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            colors.forEach(color => {
+                const grad = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+                grad.setAttribute('id', `grad-${color}`);
+                grad.setAttribute('cx', '35%'); grad.setAttribute('cy', '35%'); grad.setAttribute('r', '70%');
+
+                const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stop1.setAttribute('offset', '0%');
+                const tint = { yellow: '#fff4b3', blue: '#b3d1ff', red: '#ffb3b3', green: '#ccffdd' };
+                stop1.setAttribute('stop-color', tint[color]);
+
+                const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stop2.setAttribute('offset', '100%');
+                const mainColor = { yellow: 'var(--yellow-main)', blue: 'var(--blue-main)', red: 'var(--red-main)', green: 'var(--green-main)' };
+                stop2.setAttribute('stop-color', mainColor[color]);
+
+                grad.appendChild(stop1);
+                grad.appendChild(stop2);
+                defs.appendChild(grad);
+            });
+            svg.appendChild(defs);
+        }
+
+        // Custom Logs Logger
+        function addLog(msg, type = 'system') {
+            const list = document.getElementById('log-list');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = msg;
+            list.appendChild(entry);
+            list.scrollTop = list.scrollHeight;
+        }
+
+        // Rule notifications
+        let ruleNotifyTimeout = null;
+        function showRuleViolationNotification(msg) {
+            const panel = document.getElementById('rule-notification');
+            const iconEl = panel.querySelector('.rule-icon');
+            if (iconEl) iconEl.textContent = '⚠️';
+            panel.classList.remove('info');
+            document.getElementById('rule-notification-text').textContent = msg;
+            panel.classList.add('show');
+            if (ruleNotifyTimeout) clearTimeout(ruleNotifyTimeout);
+            ruleNotifyTimeout = setTimeout(() => {
+                panel.classList.remove('show');
+            }, 5500);
+        }
+
+        // Friendly info banner used to clarify why an unusual move is legal.
+        function showRuleInfoNotification(msg) {
+            const panel = document.getElementById('rule-notification');
+            const iconEl = panel.querySelector('.rule-icon');
+            if (iconEl) iconEl.textContent = 'ℹ️';
+            panel.classList.add('info');
+            document.getElementById('rule-notification-text').textContent = msg;
+            panel.classList.add('show');
+            if (ruleNotifyTimeout) clearTimeout(ruleNotifyTimeout);
+            ruleNotifyTimeout = setTimeout(() => {
+                panel.classList.remove('show');
+                panel.classList.remove('info');
+            }, 6500);
+        }
+
+        // Query Occupants
+        function getPawnsOnSpace(spaceId) {
+            const result = [];
+            players.forEach(p => {
+                p.pawns.forEach(pawn => {
+                    if (pawn.pathIndex >= 0) {
+                        const currentSpaceId = p.path[pawn.pathIndex];
+                        if (currentSpaceId === spaceId) {
+                            result.push(pawn);
+                        }
+                    }
+                });
+            });
+            return result;
+        }
+
+        // American Safety Occupancy Checking
+        function isSafetySpaceOccupiedByOpponent(spaceId, playerIdx) {
+            if (activeRuleset !== 'american' || !isSafeSpace(spaceId)) return false;
+            const pawns = getPawnsOnSpace(spaceId);
+            return pawns.length > 0 && pawns.some(p => p.playerIndex !== playerIdx);
+        }
+
+        // General validation mechanics
+        function canPawnMoveBase(playerIdx, pawnId, roll) {
+            const player = players[playerIdx];
+            const pawn = player.pawns[pawnId];
+
+            if (pawn.pathIndex === -1) {
+                // Releases require 5
+                if (activeRuleset === 'american') {
+                    return roll === 5 && exitPawnFromNestAllowed(playerIdx);
+                } else {
+                    // Cuban/PR: require a natural 5 on a single die.
+                    // A combined sum-to-5 (e.g. 4+1, 3+2) is handled by the combination-exit
+                    // path (canExitNestWithCombination) with roll === 0, not here.
+                    if (roll === 5) {
+                        return exitPawnFromNestAllowed(playerIdx);
+                    }
+                    return false;
+                }
+            }
+
+            const targetIndex = pawn.pathIndex + roll;
+            if (targetIndex > 71) return false; // Over goal
+
+            // Barrier checking along path
+            for (let step = 1; step <= roll; step++) {
+                const checkIndex = pawn.pathIndex + step;
+                const checkSpaceId = player.path[checkIndex];
+                if (checkSpaceId.includes('center')) continue; // Skip goal barrier checks
+
+                const occupants = getPawnsOnSpace(checkSpaceId);
+
+                // standard blockades
+                if (occupants.length === 2) {
+                    const isBlock = occupants[0].playerIndex === occupants[1].playerIndex;
+                    if (isBlock) return false; // Blocked path
+                }
+
+                // Landing restrictions
+                if (step === roll) {
+                    if (occupants.length >= 2) {
+                        return false; // Can't land 3 pawns
+                    }
+                    // American Safe exclusivity check
+                    if (activeRuleset === 'american' && isSafeSpace(checkSpaceId) && occupants.length === 1) {
+                        if (occupants[0].playerIndex !== playerIdx) {
+                            return false; // Locked by opponent
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        function hasMovableBlockade(playerIdx, roll) {
+            const player = players[playerIdx];
+            const spaceCounts = {};
+            player.pawns.forEach(p => {
+                if (p.pathIndex >= 0) {
+                    const spaceId = player.path[p.pathIndex];
+                    spaceCounts[spaceId] = (spaceCounts[spaceId] || 0) + 1;
+                }
+            });
+
+            const blockades = [];
+            for (let id in spaceCounts) {
+                if (spaceCounts[id] === 2) blockades.push(id);
+            }
+            if (blockades.length === 0) return false;
+
+            return player.pawns.some((p, idx) => {
+                if (p.pathIndex >= 0) {
+                    const spaceId = player.path[p.pathIndex];
+                    if (blockades.includes(spaceId)) {
+                        return canPawnMoveBase(playerIdx, idx, roll);
+                    }
+                }
+                return false;
+            });
+        }
+
+        function pawnInNestMustExit(playerIdx) {
+            const player = players[playerIdx];
+            const hasInNest = player.pawns.some(p => p.pathIndex === -1);
+            if (!hasInNest || !exitPawnFromNestAllowed(playerIdx)) return false;
+
+            const activeRolls = diceState.filter(d => !d.used).map(d => d.val);
+            if (activeRolls.includes(5)) return true;
+
+            // Combined 5s exit check
+            if (activeRuleset !== 'american' && playDiceCount === 2) {
+                const unused = diceState.filter(d => !d.used);
+                if (unused.length === 2 && (unused[0].val + unused[1].val === 5)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function exitPawnFromNestAllowed(playerIdx) {
+            const player = players[playerIdx];
+            const startSpaceStr = startSpaces[playerIdx].toString();
+            if (!player.pawns.some(p => p.pathIndex === -1)) return false;
+            const ownOnStart = getPawnsOnSpace(startSpaceStr).filter(p => p.playerIndex === playerIdx);
+            return ownOnStart.length < 2;
+        }
+
+        // Mandatory check wraps rules validations
+        function canPawnMove(playerIdx, pawnId, roll) {
+            const player = players[playerIdx];
+            const pawn = player.pawns[pawnId];
+
+            // 1. Mandatory exits priority
+            if (pawnInNestMustExit(playerIdx) && pawn.pathIndex !== -1) {
+                // If it is a combined 5 exit, and we select a board piece, it's illegal.
+                // If this roll is a 5, and we have nest pawns, it is invalid to move a board piece.
+                if (roll === 5) return false;
+
+                // Sum 5 check
+                const unused = diceState.filter(d => !d.used);
+                if (unused.length === 2 && (unused[0].val + unused[1].val === 5)) {
+                    return false;
+                }
+            }
+
+            // 2. Base checks
+            if (!canPawnMoveBase(playerIdx, pawnId, roll)) {
+                return false;
+            }
+
+            // 3. Cuban forced blockade breaking
+            if (activeRuleset === 'cuban' && (roll === 6 || roll === 7)) {
+                if (hasMovableBlockade(playerIdx, roll)) {
+                    if (pawn.pathIndex >= 0) {
+                        const spaceId = player.path[pawn.pathIndex];
+                        const occupants = getPawnsOnSpace(spaceId);
+                        const isBlock = occupants.length === 2 &&
+                            occupants[0].playerIndex === playerIdx &&
+                            occupants[1].playerIndex === playerIdx;
+                        if (!isBlock) return false; // Must move the blockade pawn!
+                    } else {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        function getRuleViolationReason(playerIdx, pawnId, roll) {
+            const player = players[playerIdx];
+            const pawn = player.pawns[pawnId];
+
+            if (pawn.pathIndex === -1) {
+                if (activeRuleset === 'american') {
+                    if (roll !== 5) return "American Rules: You strictly need a natural 5 on an individual die to exit the nest.";
+                } else {
+                    const unused = diceState.filter(d => !d.used);
+                    const sumTo5 = unused.length === 2 && (unused[0].val + unused[1].val === 5);
+                    if (roll !== 5 && !sumTo5) {
+                        if (activeRuleset === 'puertorican') {
+                            return "Puerto Rican Rules: Exit requires rolling a 5 on a single die, or a combination of both dice summing to 5.";
+                        } else {
+                            return "Cuban Rules: Exit requires rolling a 5 or combinations summing to 5.";
+                        }
+                    }
+                }
+                if (!exitPawnFromNestAllowed(playerIdx)) return "Starting Space Blocked: Your exit starting space already has 2 of your pawns.";
+            }
+
+            if (pawnInNestMustExit(playerIdx) && pawn.pathIndex !== -1) {
+                return "Mandatory Nest Exit: You have pawns in the nest and valid exit rolls. You MUST exit a pawn first.";
+            }
+
+            if (activeRuleset === 'cuban' && (roll === 6 || roll === 7) && hasMovableBlockade(playerIdx, roll)) {
+                if (pawn.pathIndex >= 0) {
+                    const spaceId = player.path[pawn.pathIndex];
+                    const occupants = getPawnsOnSpace(spaceId);
+                    const isBlock = occupants.length === 2 && occupants[0].playerIndex === playerIdx;
+                    if (!isBlock) return "Cuban Rule: You are obligated to break one of your blockades on a roll of 6 or 7.";
+                } else {
+                    return "Cuban Rule: You are obligated to break one of your blockades on a roll of 6 or 7.";
+                }
+            }
+
+            const targetIndex = pawn.pathIndex + roll;
+            if (targetIndex > 71) return "Exact Roll Required: The pawn would overshoot the home center goal.";
+
+            // Trace path for blockades
+            for (let step = 1; step <= roll; step++) {
+                const checkIndex = pawn.pathIndex + step;
+                const checkSpaceId = player.path[checkIndex];
+                if (checkSpaceId.includes('center')) continue;
+
+                const occupants = getPawnsOnSpace(checkSpaceId);
+                if (occupants.length === 2 && occupants[0].playerIndex === occupants[1].playerIndex) {
+                    return `Blocked Path: Space ${checkSpaceId} is blocked by a blockade (two pawns of the same color).`;
+                }
+
+                if (step === roll) {
+                    if (occupants.length >= 2) return `Space Full: Casilla ${checkSpaceId} already contains 2 pawns.`;
+                    if (activeRuleset === 'american' && isSafeSpace(checkSpaceId) && occupants.length === 1 && occupants[0].playerIndex !== playerIdx) {
+                        return `American Rules: Safe space ${checkSpaceId} is exclusively occupied by another player.`;
+                    }
+                }
+            }
+
+            return "This move is invalid under current ruleset rules.";
+        }
+
+        // Releases nest pawn
+        function releasePawnFromNest(playerIdx) {
+            const player = players[playerIdx];
+            const startSpaceStr = startSpaces[playerIdx].toString();
+            const exitPawn = player.pawns.find(p => p.pathIndex === -1);
+            if (!exitPawn) return false;
+
+            const occupants = getPawnsOnSpace(startSpaceStr);
+            const opponents = occupants.filter(p => p.playerIndex !== playerIdx);
+
+            if (opponents.length > 0) {
+                // Eat opponent
+                const victim = opponents[opponents.length - 1];
+                capturePawn(victim, playerIdx);
+            }
+
+            exitPawn.pathIndex = 0;
+            sounds.playExit();
+            addLog(`🚪 ${player.name} released a pawn from nest onto starting space ${startSpaceStr}!`, player.color);
+            return true;
+        }
+
+        function capturePawn(victimPawn, capturerIdx) {
+            victimPawn.pathIndex = -1; // back to nest
+            sounds.playCapture();
+
+            const victimPlayer = players[victimPawn.playerIndex];
+            const capturer = players[capturerIdx];
+
+            addLog(`💥 ${capturer.name} captured ${victimPlayer.name}'s pawn! Sent back to nest.`, capturer.color);
+            pendingBonusMove = 20; // 20-space bonus move
+            sopladoCandidate = null; // Clear any pending soplado as we captured
+        }
+
+        // Soplado checking: Scan if human missed any capture in their turn before executing move
+        function checkCapturePossibilities(playerIdx) {
+            const player = players[playerIdx];
+            const unusedRolls = diceState.filter(d => !d.used).map(d => d.val);
+            if (unusedRolls.length === 0) return null;
+
+            // Check if any pawn has a valid path that ends on an opponent
+            for (let roll of unusedRolls) {
+                for (let pawnIdx = 0; pawnIdx < 4; pawnIdx++) {
+                    const pawn = player.pawns[pawnIdx];
+                    if (pawn.pathIndex === -1) continue; // nest pawn can't capture directly
+
+                    if (canPawnMove(playerIdx, pawnIdx, roll)) {
+                        const targetIdx = pawn.pathIndex + roll;
+                        const targetSpaceId = player.path[targetIdx];
+                        if (targetSpaceId && !isSafeSpace(targetSpaceId) && !targetSpaceId.includes('home') && !targetSpaceId.includes('center')) {
+                            const occupants = getPawnsOnSpace(targetSpaceId).filter(p => p.playerIndex !== playerIdx);
+                            if (occupants.length === 1) {
+                                return {
+                                    pawnId: pawnIdx,
+                                    rollValue: roll,
+                                    victimPawn: occupants[0],
+                                    reason: `Pawn ${pawnIdx + 1} could have eaten opponent's pawn at space ${targetSpaceId} using a roll of ${roll}.`
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Check double combination exit captures or double rolls captures
+            return null;
+        }
+
+        // Executes Pawn Movements
+        function executeMovePawn(playerIdx, pawnId, roll) {
+            if (isAnimating) return false;
+            const player = players[playerIdx];
+            const pawn = player.pawns[pawnId];
+
+            // Before moving, check if human missed a capture (only in PR ruleset and if toggled)
+            if (activeRuleset === 'puertorican' && configSopladoActive && player.type === 'human') {
+                const missed = checkCapturePossibilities(playerIdx);
+                // If they had a capture, but they are not moving to capture
+                if (missed) {
+                    let isCapturingMove = false;
+                    if (pawn.pathIndex >= 0) {
+                        const targetSpace = player.path[pawn.pathIndex + roll];
+                        if (targetSpace && !isSafeSpace(targetSpace)) {
+                            const targetOccupants = getPawnsOnSpace(targetSpace).filter(p => p.playerIndex !== playerIdx);
+                            if (targetOccupants.length === 1) {
+                                isCapturingMove = true;
+                            }
+                        }
+                    }
+                    if (!isCapturingMove) {
+                        // Mark candidate for soplado
+                        sopladoCandidate = {
+                            playerIdx: playerIdx,
+                            pawnId: missed.pawnId,
+                            victimPawn: missed.victimPawn,
+                            reason: missed.reason
+                        };
+                        addLog(`⚠️ Soplado Warn: ${player.name} missed a capture opportunity! Opponents can click Soplado to penalize.`, 'system');
+                    }
+                }
+            }
+
+            if (pawn.pathIndex === -1) {
+                // Release nest pawn
+                const success = releasePawnFromNest(playerIdx);
+                if (success) {
+                    lastMovedPawnId = pawnId;
+
+                    // Consume rolls
+                    if (roll === 0) {
+                        // sum of 5 exit consumed all rolls
+                        diceState.forEach(d => d.used = true);
+                        if (players[playerIdx].type === 'human') {
+                            showRuleInfoNotification("Combination exit: both dice summed to 5, so the pawn left the nest and both dice were consumed.");
+                        }
+                    }
+                    // For roll > 0, the caller has already marked its specific die used.
+                    // Do NOT consume another matching die here (with doubles like 5-5 that
+                    // would incorrectly burn the second 5 you need to release a 2nd pawn).
+
+                    renderPawns();
+                    checkTurnSequence();
+                    return true;
+                }
+                return false;
+            }
+
+            // Normal board movement
+            const startSpaceId = player.path[pawn.pathIndex];
+            let currentStep = 0;
+            isAnimating = true;
+
+            function animateStep() {
+                if (currentStep < roll) {
+                    pawn.pathIndex++;
+                    currentStep++;
+                    sounds.playMove();
+                    renderPawns();
+                    setTimeout(animateStep, 80);
+                } else {
+                    isAnimating = false;
+                    // Landed
+                    const landingSpaceId = player.path[pawn.pathIndex];
+                    evaluateLanding(playerIdx, pawnId, startSpaceId, landingSpaceId);
+                }
+            }
+
+            animateStep();
+            return true;
+        }
+
+        function evaluateLanding(playerIdx, pawnId, startSpaceId, landingSpaceId) {
+            const player = players[playerIdx];
+            const pawn = player.pawns[pawnId];
+
+            // 1. Check Captures
+            if (!isSafeSpace(landingSpaceId) && !landingSpaceId.includes('home') && !landingSpaceId.includes('center')) {
+                const occupants = getPawnsOnSpace(landingSpaceId).filter(p => p.playerIndex !== playerIdx);
+                if (occupants.length === 1) {
+                    capturePawn(occupants[0], playerIdx);
+                }
+            }
+
+            // 2. Check blockade creation
+            const occupants = getPawnsOnSpace(landingSpaceId);
+            if (occupants.length === 2 && occupants[0].playerIndex === occupants[1].playerIndex) {
+                sounds.playBlock();
+                addLog(`🔒 ${player.name} forms a blockade on space ${landingSpaceId}!`, player.color);
+            }
+
+            // 3. Goal Entry
+            if (pawn.pathIndex === 71) {
+                sounds.playWin();
+                addLog(`🎉 ${player.name} has moved a pawn into the home center!`, player.color);
+                document.getElementById(`score-p${playerIdx}`).textContent = `${player.pawns.filter(p => p.pathIndex === 71).length}/4`;
+                pendingBonusMove = 10; // +10 bonus move
+            }
+
+            lastMovedPawnId = pawnId;
+            addLog(`${player.name} moves pawn ${pawnId + 1} from ${startSpaceId} to ${landingSpaceId}.`, player.color);
+
+            renderPawns();
+            checkTurnSequence();
+        }
+
+        // Triggers soplado penalty directly
+        function triggerSopladoPenalty() {
+            if (!sopladoCandidate) return;
+            const player = players[sopladoCandidate.playerIdx];
+            const pawn = player.pawns[sopladoCandidate.pawnId];
+
+            pawn.pathIndex = -1; // send back to nest
+            sounds.playCapture();
+
+            addLog(`💨 SOPLADO! ${player.name}'s pawn ${pawn.id + 1} was sent back to nest for missing an eat opportunity!`, 'system');
+
+            // clear candidate
+            sopladoCandidate = null;
+            document.getElementById('soplado-btn').style.display = 'none';
+
+            renderPawns();
+        }
+
+        function checkTurnSequence() {
+            if (players[activeTurn].hasWon()) {
+                endGame(activeTurn);
+                return;
+            }
+
+            // If a soplado candidate exists, human turns wait or let AI auto-trigger it
+            if (sopladoCandidate) {
+                const nextPlayer = players[(activeTurn + 1) % 4];
+                if (nextPlayer.type === 'ai') {
+                    // AI auto-blows human
+                    setTimeout(() => {
+                        triggerSopladoPenalty();
+                        checkTurnSequence();
+                    }, 400);
+                    return;
+                } else {
+                    // Show Soplado button for other human players to click
+                    document.getElementById('soplado-btn').style.display = 'block';
+                }
+            }
+
+            // Handle pending bonus moves (+20 or +10)
+            if (pendingBonusMove > 0) {
+                const bonus = pendingBonusMove;
+                pendingBonusMove = 0; // reset
+                activeBonusMoveValue = bonus; // Store it globally!
+                addLog(`🎁 Bonus Move: ${players[activeTurn].name} moves another pawn by ${bonus}!`, players[activeTurn].color);
+
+                const hasLegal = players[activeTurn].pawns.some((p, idx) => canPawnMove(activeTurn, idx, bonus));
+                if (hasLegal) {
+                    gameState = 'waiting_for_move';
+                    let diceVal = bonus;
+                    updateDashboardForBonus(bonus);
+
+                    if (players[activeTurn].type === 'human') {
+                        highlightRestrictedPawns(players[activeTurn].pawns.filter((p, idx) => canPawnMove(activeTurn, idx, bonus)).map(p => p.id));
+                    } else {
+                        aiTimeoutId = setTimeout(() => {
+                            aiPlayBonusMove(bonus);
+                        }, speedMs);
+                    }
+                } else {
+                    addLog(`No legal moves available for the bonus. Bonus move of ${bonus} is lost.`, players[activeTurn].color);
+                    activeBonusMoveValue = 0; // Bug fix: clear stale bonus value so the next pawn click
+                                              // doesn't silently apply the forfeited bonus move (e.g. a
+                                              // +20 capture bonus that was blocked by a bridge) and
+                                              // bypass blockade/path validation.
+                    checkTurnSequence();
+                }
+                return;
+            }
+
+            // Check if unused rolls remain
+            const unused = diceState.filter(d => !d.used);
+            if (unused.length > 0) {
+                gameState = 'waiting_for_move';
+                currentMovingRollIndex = -1;
+
+                updateDashboard();
+
+                if (players[activeTurn].type === 'ai') {
+                    aiPlayTurn();
+                } else {
+                    // Pre-select first unused die that has legal moves
+                    let validIndex = -1;
+                    for (let i = 0; i < diceState.length; i++) {
+                        if (!diceState[i].used && players[activeTurn].pawns.some((p, idx) => canPawnMove(activeTurn, idx, diceState[i].val))) {
+                            validIndex = i;
+                            break;
+                        }
+                    }
+                    if (validIndex !== -1) {
+                        selectDie(validIndex);
+                    } else if (activeRuleset !== 'american' && canExitNestWithCombination(activeTurn)) {
+                        currentMovingRollIndex = -1;
+                        updateDashboard();
+                        highlightActivePawns();
+                    } else {
+                        // No moves left
+                        const vals = diceState.filter(d => !d.used).map(d => d.val);
+                        addLog(`No legal moves for rolls: ${vals.join(', ')}. Passing turn.`, players[activeTurn].color);
+                        diceState.forEach(d => d.used = true);
+                        rolledDoublesThisTurn = false;
+                        consecutiveDoubles = 0;
+                        checkTurnSequence();
+                    }
+                }
+                return;
+            }
+
+            // All rolls used. Check doubles for extra rolls
+            if (rolledDoublesThisTurn && playDiceCount === 2) {
+                rolledDoublesThisTurn = false;
+                if (consecutiveDoubles < 3) {
+                    addLog(`🎲 Doubles! ${players[activeTurn].name} gets another roll.`, players[activeTurn].color);
+                    gameState = 'waiting_for_roll';
+                    updateDashboard();
+                    triggerRollSequence();
+                    return;
+                }
+            }
+
+            // Next turn
+            nextTurn();
+        }
+
+        function nextTurn() {
+            consecutiveDoubles = 0;
+            rolledDoublesThisTurn = false;
+            isFirstRollOfTurn = true;
+            sopladoCandidate = null;
+            document.getElementById('soplado-btn').style.display = 'none';
+
+            let count = 0;
+            do {
+                activeTurn = (activeTurn + 1) % 4;
+                count++;
+            } while (players[activeTurn].type === 'off' && count < 4);
+
+            if (count >= 4) {
+                addLog("Error: No players enabled!", "system");
+                return;
+            }
+
+            gameState = 'waiting_for_roll';
+            updateDashboard();
+            triggerRollSequence();
+        }
+
+        function triggerRollSequence() {
+            const player = players[activeTurn];
+            if (player.type === 'ai') {
+                document.getElementById('roll-btn').disabled = true;
+                aiTimeoutId = setTimeout(rollDiceAction, speedMs);
+            } else {
+                document.getElementById('roll-btn').disabled = false;
+            }
+        }
+
+        // Action Roll
+        function rollDiceAction() {
+            if (gameState !== 'waiting_for_roll') return;
+
+            sopladoCandidate = null;
+            document.getElementById('soplado-btn').style.display = 'none';
+            isFirstRollOfTurn = false;
+
+            sounds.playRoll();
+
+            const d1 = document.getElementById('dice');
+            const d2 = document.getElementById('dice2');
+            const d3Cont = document.getElementById('dice-container-2');
+            const d4Cont = document.getElementById('dice-container-3');
+            const qEl = document.getElementById('dice-question-mark');
+
+            d1.classList.add('rolling');
+            if (playDiceCount === 2) d2.classList.add('rolling');
+            d3Cont.style.display = 'none';
+            d4Cont.style.display = 'none';
+            qEl.style.display = 'none';
+            activeBonusMoveValue = 0; // Clear any pending bonus value
+
+            setTimeout(() => {
+                d1.classList.remove('rolling');
+                d2.classList.remove('rolling');
+
+                let v1 = Math.floor(Math.random() * 6) + 1;
+                let v2 = playDiceCount === 2 ? Math.floor(Math.random() * 6) + 1 : 0;
+
+                diceState = [{ val: v1, used: false }];
+                if (playDiceCount === 2) {
+                    diceState.push({ val: v2, used: false });
+                    rolledDoublesThisTurn = v1 === v2;
+                    if (rolledDoublesThisTurn) {
+                        consecutiveDoubles++;
+
+                        // Three doubles check
+                        if (consecutiveDoubles === 3) {
+                            addLog(`🚨 Three consecutive doubles! Penalty triggered.`, 'system');
+                            penalizeThreeDoubles(activeTurn);
+                            return;
+                        }
+                    }
+                }
+
+                // 6 becomes 7 empty nest rule (Cuban only, togglable)
+                let ruleDesc = "";
+                if (activeRuleset === 'cuban' && configEmptyNestActive && players[activeTurn].hasAllPawnsOut()) {
+                    let promoted = false;
+                    if (v1 === 6) { v1 = 7; promoted = true; diceState[0].val = 7; }
+                    if (v2 === 6) { v2 = 7; promoted = true; diceState[1].val = 7; }
+                    if (promoted) ruleDesc = " (Nest empty: 6 becomes 7!)";
+                }
+
+                // American Doublets Bottoms rule
+                if (activeRuleset === 'american' && rolledDoublesThisTurn && players[activeTurn].hasAllPawnsOut()) {
+                    // Doublets bottoms: get face values and opposite values
+                    const op1 = 7 - v1;
+                    const op2 = 7 - v2;
+                    diceState.push({ val: op1, used: false });
+                    diceState.push({ val: op2, used: false });
+                    ruleDesc = " (Doublets Bottoms: Opposites active!)";
+                }
+
+                let rollText = `rolls a ${v1}`;
+                if (playDiceCount === 2) {
+                    rollText += ` and a ${v2}`;
+                    if (rolledDoublesThisTurn) rollText += " (Doubles!)";
+                }
+                addLog(`🎲 ${players[activeTurn].name} ${rollText}${ruleDesc}!`, players[activeTurn].color);
+
+                gameState = 'waiting_for_move';
+                updateDashboard();
+
+                if (players[activeTurn].type === 'ai') {
+                    aiPlayTurn();
+                } else {
+                    // Human: pre-select first die that has moves
+                    let validIndex = -1;
+                    for (let i = 0; i < diceState.length; i++) {
+                        if (players[activeTurn].pawns.some((p, idx) => canPawnMove(activeTurn, idx, diceState[i].val))) {
+                            validIndex = i;
+                            break;
+                        }
+                    }
+                    if (validIndex !== -1) {
+                        selectDie(validIndex);
+                    } else if (activeRuleset !== 'american' && canExitNestWithCombination(activeTurn)) {
+                        currentMovingRollIndex = -1;
+                        updateDashboard();
+                        highlightActivePawns();
+                    } else {
+                        // no moves
+                        const vals = diceState.filter(d => !d.used).map(d => d.val);
+                        addLog(`No legal moves for rolls: ${vals.join(', ')}. Passing turn.`, players[activeTurn].color);
+                        diceState.forEach(d => d.used = true);
+                        rolledDoublesThisTurn = false;
+                        consecutiveDoubles = 0;
+                        checkTurnSequence();
+                    }
+                }
+
+            }, 600);
+        }
+
+        function penalizeThreeDoubles(playerIdx) {
+            const player = players[playerIdx];
+            let penalizedPawn = null;
+
+            if (activeRuleset === 'american') {
+                // Most advanced active pawn on board
+                let bestIdx = -1;
+                player.pawns.forEach(p => {
+                    if (p.pathIndex >= 0 && p.pathIndex < 71) {
+                        if (p.pathIndex > bestIdx) {
+                            bestIdx = p.pathIndex;
+                            penalizedPawn = p;
+                        }
+                    }
+                });
+            } else {
+                // Cuban/PR: Last moved pawn
+                if (lastMovedPawnId !== -1) {
+                    const pawn = player.pawns[lastMovedPawnId];
+                    if (pawn.pathIndex >= 0 && pawn.pathIndex < 71) {
+                        penalizedPawn = pawn;
+                    }
+                }
+            }
+
+            if (penalizedPawn) {
+                penalizedPawn.pathIndex = -1; // back to nest
+                sounds.playCapture();
+                addLog(`🚨 Double penalty: ${player.name}'s pawn ${penalizedPawn.id + 1} was sent back to nest.`, player.color);
+            } else {
+                addLog(`Double penalty triggered, but no active pawns were vulnerable on the board.`, 'system');
+            }
+
+            // Immediately clear rolls and cycle turn
+            diceState.forEach(d => d.used = true);
+            rolledDoublesThisTurn = false;
+            consecutiveDoubles = 0;
+            nextTurn();
+        }
+
+        function canExitNestWithCombination(playerIdx) {
+            if (playDiceCount === 1) return false;
+            const player = players[playerIdx];
+            const hasInNest = player.pawns.some(p => p.pathIndex === -1);
+            if (!hasInNest || !exitPawnFromNestAllowed(playerIdx)) return false;
+
+            const unused = diceState.filter(d => !d.used);
+            return unused.length === 2 && (unused[0].val + unused[1].val === 5);
+        }
+
+        // GUI click handling for dice selection
+        function selectDie(dIdx) {
+            if (gameState !== 'waiting_for_move') return;
+            if (diceState[dIdx].used) return;
+
+            const roll = diceState[dIdx].val;
+            const hasLegal = players[activeTurn].pawns.some((p, idx) => canPawnMove(activeTurn, idx, roll));
+
+            if (!hasLegal) {
+                showRuleViolationNotification(`You have no legal moves for a roll of ${roll}.`);
+                return;
+            }
+
+            currentMovingRollIndex = dIdx;
+            updateDashboard();
+            highlightActivePawns();
+        }
+
+        function useSelectedDieAndMove(pawnId) {
+            if (currentMovingRollIndex === -1) return;
+            const roll = diceState[currentMovingRollIndex].val;
+
+            // Check combined exit exit
+            const pawn = players[activeTurn].pawns[pawnId];
+            if (pawn.pathIndex === -1 && canExitNestWithCombination(activeTurn)) {
+                diceState.forEach(d => d.used = true);
+                currentMovingRollIndex = -1;
+                renderPawns();
+                updateDashboard();
+                executeMovePawn(activeTurn, pawnId, 0); // 0 roll signalizes combined exit
+                return;
+            }
+
+            diceState[currentMovingRollIndex].used = true;
+            currentMovingRollIndex = -1;
+
+            renderPawns();
+            updateDashboard();
+            executeMovePawn(activeTurn, pawnId, roll);
+        }
+
+        function highlightActivePawns() {
+            renderPawns();
+            const player = players[activeTurn];
+
+            if (currentMovingRollIndex !== -1) {
+                const roll = diceState[currentMovingRollIndex].val;
+                player.pawns.forEach((p, idx) => {
+                    if (canPawnMove(activeTurn, idx, roll)) {
+                        const g = document.getElementById(`pawn-g-${activeTurn}-${idx}`);
+                        if (g) g.classList.add('pawn-active');
+                    }
+                });
+            } else {
+                // Highlight moves matching any unused die
+                const unused = diceState.filter(d => !d.used);
+                player.pawns.forEach((p, idx) => {
+                    let canMoveAny = false;
+                    unused.forEach(d => {
+                        if (canPawnMove(activeTurn, idx, d.val)) canMoveAny = true;
+                    });
+                    if (canMoveAny) {
+                        const g = document.getElementById(`pawn-g-${activeTurn}-${idx}`);
+                        if (g) g.classList.add('pawn-active');
+                    }
+                });
+            }
+
+            // Combination exits highlights
+            if (canExitNestWithCombination(activeTurn)) {
+                player.pawns.forEach((p, idx) => {
+                    if (p.pathIndex === -1) {
+                        const g = document.getElementById(`pawn-g-${activeTurn}-${idx}`);
+                        if (g) g.classList.add('pawn-active');
+                    }
+                });
+            }
+        }
+
+        function highlightRestrictedPawns(allowedIds) {
+            renderPawns();
+            allowedIds.forEach(id => {
+                const g = document.getElementById(`pawn-g-${activeTurn}-${id}`);
+                if (g) g.classList.add('pawn-active');
+            });
+        }
+
+        // Draw Pawns in SVG layer
+        function renderPawns() {
+            const container = document.getElementById('pawns-layer');
+            container.innerHTML = '';
+
+            const occupantsMap = {};
+
+            players.forEach((p, pIdx) => {
+                p.pawns.forEach((pawn, pawnIdx) => {
+                    let spaceId = pawn.pathIndex === -1 ? `${p.color}_nest_${pawnIdx}` : p.path[pawn.pathIndex];
+                    if (!occupantsMap[spaceId]) occupantsMap[spaceId] = [];
+                    occupantsMap[spaceId].push(pawn);
+                });
+            });
+
+            // Trigger visual occupancy glow updates for safe cells under American Rules
+            if (activeRuleset === 'american') {
+                safeSpacesList.forEach(spaceNum => {
+                    const safeIndicator = document.getElementById(`safe-ind-${spaceNum}`);
+                    if (safeIndicator) {
+                        safeIndicator.className = 'safe-indicator'; // clear occupied styles
+                        const occupants = getPawnsOnSpace(spaceNum.toString());
+                        if (occupants.length > 0) {
+                            safeIndicator.classList.add(`safe-occupied-${colors[occupants[0].playerIndex]}`);
+                        }
+                    }
+                });
+            }
+
+            for (let spaceId in occupantsMap) {
+                const pawns = occupantsMap[spaceId];
+                const baseCoords = getCoordsForSpaceId(spaceId);
+                if (!baseCoords) continue;
+
+                const centerX = baseCoords.c * 50 + 25;
+                const centerY = baseCoords.r * 50 + 25;
+
+                pawns.forEach((pawn, idx) => {
+                    let px = centerX;
+                    let py = centerY;
+                    let radius = 16;
+
+                    // overlap spacing
+                    if (pawns.length === 2) {
+                        radius = 12;
+                        if (baseCoords.r === 8 || baseCoords.r === 10) {
+                            px = idx === 0 ? centerX - 10 : centerX + 10;
+                        } else if (baseCoords.c === 8 || baseCoords.c === 10) {
+                            py = idx === 0 ? centerY - 10 : centerY + 10;
+                        } else {
+                            px = idx === 0 ? centerX - 8 : centerX + 8;
+                            py = idx === 0 ? centerY - 8 : centerY + 8;
+                        }
+                    }
+
+                    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    g.setAttribute('id', `pawn-g-${pawn.playerIndex}-${pawn.id}`);
+                    g.setAttribute('class', 'pawn-glow');
+                    g.setAttribute('color', pawn.color);
+                    g.style.transformOrigin = `${px}px ${py}px`;
+
+                    // Invisible enlarged hit-area for finger taps on mobile.
+                    // (~28 SVG units ≈ 22px on a 360px-wide phone — close to a 44px touch target
+                    // since the actual tap goes anywhere inside this circle.)
+                    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    hit.setAttribute('cx', px); hit.setAttribute('cy', py);
+                    hit.setAttribute('r', 28);
+                    hit.setAttribute('fill', 'transparent');
+                    hit.setAttribute('pointer-events', 'all');
+                    g.appendChild(hit);
+
+                    const shadow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    shadow.setAttribute('cx', px); shadow.setAttribute('cy', py + 2);
+                    shadow.setAttribute('r', radius); shadow.setAttribute('fill', 'rgba(0, 0, 0, 0.4)');
+                    g.appendChild(shadow);
+
+                    const base = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    base.setAttribute('cx', px); base.setAttribute('cy', py);
+                    base.setAttribute('r', radius);
+                    base.setAttribute('fill', `url(#grad-${pawn.color})`);
+                    base.setAttribute('stroke', '#fff'); base.setAttribute('stroke-width', 1.2);
+                    g.appendChild(base);
+
+                    const shine = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    shine.setAttribute('cx', px - radius / 3); shine.setAttribute('cy', py - radius / 3);
+                    shine.setAttribute('r', radius / 3.5);
+                    shine.setAttribute('fill', 'rgba(255, 255, 255, 0.45)');
+                    g.appendChild(shine);
+
+                    g.addEventListener('click', () => {
+                        if (isAnimating) return; // Block clicks during animations!
+                        if (gameState === 'waiting_for_move' && activeTurn === pawn.playerIndex) {
+                            if (players[activeTurn].type !== 'human') return;
+
+                            const isActive = g.classList.contains('pawn-active');
+                            if (isActive) {
+                                if (activeBonusMoveValue > 0) {
+                                    const moveVal = activeBonusMoveValue;
+                                    activeBonusMoveValue = 0; // Reset before executing to prevent double clicks
+                                    executeMovePawn(activeTurn, pawn.id, moveVal);
+                                    return;
+                                }
+
+                                if (currentMovingRollIndex !== -1) {
+                                    useSelectedDieAndMove(pawn.id);
+                                } else {
+                                    // exit from nest using combination
+                                    if (pawn.pathIndex === -1 && canExitNestWithCombination(activeTurn)) {
+                                        executeMovePawn(activeTurn, pawn.id, 0);
+                                    } else {
+                                        const unused = diceState.find(d => !d.used);
+                                        if (unused) {
+                                            unused.used = true;
+                                            renderPawns();
+                                            updateDashboard();
+                                            executeMovePawn(activeTurn, pawn.id, unused.val);
+                                        }
+                                    }
+                                }
+                            } else {
+                                // show warning explanation
+                                let rollVal = diceState.filter(d => !d.used).map(d => d.val)[0] || 0;
+                                if (activeBonusMoveValue > 0) rollVal = activeBonusMoveValue;
+                                else if (currentMovingRollIndex !== -1) rollVal = diceState[currentMovingRollIndex].val;
+                                const reason = getRuleViolationReason(activeTurn, pawn.id, rollVal);
+                                showRuleViolationNotification(reason);
+                            }
+                        }
+                    });
+
+                    container.appendChild(g);
+                });
+            }
+        }
+
+        // GUI state updater
+        function updateDashboard() {
+            const player = players[activeTurn];
+            const nameEl = document.getElementById('current-player-name');
+            nameEl.textContent = player.name;
+            nameEl.style.color = `var(--${player.color}-main)`;
+            nameEl.style.textShadow = `0 0 15px var(--${player.color}-glow)`;
+
+            const descEl = document.getElementById('dice-roll-desc');
+            const rollBtn = document.getElementById('roll-btn');
+
+            const dashboard = document.getElementById('turn-dashboard');
+            dashboard.style.setProperty('--active-color', `var(--${player.color}-main)`);
+            dashboard.style.setProperty('--active-glow', `var(--${player.color}-glow)`);
+            dashboard.style.setProperty('--active-bg', `var(--${player.color}-bg)`);
+
+            colors.forEach((c, idx) => {
+                const box = document.querySelector(`.score-box-${c}`);
+                if (idx === activeTurn) {
+                    box.classList.add('active-score');
+                    box.style.transform = 'scale(1.05)';
+                } else {
+                    box.classList.remove('active-score');
+                    box.style.transform = 'scale(1)';
+                }
+            });
+
+            // Dice UI values
+            const d1El = document.getElementById('dice');
+            const d2El = document.getElementById('dice2');
+            const d3El = document.getElementById('dice3');
+            const d4El = document.getElementById('dice4');
+
+            const d2Cont = document.getElementById('dice-container-1');
+            const d3Cont = document.getElementById('dice-container-2');
+            const d4Cont = document.getElementById('dice-container-3');
+
+            // Set visible dice depending on play style
+            d2Cont.style.display = playDiceCount === 2 ? 'block' : 'none';
+            d3Cont.style.display = (playDiceCount === 2 && diceState.length > 2) ? 'block' : 'none';
+            d4Cont.style.display = (playDiceCount === 2 && diceState.length > 3) ? 'block' : 'none';
+
+            // Question mark visibility
+            const qEl = document.getElementById('dice-question-mark');
+            if (gameState === 'waiting_for_roll' && player.type === 'human' && isFirstRollOfTurn) {
+                qEl.style.display = 'flex';
+            } else {
+                qEl.style.display = 'none';
+            }
+
+            d1El.className = 'dice-cube';
+            d2El.className = 'dice-cube';
+            d3El.className = 'dice-cube';
+            d4El.className = 'dice-cube';
+
+            if (diceState[0]) d1El.classList.add(`show-${diceState[0].val}`);
+            if (diceState[1] && playDiceCount === 2) d2El.classList.add(`show-${diceState[1].val}`);
+            if (diceState[2] && playDiceCount === 2 && diceState.length > 2) d3El.classList.add(`show-${diceState[2].val}`);
+            if (diceState[3] && playDiceCount === 2 && diceState.length > 3) d4El.classList.add(`show-${diceState[3].val}`);
+
+            if (gameState === 'waiting_for_roll') {
+                descEl.textContent = player.type === 'human' ? 'Roll the dice to start your turn!' : 'AI is rolling the dice...';
+                rollBtn.style.display = 'block';
+                rollBtn.disabled = player.type !== 'human';
+            } else if (gameState === 'waiting_for_move') {
+                rollBtn.style.display = 'none';
+
+                if (activeRuleset !== 'american' && canExitNestWithCombination(activeTurn) && currentMovingRollIndex === -1) {
+                    d1El.classList.add('selected-roll');
+                    d2El.classList.add('selected-roll');
+                } else {
+                    if (diceState[0].used) d1El.classList.add('used-roll');
+                    else if (currentMovingRollIndex === 0) d1El.classList.add('selected-roll');
+                    else d1El.classList.add('active-roll');
+
+                    if (playDiceCount === 2) {
+                        if (diceState[1].used) d2El.classList.add('used-roll');
+                        else if (currentMovingRollIndex === 1) d2El.classList.add('selected-roll');
+                        else d2El.classList.add('active-roll');
+
+                        if (diceState.length > 2) {
+                            if (diceState[2].used) d3El.classList.add('used-roll');
+                            else if (currentMovingRollIndex === 2) d3El.classList.add('selected-roll');
+                            else d3El.classList.add('active-roll');
+                        }
+                        if (diceState.length > 3) {
+                            if (diceState[3].used) d4El.classList.add('used-roll');
+                            else if (currentMovingRollIndex === 3) d4El.classList.add('selected-roll');
+                            else d4El.classList.add('active-roll');
+                        }
+                    }
+                }
+
+                // Nest glow indicator on mandatory exit obligation
+                colors.forEach(c => {
+                    const glowEl = document.getElementById(`nest-glow-${c}`);
+                    if (glowEl) glowEl.classList.remove('mandatory-nest-flash');
+                });
+                if (pawnInNestMustExit(activeTurn)) {
+                    const activeGlow = document.getElementById(`nest-glow-${players[activeTurn].color}`);
+                    if (activeGlow) activeGlow.classList.add('mandatory-nest-flash');
+                }
+
+                if (player.type === 'human') {
+                    if (activeRuleset !== 'american' && canExitNestWithCombination(activeTurn)) {
+                        descEl.textContent = `Combine rolls (${diceState[0].val} + ${diceState[1].val} = 5) to exit nest!`;
+                    } else if (currentMovingRollIndex !== -1) {
+                        descEl.textContent = `Choose an active pawn to move by ${diceState[currentMovingRollIndex].val} spaces!`;
+                    } else {
+                        descEl.textContent = 'Select an active die to start your movement!';
+                    }
+                } else {
+                    descEl.textContent = 'AI is playing...';
+                }
+            }
+        }
+
+        function updateDashboardForBonus(bonus) {
+            const player = players[activeTurn];
+            document.getElementById('current-player-name').textContent = player.name;
+            document.getElementById('dice-roll-desc').textContent = `🎁 Bonus Move: Move any pawn by ${bonus} spaces!`;
+            document.getElementById('roll-btn').style.display = 'none';
+
+            document.getElementById('dice').className = 'dice-cube used-roll';
+            document.getElementById('dice2').className = 'dice-cube used-roll';
+        }
+
+        // Start / Restart
+        function startNewMatch() {
+            if (aiTimeoutId) clearTimeout(aiTimeoutId);
+
+            activeRuleset = document.getElementById('ruleset-select').value;
+            playDiceCount = parseInt(document.getElementById('dice-count-select').value) || 2;
+            configEmptyNestActive = document.getElementById('rule-empty-nest').checked;
+            configSopladoActive = document.getElementById('rule-soplado').checked;
+
+            players = [];
+            colors.forEach((color, idx) => {
+                const name = document.getElementById(`p${idx}-name`).value || `Player ${idx + 1}`;
+                const type = document.getElementById(`p${idx}-type`).value;
+                players.push(new Player(idx, name, color, type));
+
+                const scoreBoxTitle = document.querySelector(`.score-box-${color} .score-color-title`);
+                scoreBoxTitle.textContent = name.substring(0, 10);
+                document.getElementById(`score-p${idx}`).textContent = '0/4';
+            });
+
+            const enabled = players.filter(p => p.type !== 'off').length;
+            if (enabled < 2) {
+                alert("Please enable at least 2 players!");
+                return;
+            }
+
+            document.getElementById('setup-screen').style.display = 'none';
+            document.getElementById('play-screen').style.display = 'block';
+            document.getElementById('gameover-overlay').classList.remove('active');
+
+            gameState = 'waiting_for_roll';
+            consecutiveDoubles = 0;
+            rolledDoublesThisTurn = false;
+            isFirstRollOfTurn = true;
+            pendingBonusMove = 0;
+            activeBonusMoveValue = 0;
+            lastMovedPawnId = -1;
+            sopladoCandidate = null;
+
+            document.getElementById('log-list').innerHTML = '';
+            addLog(`🎲 ${activeRuleset.toUpperCase()} Rules Match Started!`, 'system');
+
+            sounds.playExit();
+
+            drawBoard();
+            createGradients();
+
+            // Find first player
+            activeTurn = 0;
+            while (activeTurn < 4 && players[activeTurn].type === 'off') {
+                activeTurn++;
+            }
+
+            addLog(`It's ${players[activeTurn].name}'s turn.`, players[activeTurn].color);
+
+            renderPawns();
+            updateDashboard();
+            triggerRollSequence();
+        }
+
+        function endGame(winnerIdx) {
+            gameState = 'game_over';
+            sounds.playGameOver();
+            const winner = players[winnerIdx];
+            addLog(`🏆 MATCH OVER! ${winner.name} WINS THE GAME! 🏆`, winner.color);
+            document.getElementById('winner-announcement').textContent = `${winner.name} successfully got all 4 pawns home!`;
+            document.getElementById('gameover-overlay').classList.add('active');
+        }
+
+        // Setup actions listeners
+        document.getElementById('start-game-btn').addEventListener('click', startNewMatch);
+        document.getElementById('roll-btn').addEventListener('click', rollDiceAction);
+        document.getElementById('play-again-btn').addEventListener('click', () => {
+            document.getElementById('gameover-overlay').classList.remove('active');
+            document.getElementById('setup-screen').style.display = 'block';
+            document.getElementById('play-screen').style.display = 'none';
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            document.getElementById('restart-modal').classList.add('active');
+        });
+        document.getElementById('restart-cancel-btn').addEventListener('click', () => {
+            document.getElementById('restart-modal').classList.remove('active');
+        });
+        document.getElementById('restart-confirm-btn').addEventListener('click', () => {
+            if (aiTimeoutId) {
+                clearTimeout(aiTimeoutId);
+                aiTimeoutId = null;
+            }
+            document.getElementById('restart-modal').classList.remove('active');
+            document.getElementById('setup-screen').style.display = 'block';
+            document.getElementById('play-screen').style.display = 'none';
+            gameState = 'setup';
+            drawBoard();
+        });
+
+        document.getElementById('soplado-btn').addEventListener('click', triggerSopladoPenalty);
+
+        document.getElementById('dice-overlay-0').addEventListener('click', () => {
+            if (isAnimating) return; // Block die selection during animations!
+            if (gameState === 'waiting_for_move' && players[activeTurn].type === 'human') {
+                selectDie(0);
+            }
+        });
+        document.getElementById('dice-overlay-1').addEventListener('click', () => {
+            if (isAnimating) return; // Block die selection during animations!
+            if (gameState === 'waiting_for_move' && players[activeTurn].type === 'human' && playDiceCount === 2) {
+                selectDie(1);
+            }
+        });
+        document.getElementById('dice-overlay-2').addEventListener('click', () => {
+            if (isAnimating) return; // Block die selection during animations!
+            if (gameState === 'waiting_for_move' && players[activeTurn].type === 'human' && diceState.length > 2) {
+                selectDie(2);
+            }
+        });
+        document.getElementById('dice-overlay-3').addEventListener('click', () => {
+            if (isAnimating) return; // Block die selection during animations!
+            if (gameState === 'waiting_for_move' && players[activeTurn].type === 'human' && diceState.length > 3) {
+                selectDie(3);
+            }
+        });
+
+        // Initialize board
+        drawBoard();
+    </script>
+
+    <!-- AI Decisions Heuristics and Simulators -->
+    <script>
+        function aiPlayTurn() {
+            if (gameState !== 'waiting_for_move') return;
+
+            const player = players[activeTurn];
+
+            // If AI is playing and it has a soplado candidate against the human, it resolves it immediately
+            if (sopladoCandidate) {
+                triggerSopladoPenalty();
+                checkTurnSequence();
+                return;
+            }
+
+            const currentPawnsState = players.map(p => p.pawns.map(pawn => ({
+                id: pawn.id,
+                pathIndex: pawn.pathIndex,
+                color: pawn.color,
+                playerIndex: pawn.playerIndex
+            })));
+
+            let bestMove = null;
+            let bestScore = -Infinity;
+
+            const unused = diceState.filter(d => !d.used);
+
+            if (unused.length === 1) {
+                const d = unused[0];
+                const dIdx = diceState.indexOf(d);
+                player.pawns.forEach((p, idx) => {
+                    if (canPawnMove(activeTurn, idx, d.val)) {
+                        const sim = simulateMove(activeTurn, idx, d.val, currentPawnsState);
+                        const score = scoreSimulation(sim, activeTurn);
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestMove = { pawnId: idx, rollValue: d.val, rollIndex: dIdx };
+                        }
+                    }
+                });
+            } else if (unused.length >= 2) {
+                // simulate permutations
+                const d1 = unused[0];
+                const d2 = unused[1];
+                const d1Idx = diceState.indexOf(d1);
+                const d2Idx = diceState.indexOf(d2);
+
+                const mustExit = pawnInNestMustExit(activeTurn);
+
+                // Option A: d1 then d2
+                if (!mustExit || d1.val === 5) {
+                    player.pawns.forEach((p1, idx1) => {
+                        if (canPawnMove(activeTurn, idx1, d1.val)) {
+                            const sim1 = simulateMove(activeTurn, idx1, d1.val, currentPawnsState);
+                            player.pawns.forEach((p2, idx2) => {
+                                if (canPawnMoveInState(activeTurn, idx2, d2.val, sim1.newState)) {
+                                    const sim2 = simulateMove(activeTurn, idx2, d2.val, sim1.newState);
+                                    const score = scoreSimulation(sim2, activeTurn);
+                                    if (score > bestScore) {
+                                        bestScore = score;
+                                        bestMove = { pawnId: idx1, rollValue: d1.val, rollIndex: d1Idx };
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+
+                // Option B: d2 then d1
+                if (!mustExit || d2.val === 5) {
+                    player.pawns.forEach((p1, idx1) => {
+                        if (canPawnMove(activeTurn, idx1, d2.val)) {
+                            const sim1 = simulateMove(activeTurn, idx1, d2.val, currentPawnsState);
+                            player.pawns.forEach((p2, idx2) => {
+                                if (canPawnMoveInState(activeTurn, idx2, d1.val, sim1.newState)) {
+                                    const sim2 = simulateMove(activeTurn, idx2, d1.val, sim1.newState);
+                                    const score = scoreSimulation(sim2, activeTurn);
+                                    if (score > bestScore) {
+                                        bestScore = score;
+                                        bestMove = { pawnId: idx1, rollValue: d2.val, rollIndex: d2Idx };
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+
+            // Sum exit combination simulation for AI
+            if (activeRuleset !== 'american' && unused.length === 2 && canExitNestWithCombination(activeTurn)) {
+                player.pawns.forEach((p, idx) => {
+                    if (p.pathIndex === -1) {
+                        const sim = simulateMove(activeTurn, idx, 0, currentPawnsState);
+                        const score = scoreSimulation(sim, activeTurn) + 100;
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestMove = { pawnId: idx, rollValue: 0, rollIndex: -1, isCombination: true };
+                        }
+                    }
+                });
+            }
+
+            if (bestMove) {
+                if (bestMove.isCombination) {
+                    diceState.forEach(d => d.used = true);
+                    currentMovingRollIndex = -1;
+                    executeMovePawn(activeTurn, bestMove.pawnId, 0);
+                } else {
+                    currentMovingRollIndex = bestMove.rollIndex;
+                    diceState[currentMovingRollIndex].used = true;
+                    currentMovingRollIndex = -1;
+                    executeMovePawn(activeTurn, bestMove.pawnId, bestMove.rollValue);
+                }
+            } else {
+                addLog(`AI ${player.name} has no legal moves. Passing turn.`, player.color);
+                diceState.forEach(d => d.used = true);
+                checkTurnSequence();
+            }
+        }
+
+        function aiPlayBonusMove(bonus) {
+            const player = players[activeTurn];
+            const movable = player.pawns.filter((p, idx) => canPawnMove(activeTurn, idx, bonus));
+
+            if (movable.length === 0) {
+                // Defensive: same leak as the human path — if the bonus becomes
+                // unplayable here, clear the stale value before recursing so it
+                // can't bleed into a subsequent click/turn.
+                activeBonusMoveValue = 0;
+                checkTurnSequence();
+                return;
+            }
+
+            const currentPawnsState = players.map(p => p.pawns.map(pawn => ({
+                id: pawn.id,
+                pathIndex: pawn.pathIndex,
+                color: pawn.color,
+                playerIndex: pawn.playerIndex
+            })));
+
+            let bestPawn = movable[0];
+            let bestScore = -Infinity;
+
+            movable.forEach(p => {
+                const sim = simulateMove(activeTurn, p.id, bonus, currentPawnsState);
+                const score = scoreSimulation(sim, activeTurn);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestPawn = p;
+                }
+            });
+
+            executeMovePawn(activeTurn, bestPawn.id, bonus);
+        }
+
+        // Sim helper
+        function simulateMove(playerIdx, pawnId, roll, state) {
+            const newState = JSON.parse(JSON.stringify(state));
+            const player = players[playerIdx];
+            const pawn = newState[playerIdx][pawnId];
+
+            let captureOccurred = false;
+            let landedOnCenter = false;
+            let blockadeFormed = false;
+
+            if (pawn.pathIndex === -1 && (roll === 5 || roll === 0)) {
+                pawn.pathIndex = 0;
+                const startStr = startSpaces[playerIdx].toString();
+                const opponents = getPawnsOnSpaceInState(startStr, newState).filter(p => p.playerIndex !== playerIdx);
+                if (opponents.length > 0) {
+                    captureOccurred = true;
+                    opponents[opponents.length - 1].pathIndex = -1;
+                }
+            } else {
+                pawn.pathIndex += roll;
+                const landingSpaceId = player.path[pawn.pathIndex];
+
+                if (pawn.pathIndex === 71) {
+                    landedOnCenter = true;
+                }
+
+                if (!isSafeSpace(landingSpaceId) && !landingSpaceId.includes('home') && !landingSpaceId.includes('center')) {
+                    const opponents = getPawnsOnSpaceInState(landingSpaceId, newState).filter(p => p.playerIndex !== playerIdx);
+                    if (opponents.length === 1) {
+                        captureOccurred = true;
+                        opponents[0].pathIndex = -1;
+                    }
+                }
+
+                const team = getPawnsOnSpaceInState(landingSpaceId, newState).filter(p => p.playerIndex === playerIdx);
+                if (team.length === 2) {
+                    blockadeFormed = true;
+                }
+            }
+
+            return { newState, captureOccurred, landedOnCenter, blockadeFormed };
+        }
+
+        function canPawnMoveInState(playerIdx, pawnId, roll, state) {
+            const player = players[playerIdx];
+            const pawn = state[playerIdx][pawnId];
+            if (pawn.pathIndex === -1) return false;
+
+            const targetIdx = pawn.pathIndex + roll;
+            if (targetIdx > 71) return false;
+
+            for (let step = 1; step <= roll; step++) {
+                const checkIdx = pawn.pathIndex + step;
+                const checkSpaceId = player.path[checkIdx];
+                if (checkSpaceId.includes('center')) continue;
+
+                const occupants = getPawnsOnSpaceInState(checkSpaceId, state);
+                if (occupants.length === 2 && occupants[0].playerIndex === occupants[1].playerIndex) {
+                    return false; // blocked
+                }
+
+                if (step === roll && occupants.length >= 2) return false;
+            }
+
+            return true;
+        }
+
+        function getPawnsOnSpaceInState(spaceId, state) {
+            const result = [];
+            for (let pIdx = 0; pIdx < 4; pIdx++) {
+                state[pIdx].forEach(pawn => {
+                    if (pawn.pathIndex >= 0) {
+                        const currentSpaceId = players[pIdx].path[pawn.pathIndex];
+                        if (currentSpaceId === spaceId) {
+                            result.push(pawn);
+                        }
+                    }
+                });
+            }
+            return result;
+        }
+
+        function scoreSimulation(simResult, playerIdx) {
+            const { newState, captureOccurred, landedOnCenter, blockadeFormed } = simResult;
+            let score = 0;
+
+            newState[playerIdx].forEach(p => {
+                if (p.pathIndex === 71) {
+                    score += 1000;
+                } else if (p.pathIndex === -1) {
+                    score -= 100;
+                } else {
+                    score += p.pathIndex * 8;
+                    const spaceId = players[playerIdx].path[p.pathIndex];
+                    if (isSafeSpace(spaceId) || spaceId.includes('home')) {
+                        score += 40;
+                    }
+                }
+            });
+
+            if (captureOccurred) score += 300;
+            if (landedOnCenter) score += 200;
+            if (blockadeFormed) score += 30;
+
+            return score;
+        }
+    </script>
+
+    <!-- Debug Harness and URL parser -->
+    <script>
+        function loadDebugState() {
+            startNewMatch();
+
+            // Set coordinates to test various rules
+            // Player 0 (Yellow): all in nest
+            players[0].pawns.forEach(p => p.pathIndex = -1);
+
+            // Player 1 (Blue): 1 active
+            players[1].pawns[0].pathIndex = -1;
+            players[1].pawns[1].pathIndex = -1;
+            players[1].pawns[2].pathIndex = -1;
+            players[1].pawns[3].pathIndex = 14;
+
+            // Player 2 (Red): blockade on space 41, one pawn on space 42
+            players[2].pawns[0].pathIndex = 3;
+            players[2].pawns[1].pathIndex = 2;
+            players[2].pawns[2].pathIndex = 2;
+            players[2].pawns[3].pathIndex = 30;
+
+            // Player 3 (Green): 1 active on space 5
+            players[3].pawns[0].pathIndex = -1;
+            players[3].pawns[1].pathIndex = -1;
+            players[3].pawns[2].pathIndex = -1;
+            players[3].pawns[3].pathIndex = 18;
+
+            activeTurn = 2;
+            diceState = [
+                { val: 6, used: false },
+                { val: 3, used: false }
+            ];
+            gameState = 'waiting_for_move';
+            currentMovingRollIndex = 0;
+
+            renderPawns();
+            updateDashboard();
+            highlightActivePawns();
+
+            addLog("--- DIAGNOSTIC DEBUG STATE LOADED ---", "system");
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('debug') === 'true') {
+                setTimeout(loadDebugState, 1500);
+            }
+        });
+    </script>
+
+    <!-- Rule Violation Banner element -->
+    <div id="rule-notification">
+        <div class="rule-icon">⚠️</div>
+        <div id="rule-notification-text"></div>
+    </div>
+</body>
+
+</html>
