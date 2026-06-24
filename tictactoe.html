@@ -22,7 +22,8 @@
             color: white;
             padding: 20px;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             transition: background-image 1s ease-in-out;
         }
         
@@ -110,6 +111,9 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.2);
             z-index: 10;
+            width: 100%;
+            max-width: 440px;
+            box-sizing: border-box;
         }
         
         .board {
@@ -121,8 +125,6 @@
         }
         
         .cell {
-            width: 120px;
-            height: 120px;
             background: linear-gradient(145deg, #2a2a4a, #1a1a3a);
             display: flex;
             align-items: center;
@@ -134,6 +136,7 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
             border: 2px solid rgba(255, 255, 255, 0.1);
+            aspect-ratio: 1 / 1;
         }
         
         .cell:hover:not(.taken) {
@@ -288,6 +291,69 @@
             font-size: 0.9em;
             color: #a0a0a0;
             z-index: 10;
+        }
+
+        /* ── Mobile phones & tablets (≤480px) ───────────────────────── */
+        @media (max-width: 480px) {
+            body {
+                padding: 15px 10px;
+            }
+            h1 {
+                font-size: 2.2rem;
+                margin-bottom: 5px;
+            }
+            .subtitle {
+                font-size: 1rem;
+                margin-bottom: 20px;
+            }
+            .game-container {
+                padding: 15px;
+                border-radius: 16px;
+            }
+            .board {
+                grid-template-columns: repeat(3, min(85px, 26vw));
+                grid-template-rows: repeat(3, min(85px, 26vw));
+                gap: 8px;
+                margin: 15px 0;
+            }
+            .cell {
+                border-radius: 10px;
+                font-size: clamp(2rem, 10vw, 3rem);
+            }
+            .scoreboard {
+                padding: 8px 5px;
+                margin: 10px 0;
+            }
+            .score {
+                padding: 5px;
+            }
+            .score-label {
+                font-size: 0.8em;
+            }
+            .score-value {
+                font-size: 1.5em;
+            }
+            .status {
+                font-size: 1.1em;
+                margin: 15px 0;
+                padding: 10px;
+                min-height: 50px;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 0.95em;
+                flex: 1;
+            }
+            .btn-container {
+                gap: 10px;
+                margin-top: 15px;
+            }
+            .bg-indicator {
+                bottom: 5px;
+                right: 10px;
+                padding: 5px 8px;
+                font-size: 0.75em;
+            }
         }
     </style>
 </head>
