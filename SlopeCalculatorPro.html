@@ -331,6 +331,14 @@
             <button class="btn btn-primary" onclick="calculateMode4()">Calculate Slopes</button>
             <button class="btn btn-secondary" onclick="clearMode4()">Clear</button>
           </div>
+          <div class="input-group" style="margin-top:10px;">
+            <label>Boundaries Linear Interpolation <span id="m4_snap_label" style="color:var(--text-muted);font-weight:normal;">(off — line bends at each user point)</span></label>
+            <div class="btn-row">
+              <button class="btn btn-secondary" id="m4SnapLowBtn" onclick="setM4Snap('low')" title="Backward Projection. The line passes through every user point but only bends at the LOW edge of its cell. The boundary Y at the low edge is computed by extending the OUTGOING slope (toward the next vertex) backward through the user point.">← Backward Projection</button>
+              <button class="btn btn-secondary" id="m4SnapHighBtn" onclick="setM4Snap('high')" title="Forward Projection. The line passes through every user point but only bends at the HIGH edge of its cell. The boundary Y at the high edge is computed by extending the INCOMING slope (from the previous vertex) through the user point.">Forward Projection →</button>
+              <button class="btn btn-secondary" id="m4SnapResetBtn" onclick="setM4Snap('none')" title="Reset to regular interpolation (line bends at every user point).">Reset</button>
+            </div>
+          </div>
           <div id="m4_results" style="margin-top:12px;"></div>
         </div>
       </div>
@@ -377,7 +385,10 @@ const state = {
   mode: 0, lines: [], dataPoints: [], sectionLines: [],
   mouseX: 0, mouseY: 0, panX: 0, panY: 0, zoom: 1,
   isDragging: false, dragStartX: 0, dragStartY: 0, panStartX: 0, panStartY: 0,
-  scaleX: 10, scaleY: 10
+  scaleX: 10, scaleY: 10,
+  // Mode 4 snap-to-grid mode: 'none' = use raw X, 'high' = snap each user X to
+  // the upper edge of its segment, 'low' = snap to the lower edge.
+  m4Snap: 'none'
 };
 
 const COLORS = {
@@ -995,7 +1006,11 @@ function calculateMode4() {
     let x = parseFloat(xEl.value);
     if (isNaN(x)) x = (a + b) / 2;
     if (x < a || x > b) { x = Math.min(Math.max(x, a), b); xEl.value = x; }
-    filled.push({ seg: i + 1, x, y });
+    // Keep the raw user X. Snap modes do NOT move the user point — instead
+    // they compute fresh boundary points so the polyline still passes through
+    // this (x, y) but only bends at cell edges. segMin/segMax let us locate
+    // the cell during polyline construction below.
+    filled.push({ seg: i + 1, x, y, segMin: a, segMax: b });
   }
 
   if (filled.length < 1) {
@@ -1003,10 +1018,89 @@ function calculateMode4() {
     return;
   }
 
-  // Sort user points by X and prepend the fixed (0,0) anchor (unless the user
-  // already provided a point at x=0).
+  // Sort user points by X.
   filled.sort((p, q) => p.x - q.x);
-  const poly = (filled[0].x === 0) ? filled.slice() : [{ seg: 0, x: 0, y: 0 }, ...filled];
+
+  // Build the polyline. Three snap modes:
+  //   'none' — vertices are (0,0) + every user point. Line bends at each user
+  //            point (original linear-interpolation behavior).
+  //   'high' — "From Before". Vertices are (0,0) + the HIGH edge of every cell
+  //            containing a user point. Each high-edge Y is computed by
+  //            extending the slope coming IN (from the previous vertex) through
+  //            the user point. The line passes through every user point but
+  //            only bends at the high cell edge.
+  //   'low'  — "From After". Vertices are (0,0) + the LOW edge of every cell
+  //            containing a user point + (scaleX, extrapolated). Each low-edge
+  //            Y is computed by extending the slope going OUT (toward the next
+  //            vertex) backward through the user point. The line passes through
+  //            every user point but only bends at the low cell edge.
+  let poly;
+  if (state.m4Snap === 'high') {
+    poly = [];
+    let prevX = 0, prevY = 0;
+    let startIdx = 0;
+    if (filled[0].x === 0) {
+      // User-supplied (0, y) acts as the starting anchor.
+      prevY = filled[0].y;
+      poly.push({ seg: filled[0].seg, x: 0, y: prevY });
+      startIdx = 1;
+    } else {
+      poly.push({ seg: 0, x: 0, y: 0 });
+    }
+    for (let i = startIdx; i < filled.length; i++) {
+      const p = filled[i];
+      const dx = p.x - prevX;
+      const slope = dx !== 0 ? (p.y - prevY) / dx : 0;
+      const bX = p.segMax;
+      const bY = +(p.y + slope * (bX - p.x)).toFixed(6);
+      poly.push({ seg: p.seg, x: bX, y: bY });
+      prevX = bX; prevY = bY;
+    }
+  } else if (state.m4Snap === 'low') {
+    // Build vertices in reverse from the right end.
+    const n = filled.length;
+    const last = filled[n - 1];
+    let lastSlope = 0;
+    if (n >= 2) {
+      const prev = filled[n - 2];
+      const dx = last.x - prev.x;
+      if (dx !== 0) lastSlope = (last.y - prev.y) / dx;
+    } else if (last.x !== 0) {
+      lastSlope = last.y / last.x;
+    }
+    const rev = [];
+    let nextX, nextY;
+    if (last.x < state.scaleX) {
+      nextX = state.scaleX;
+      nextY = +(last.y + lastSlope * (state.scaleX - last.x)).toFixed(6);
+      rev.push({ seg: 0, x: nextX, y: nextY });
+    } else {
+      nextX = last.x; nextY = last.y;
+      rev.push({ seg: last.seg, x: nextX, y: nextY });
+    }
+    const startFrom = (last.x < state.scaleX) ? n - 1 : n - 2;
+    for (let i = startFrom; i >= 0; i--) {
+      const p = filled[i];
+      const dx = nextX - p.x;
+      const slope = dx !== 0 ? (nextY - p.y) / dx : 0;
+      const aX = p.segMin;
+      const aY = +(p.y - slope * (p.x - aX)).toFixed(6);
+      rev.push({ seg: p.seg, x: aX, y: aY });
+      nextX = aX; nextY = aY;
+    }
+    // Cap the left end with the (0,0) anchor.
+    const leftMost = rev[rev.length - 1];
+    if (leftMost.x > 0) {
+      rev.push({ seg: 0, x: 0, y: 0 });
+    } else {
+      rev[rev.length - 1] = { seg: 0, x: 0, y: 0 };
+    }
+    poly = rev.reverse();
+  } else {
+    // 'none' — original behavior: anchor (0,0) prepended unless the user
+    // already provided a point at x=0.
+    poly = (filled[0].x === 0) ? filled.slice() : [{ seg: 0, x: 0, y: 0 }, ...filled];
+  }
 
   // Linear interpolation along the polyline; extrapolate past the last user point
   // using the slope of the final user segment.
@@ -1130,8 +1224,44 @@ function calculateMode4() {
 function clearMode4() {
   document.getElementById('m4_results').innerHTML = '';
   state.lines = []; state.dataPoints = []; state.sectionLines = [];
+  setM4Snap('none', /*skipRecalc=*/true);
   generateMode4Inputs();
   draw();
+}
+
+// Switch the Mode 4 snap-to-boundary mode and (by default) re-run the slope
+// calculation so the visualization updates immediately. Modes:
+//   'none' — use the raw X the user typed (default / reset).
+//   'low'  — snap each user point's X to the LOW edge of its segment.
+//   'high' — snap each user point's X to the HIGH edge of its segment.
+function setM4Snap(mode, skipRecalc) {
+  if (mode !== 'low' && mode !== 'high' && mode !== 'none') mode = 'none';
+  state.m4Snap = mode;
+  const lowBtn   = document.getElementById('m4SnapLowBtn');
+  const highBtn  = document.getElementById('m4SnapHighBtn');
+  const resetBtn = document.getElementById('m4SnapResetBtn');
+  const label    = document.getElementById('m4_snap_label');
+  // Highlight the active snap button by swapping it to btn-primary.
+  [lowBtn, highBtn, resetBtn].forEach(b => {
+    if (!b) return;
+    b.classList.remove('btn-primary');
+    b.classList.add('btn-secondary');
+  });
+  if (mode === 'low'  && lowBtn)   { lowBtn.classList.add('btn-primary');   lowBtn.classList.remove('btn-secondary'); }
+  if (mode === 'high' && highBtn)  { highBtn.classList.add('btn-primary');  highBtn.classList.remove('btn-secondary'); }
+  if (mode === 'none' && resetBtn) { resetBtn.classList.add('btn-primary'); resetBtn.classList.remove('btn-secondary'); }
+  if (label) {
+    label.textContent =
+      mode === 'high' ? '(Forward Projection — bend at HIGH cell edge, line still passes through user points)' :
+      mode === 'low'  ? '(Backward Projection — bend at LOW cell edge, line still passes through user points)'  :
+                        '(off — line bends at each user point)';
+  }
+  // Re-run the calc only if results are already on screen (otherwise the user
+  // hasn't asked for a calculation yet and we shouldn't trigger one).
+  if (!skipRecalc) {
+    const results = document.getElementById('m4_results');
+    if (results && results.innerHTML.trim() !== '') calculateMode4();
+  }
 }
 
 // ========== HELPERS ==========
