@@ -1723,6 +1723,11 @@
                                 <span style="font-size: 0.85rem; color: var(--text-muted);">Soplado Rule:</span>
                                 <input type="checkbox" id="rule-soplado" checked style="width: 16px; height: 16px;">
                             </div>
+                            <div id="predictive-preview-row"
+                                style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">Predict Landing:</span>
+                                <input type="checkbox" id="predictive-preview" checked style="width: 16px; height: 16px;">
+                            </div>
                         </div>
                     </div>
 
@@ -2289,6 +2294,7 @@
         let playDiceCount = 2; // 1 or 2
         let configEmptyNestActive = true; // Toggle for 6 becomes 7 (Cuban only)
         let configSopladoActive = true; // Toggle for missed capture penalty (PR only)
+        let configPredictivePreviewActive = true; // Toggle landing ghost previews.
 
         let players = [];
         let activeTurn = 0;
@@ -2304,6 +2310,7 @@
         let speedMs = 800; // AI turn delay
         let isFirstRollOfTurn = true;
         let isAnimating = false; // Prevents double click movement bugs
+        let selectedLandingPreviewPawn = null; // Touch screens: first tap previews, second tap moves.
 
         // Soplado logic variables
         let sopladoCandidate = null; // Stores { playerIdx, pawnId, rollValue, startSpaceId, targetSpaceId } if capture was missed
@@ -3362,6 +3369,7 @@
         function selectDie(dIdx) {
             if (gameState !== 'waiting_for_move') return;
             if (diceState[dIdx].used) return;
+            resetLandingPreview();
 
             const roll = diceState[dIdx].val;
             const hasLegal = players[activeTurn].pawns.some((p, idx) => canPawnMove(activeTurn, idx, roll));
@@ -3450,7 +3458,31 @@
             if (ghost) ghost.remove();
         }
 
+        function resetLandingPreview() {
+            selectedLandingPreviewPawn = null;
+            clearLandingGhost();
+        }
+
+        function usesTapLandingPreview() {
+            return configPredictivePreviewActive && window.matchMedia('(hover: none)').matches;
+        }
+
+        function isSelectedLandingPreviewPawn(pawn) {
+            return selectedLandingPreviewPawn &&
+                selectedLandingPreviewPawn.playerIndex === pawn.playerIndex &&
+                selectedLandingPreviewPawn.id === pawn.id;
+        }
+
+        function selectLandingPreviewPawn(pawn) {
+            selectedLandingPreviewPawn = {
+                playerIndex: pawn.playerIndex,
+                id: pawn.id
+            };
+            showLandingGhost(pawn);
+        }
+
         function getPreviewRollForPawn(pawn) {
+            if (!configPredictivePreviewActive) return null;
             if (gameState !== 'waiting_for_move' || players[activeTurn].type !== 'human') return null;
             if (pawn.playerIndex !== activeTurn) return null;
 
@@ -3541,6 +3573,7 @@
 
         // Draw Pawns in SVG layer
         function renderPawns() {
+            resetLandingPreview();
             const container = document.getElementById('pawns-layer');
             container.innerHTML = '';
 
@@ -3643,6 +3676,14 @@
 
                             const isActive = g.classList.contains('pawn-active');
                             if (isActive) {
+                                if (usesTapLandingPreview()) {
+                                    if (!isSelectedLandingPreviewPawn(pawn)) {
+                                        selectLandingPreviewPawn(pawn);
+                                        return;
+                                    }
+                                    resetLandingPreview();
+                                }
+
                                 if (activeBonusMoveValue > 0) {
                                     const moveVal = activeBonusMoveValue;
                                     activeBonusMoveValue = 0; // Reset before executing to prevent double clicks
@@ -3667,6 +3708,7 @@
                                     }
                                 }
                             } else {
+                                resetLandingPreview();
                                 // show warning explanation
                                 let rollVal = diceState.filter(d => !d.used).map(d => d.val)[0] || 0;
                                 if (activeBonusMoveValue > 0) rollVal = activeBonusMoveValue;
@@ -3817,6 +3859,8 @@
             playDiceCount = parseInt(document.getElementById('dice-count-select').value) || 2;
             configEmptyNestActive = document.getElementById('rule-empty-nest').checked;
             configSopladoActive = document.getElementById('rule-soplado').checked;
+            configPredictivePreviewActive = document.getElementById('predictive-preview').checked;
+            resetLandingPreview();
 
             players = [];
             colors.forEach((color, idx) => {
@@ -3960,6 +4004,11 @@
             if (gameState === 'waiting_for_move' && players[activeTurn].type === 'human' && diceState.length > 3) {
                 selectDie(3);
             }
+        });
+
+        document.getElementById('predictive-preview').addEventListener('change', (event) => {
+            configPredictivePreviewActive = event.target.checked;
+            if (!configPredictivePreviewActive) resetLandingPreview();
         });
 
         // Initialize board
