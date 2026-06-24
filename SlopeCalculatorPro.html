@@ -333,10 +333,11 @@
           </div>
           <div class="input-group" style="margin-top:10px;">
             <label>Boundaries Linear Interpolation <span id="m4_snap_label" style="color:var(--text-muted);font-weight:normal;">(off — line bends at each user point)</span></label>
-            <div class="btn-row">
+            <div class="btn-row" style="flex-wrap:wrap;">
               <button class="btn btn-secondary" id="m4SnapLowBtn" onclick="setM4Snap('low')" title="Backward Projection. The line passes through every user point but only bends at the LOW edge of its cell. The boundary Y at the low edge is computed by extending the OUTGOING slope (toward the next vertex) backward through the user point.">← Backward Projection</button>
+              <button class="btn btn-secondary" id="m4SnapSmoothBtn" style="color:var(--accent-green);" onclick="setM4Snap('smooth')" title="Smooth Interpolation. For each user point, the preceding slope (from the previous vertex/anchor) and the proceeding slope (to the next vertex) are averaged into a smoothed slope that still passes through the user point. That smoothed slope is projected to BOTH cell edges, so the boundary Y values are chosen to smooth the transition between the two neighbouring slopes. The preceding and proceeding line segments are then recomputed so they hit those new boundary points.">↯ Smooth Interpolation ↯</button>
               <button class="btn btn-secondary" id="m4SnapHighBtn" onclick="setM4Snap('high')" title="Forward Projection. The line passes through every user point but only bends at the HIGH edge of its cell. The boundary Y at the high edge is computed by extending the INCOMING slope (from the previous vertex) through the user point.">Forward Projection →</button>
-              <button class="btn btn-secondary" id="m4SnapResetBtn" onclick="setM4Snap('none')" title="Reset to regular interpolation (line bends at every user point).">Reset</button>
+              <button class="btn btn-secondary" id="m4SnapResetBtn" style="color:var(--accent-red);" onclick="setM4Snap('none')" title="Reset to regular interpolation (line bends at every user point).">Reset</button>
             </div>
           </div>
           <div id="m4_results" style="margin-top:12px;"></div>
@@ -1096,6 +1097,83 @@ function calculateMode4() {
       rev[rev.length - 1] = { seg: 0, x: 0, y: 0 };
     }
     poly = rev.reverse();
+  } else if (state.m4Snap === 'smooth') {
+    // 'smooth' — Smooth Interpolation. For each user point P_i in cell
+    // [a_i, b_i] we compute:
+    //   m_in  = preceding slope (from previous vertex or (0,0) anchor to P_i)
+    //   m_out = proceeding slope (from P_i to the next vertex)
+    //   m_avg = (m_in + m_out) / 2     ← smoothed slope through P_i
+    // We then project that smoothed slope from P_i to BOTH cell edges to get
+    // boundary points B_low(P_i) and B_high(P_i). The line therefore passes
+    // through P_i with one consistent slope (no bend at the user point) and
+    // only bends at cell edges. When two neighbouring user points share a
+    // cell boundary (high edge of left cell == low edge of right cell), the
+    // two candidate Y values for that shared edge are averaged so the
+    // polyline stays single-valued at that X. After construction, the
+    // segment slopes flanking each user point — i.e. (P_i − B_low) and
+    // (B_high − P_i) — are exactly m_avg, the smoothed slope; that is the
+    // "preceding / proceeding slope recalculated so they hit the new
+    // boundary point" the user asked for.
+    const n = filled.length;
+    const smoothSlopes = [];
+    for (let i = 0; i < n; i++) {
+      const p = filled[i];
+      let mIn = null;
+      if (i === 0) {
+        if (p.x !== 0) mIn = p.y / p.x;             // anchor (0,0) is the previous vertex
+      } else {
+        const q = filled[i - 1];
+        const dx = p.x - q.x;
+        if (dx !== 0) mIn = (p.y - q.y) / dx;
+      }
+      let mOut = null;
+      if (i < n - 1) {
+        const q = filled[i + 1];
+        const dx = q.x - p.x;
+        if (dx !== 0) mOut = (q.y - p.y) / dx;
+      }
+      let m;
+      if (mIn !== null && mOut !== null) m = (mIn + mOut) / 2;
+      else if (mIn  !== null)            m = mIn;
+      else if (mOut !== null)            m = mOut;
+      else                                m = 0;
+      smoothSlopes.push(m);
+    }
+    poly = [];
+    // Anchor (0,0) unless the user already put a point at x=0.
+    if (filled[0].x !== 0) {
+      poly.push({ seg: 0, x: 0, y: 0 });
+    }
+    const EPS = 1e-9;
+    for (let i = 0; i < n; i++) {
+      const p   = filled[i];
+      const m   = smoothSlopes[i];
+      const lowX  = p.segMin;
+      const highX = p.segMax;
+      const lowY  = +(p.y + m * (lowX  - p.x)).toFixed(6);
+      const highY = +(p.y + m * (highX - p.x)).toFixed(6);
+      // Push low-edge boundary (or merge with previous vertex if X coincides).
+      const lastIdx = poly.length - 1;
+      const lastV   = poly[lastIdx];
+      if (lowX > lastV.x + EPS) {
+        poly.push({ seg: p.seg, x: lowX, y: lowY });
+      } else if (Math.abs(lowX - lastV.x) <= EPS) {
+        // Shared boundary with previous cell's high edge — average Y values to
+        // keep the polyline single-valued and smooth the transition.
+        lastV.y = +((lastV.y + lowY) / 2).toFixed(6);
+        lastV.seg = p.seg;
+      }
+      // Push the user point itself (skip if it coincides with the low edge).
+      const lastV2 = poly[poly.length - 1];
+      if (p.x > lastV2.x + EPS) {
+        poly.push({ seg: p.seg, x: p.x, y: p.y });
+      }
+      // Push high-edge boundary (skip if it coincides with the user point).
+      const lastV3 = poly[poly.length - 1];
+      if (highX > lastV3.x + EPS) {
+        poly.push({ seg: p.seg, x: highX, y: highY });
+      }
+    }
   } else {
     // 'none' — original behavior: anchor (0,0) prepended unless the user
     // already provided a point at x=0.
@@ -1235,26 +1313,29 @@ function clearMode4() {
 //   'low'  — snap each user point's X to the LOW edge of its segment.
 //   'high' — snap each user point's X to the HIGH edge of its segment.
 function setM4Snap(mode, skipRecalc) {
-  if (mode !== 'low' && mode !== 'high' && mode !== 'none') mode = 'none';
+  if (mode !== 'low' && mode !== 'high' && mode !== 'smooth' && mode !== 'none') mode = 'none';
   state.m4Snap = mode;
-  const lowBtn   = document.getElementById('m4SnapLowBtn');
-  const highBtn  = document.getElementById('m4SnapHighBtn');
-  const resetBtn = document.getElementById('m4SnapResetBtn');
-  const label    = document.getElementById('m4_snap_label');
+  const lowBtn    = document.getElementById('m4SnapLowBtn');
+  const highBtn   = document.getElementById('m4SnapHighBtn');
+  const smoothBtn = document.getElementById('m4SnapSmoothBtn');
+  const resetBtn  = document.getElementById('m4SnapResetBtn');
+  const label     = document.getElementById('m4_snap_label');
   // Highlight the active snap button by swapping it to btn-primary.
-  [lowBtn, highBtn, resetBtn].forEach(b => {
+  [lowBtn, highBtn, smoothBtn, resetBtn].forEach(b => {
     if (!b) return;
     b.classList.remove('btn-primary');
     b.classList.add('btn-secondary');
   });
-  if (mode === 'low'  && lowBtn)   { lowBtn.classList.add('btn-primary');   lowBtn.classList.remove('btn-secondary'); }
-  if (mode === 'high' && highBtn)  { highBtn.classList.add('btn-primary');  highBtn.classList.remove('btn-secondary'); }
-  if (mode === 'none' && resetBtn) { resetBtn.classList.add('btn-primary'); resetBtn.classList.remove('btn-secondary'); }
+  if (mode === 'low'    && lowBtn)    { lowBtn.classList.add('btn-primary');    lowBtn.classList.remove('btn-secondary');    }
+  if (mode === 'high'   && highBtn)   { highBtn.classList.add('btn-primary');   highBtn.classList.remove('btn-secondary');   }
+  if (mode === 'smooth' && smoothBtn) { smoothBtn.classList.add('btn-primary'); smoothBtn.classList.remove('btn-secondary'); }
+  if (mode === 'none'   && resetBtn)  { resetBtn.classList.add('btn-primary');  resetBtn.classList.remove('btn-secondary');  }
   if (label) {
     label.textContent =
-      mode === 'high' ? '(Forward Projection — bend at HIGH cell edge, line still passes through user points)' :
-      mode === 'low'  ? '(Backward Projection — bend at LOW cell edge, line still passes through user points)'  :
-                        '(off — line bends at each user point)';
+      mode === 'high'   ? '(Forward Projection — bend at HIGH cell edge, line still passes through user points)' :
+      mode === 'low'    ? '(Backward Projection — bend at LOW cell edge, line still passes through user points)'  :
+      mode === 'smooth' ? '(Smooth Interpolation — averaged slope through each user point, bends only at cell edges)' :
+                          '(off — line bends at each user point)';
   }
   // Re-run the calc only if results are already on screen (otherwise the user
   // hasn't asked for a calculation yet and we shouldn't trigger one).
