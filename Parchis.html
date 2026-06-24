@@ -14,6 +14,7 @@
 
     <style>
         :root {
+            color-scheme: dark;
             --bg-dark: #0f121d;
             --bg-card: rgba(25, 30, 48, 0.65);
             --border-card: rgba(255, 255, 255, 0.08);
@@ -448,7 +449,7 @@
         }
 
         .player-type-select {
-            background: rgba(0, 0, 0, 0.4);
+            background: #111422;
             border: 1px solid var(--border-card);
             color: var(--text-main);
             padding: 0.5rem;
@@ -457,6 +458,23 @@
             outline: none;
             cursor: pointer;
             font-size: 0.9rem;
+            color-scheme: dark;
+            transition: all 0.2s ease;
+        }
+
+        .player-type-select:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            background: #191e32;
+        }
+
+        .player-type-select:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+        }
+
+        .player-type-select option {
+            background-color: #0f121d;
+            color: var(--text-main);
         }
 
         /* Dashboard turn state */
@@ -553,7 +571,8 @@
             transform-style: preserve-3d;
             display: none;
             z-index: 30;
-            pointer-events: none;
+            pointer-events: auto;
+            cursor: pointer;
             animation: question-float 2.5s ease-in-out infinite;
         }
 
@@ -1562,6 +1581,8 @@
         #rule-notification.show {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+            cursor: pointer;
         }
 
         #rule-notification .rule-icon {
@@ -1944,9 +1965,17 @@
             }
 
             init() {
-                if (this.ctx) return;
+                if (this.ctx) {
+                    if (this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                    return;
+                }
                 try {
                     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    if (this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
                 } catch (e) {
                     console.error("AudioContext not supported", e);
                 }
@@ -1958,8 +1987,9 @@
             }
 
             playRoll() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
                 let duration = 0.3;
                 let osc = this.ctx.createOscillator();
@@ -1978,8 +2008,9 @@
             }
 
             playMove() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
                 let osc = this.ctx.createOscillator();
                 let gain = this.ctx.createGain();
@@ -1997,8 +2028,9 @@
             }
 
             playCapture() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
 
                 let osc = this.ctx.createOscillator();
@@ -2028,8 +2060,9 @@
             }
 
             playExit() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
                 let osc = this.ctx.createOscillator();
                 let gain = this.ctx.createGain();
@@ -2047,8 +2080,9 @@
             }
 
             playBlock() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
                 let osc = this.ctx.createOscillator();
                 let gain = this.ctx.createGain();
@@ -2066,8 +2100,9 @@
             }
 
             playWin() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
                 const playBeep = (freq, startOffset, duration) => {
                     let osc = this.ctx.createOscillator();
@@ -2087,8 +2122,9 @@
             }
 
             playGameOver() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
                 const playBeep = (freq, startOffset, duration) => {
                     let osc = this.ctx.createOscillator();
@@ -2883,9 +2919,6 @@
                     if (roll === 0) {
                         // sum of 5 exit consumed all rolls
                         diceState.forEach(d => d.used = true);
-                        if (players[playerIdx].type === 'human') {
-                            showRuleInfoNotification("Combination exit: both dice summed to 5, so the pawn left the nest and both dice were consumed.");
-                        }
                     }
                     // For roll > 0, the caller has already marked its specific die used.
                     // Do NOT consume another matching die here (with doubles like 5-5 that
@@ -3691,6 +3724,36 @@
         // Setup actions listeners
         document.getElementById('start-game-btn').addEventListener('click', startNewMatch);
         document.getElementById('roll-btn').addEventListener('click', rollDiceAction);
+
+        // Click on the frosted question mark cube to roll
+        const qMarkEl = document.getElementById('dice-question-mark');
+        if (qMarkEl) {
+            qMarkEl.addEventListener('click', () => {
+                if (gameState === 'waiting_for_roll' && players[activeTurn].type === 'human') {
+                    rollDiceAction();
+                }
+            });
+        }
+
+        // Tapping/clicking on the rule notification/explanation banner dismisses it immediately
+        window.addEventListener('DOMContentLoaded', () => {
+            const notificationEl = document.getElementById('rule-notification');
+            if (notificationEl) {
+                const dismissNotification = () => {
+                    notificationEl.classList.remove('show');
+                    notificationEl.classList.remove('info');
+                    if (ruleNotifyTimeout) {
+                        clearTimeout(ruleNotifyTimeout);
+                        ruleNotifyTimeout = null;
+                    }
+                };
+                notificationEl.addEventListener('click', dismissNotification);
+                notificationEl.addEventListener('touchstart', (e) => {
+                    dismissNotification();
+                    e.preventDefault();
+                }, { passive: false });
+            }
+        });
         document.getElementById('play-again-btn').addEventListener('click', () => {
             document.getElementById('gameover-overlay').classList.remove('active');
             document.getElementById('setup-screen').style.display = 'block';
