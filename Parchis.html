@@ -2157,6 +2157,7 @@
                     if (sounds.ctx.state === 'running') {
                         window.removeEventListener('click', unlockAudio);
                         window.removeEventListener('touchend', unlockAudio);
+                        window.removeEventListener('touchstart', unlockAudio);
                     }
                 }).catch(e => console.warn(e));
 
@@ -2173,6 +2174,7 @@
         }
         window.addEventListener('click', unlockAudio);
         window.addEventListener('touchend', unlockAudio);
+        window.addEventListener('touchstart', unlockAudio);
 
         // Sound button toggle
         document.getElementById('sound-btn').addEventListener('click', () => {
