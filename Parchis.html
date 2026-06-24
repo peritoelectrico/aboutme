@@ -2151,22 +2151,34 @@
 
         // One-time listeners to unlock web audio on mobile devices
         function unlockAudio() {
-            sounds.init();
+            if (!sounds.ctx) {
+                try {
+                    sounds.init();
+                } catch (e) {
+                    return;
+                }
+            }
             if (sounds.ctx) {
                 sounds.ctx.resume().then(() => {
                     if (sounds.ctx.state === 'running') {
                         window.removeEventListener('click', unlockAudio);
                         window.removeEventListener('touchend', unlockAudio);
                         window.removeEventListener('touchstart', unlockAudio);
+                        window.removeEventListener('touchmove', unlockAudio);
+                        window.removeEventListener('touchcancel', unlockAudio);
                     }
-                }).catch(e => console.warn(e));
+                }).catch(e => {
+                    console.warn('AudioContext resume failed:', e);
+                });
 
                 try {
-                    const buffer = sounds.ctx.createBuffer(1, 1, 22050);
-                    const source = sounds.ctx.createBufferSource();
-                    source.buffer = buffer;
-                    source.connect(sounds.ctx.destination);
-                    source.start(0);
+                    if (sounds.ctx.state === 'running') {
+                        const buffer = sounds.ctx.createBuffer(1, 1, 22050);
+                        const source = sounds.ctx.createBufferSource();
+                        source.buffer = buffer;
+                        source.connect(sounds.ctx.destination);
+                        source.start(0);
+                    }
                 } catch (e) {
                     console.warn("Failed to play silent buffer", e);
                 }
@@ -2175,6 +2187,8 @@
         window.addEventListener('click', unlockAudio);
         window.addEventListener('touchend', unlockAudio);
         window.addEventListener('touchstart', unlockAudio);
+        window.addEventListener('touchmove', unlockAudio);
+        window.addEventListener('touchcancel', unlockAudio);
 
         // Sound button toggle
         document.getElementById('sound-btn').addEventListener('click', () => {
