@@ -348,6 +348,32 @@
             stroke-width: 2.5 !important;
         }
 
+        .pawn-landing-ghost {
+            pointer-events: none;
+            opacity: 0.78;
+            filter: drop-shadow(0 0 18px currentColor);
+        }
+
+        .pawn-landing-ghost .ghost-ring {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 4;
+            stroke-dasharray: 6 5;
+            opacity: 0.9;
+        }
+
+        .pawn-landing-ghost .ghost-body {
+            fill: currentColor;
+            stroke: #fff;
+            stroke-width: 1.5;
+            opacity: 0.35;
+        }
+
+        .pawn-landing-ghost .ghost-shine {
+            fill: rgba(255, 255, 255, 0.65);
+            opacity: 0.8;
+        }
+
         @keyframes pawn-bounce {
             0% {
                 transform: translateY(0);
@@ -3419,6 +3445,100 @@
             });
         }
 
+        function clearLandingGhost() {
+            const ghost = document.getElementById('pawn-landing-ghost');
+            if (ghost) ghost.remove();
+        }
+
+        function getPreviewRollForPawn(pawn) {
+            if (gameState !== 'waiting_for_move' || players[activeTurn].type !== 'human') return null;
+            if (pawn.playerIndex !== activeTurn) return null;
+
+            if (activeBonusMoveValue > 0) {
+                return canPawnMove(activeTurn, pawn.id, activeBonusMoveValue) ? activeBonusMoveValue : null;
+            }
+
+            if (pawn.pathIndex === -1 && canExitNestWithCombination(activeTurn)) {
+                return 0;
+            }
+
+            if (currentMovingRollIndex !== -1) {
+                const roll = diceState[currentMovingRollIndex]?.val;
+                return roll !== undefined && canPawnMove(activeTurn, pawn.id, roll) ? roll : null;
+            }
+
+            const playableDie = diceState.find(d => !d.used && canPawnMove(activeTurn, pawn.id, d.val));
+            return playableDie ? playableDie.val : null;
+        }
+
+        function getLandingSpaceForPreview(playerIdx, pawnId, roll) {
+            const player = players[playerIdx];
+            const pawn = player.pawns[pawnId];
+
+            if (pawn.pathIndex === -1) {
+                return roll === 0 || roll === 5 ? startSpaces[playerIdx].toString() : null;
+            }
+
+            return player.path[pawn.pathIndex + roll] || null;
+        }
+
+        function showLandingGhost(pawn) {
+            clearLandingGhost();
+
+            const roll = getPreviewRollForPawn(pawn);
+            if (roll === null) return;
+
+            const landingSpaceId = getLandingSpaceForPreview(pawn.playerIndex, pawn.id, roll);
+            const coords = landingSpaceId ? getCoordsForSpaceId(landingSpaceId) : null;
+            const container = document.getElementById('pawns-layer');
+            if (!coords || !container) return;
+
+            const x = coords.c * 50 + 25;
+            const y = coords.r * 50 + 25;
+            const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            group.setAttribute('id', 'pawn-landing-ghost');
+            group.setAttribute('class', 'pawn-landing-ghost');
+            group.setAttribute('color', pawn.color);
+            group.style.color = `var(--${pawn.color}-main)`;
+
+            const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            ring.setAttribute('class', 'ghost-ring');
+            ring.setAttribute('cx', x);
+            ring.setAttribute('cy', y);
+            ring.setAttribute('r', 23);
+            group.appendChild(ring);
+
+            const body = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            body.setAttribute('class', 'ghost-body');
+            body.setAttribute('cx', x);
+            body.setAttribute('cy', y);
+            body.setAttribute('r', 15);
+            group.appendChild(body);
+
+            const shine = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            shine.setAttribute('class', 'ghost-shine');
+            shine.setAttribute('cx', x - 5);
+            shine.setAttribute('cy', y - 5);
+            shine.setAttribute('r', 4.5);
+            group.appendChild(shine);
+
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', x);
+            label.setAttribute('y', y + 36);
+            label.setAttribute('font-size', '12px');
+            label.setAttribute('font-family', 'Space Grotesk');
+            label.setAttribute('font-weight', '700');
+            label.setAttribute('fill', '#fff');
+            label.setAttribute('text-anchor', 'middle');
+            label.setAttribute('paint-order', 'stroke');
+            label.setAttribute('stroke', 'rgba(15,18,29,0.9)');
+            label.setAttribute('stroke-width', '4');
+            label.textContent = roll === 0 ? '5' : roll;
+            group.appendChild(label);
+
+            container.appendChild(group);
+        }
+
         // Draw Pawns in SVG layer
         function renderPawns() {
             const container = document.getElementById('pawns-layer');
@@ -3478,6 +3598,7 @@
                     g.setAttribute('id', `pawn-g-${pawn.playerIndex}-${pawn.id}`);
                     g.setAttribute('class', 'pawn-glow');
                     g.setAttribute('color', pawn.color);
+                    g.setAttribute('tabindex', '0');
                     g.style.transformOrigin = `${px}px ${py}px`;
 
                     // Invisible enlarged hit-area for finger taps on mobile.
@@ -3507,6 +3628,13 @@
                     shine.setAttribute('r', radius / 3.5);
                     shine.setAttribute('fill', 'rgba(255, 255, 255, 0.45)');
                     g.appendChild(shine);
+
+                    g.addEventListener('mouseenter', () => {
+                        if (window.matchMedia('(hover: hover)').matches) showLandingGhost(pawn);
+                    });
+                    g.addEventListener('mouseleave', clearLandingGhost);
+                    g.addEventListener('focus', () => showLandingGhost(pawn));
+                    g.addEventListener('blur', clearLandingGhost);
 
                     g.addEventListener('click', () => {
                         if (isAnimating) return; // Block clicks during animations!
