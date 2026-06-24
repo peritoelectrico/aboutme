@@ -2147,6 +2147,28 @@
 
         const sounds = new SoundEngine();
 
+        // One-time listeners to unlock web audio on mobile devices
+        function unlockAudio() {
+            sounds.init();
+            if (sounds.ctx) {
+                try {
+                    const buffer = sounds.ctx.createBuffer(1, 1, 22050);
+                    const source = sounds.ctx.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(sounds.ctx.destination);
+                    source.start(0);
+                } catch (e) {
+                    console.warn("Failed to play silent buffer", e);
+                }
+            }
+            window.removeEventListener('click', unlockAudio);
+            window.removeEventListener('touchstart', unlockAudio, { passive: true });
+            window.removeEventListener('touchend', unlockAudio);
+        }
+        window.addEventListener('click', unlockAudio);
+        window.addEventListener('touchstart', unlockAudio, { passive: true });
+        window.addEventListener('touchend', unlockAudio);
+
         // Sound button toggle
         document.getElementById('sound-btn').addEventListener('click', () => {
             sounds.init();
