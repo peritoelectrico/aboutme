@@ -2373,7 +2373,7 @@
 
                     // --- AI MOVEMENT ---
                     const speedProgress = getSpeedRangeProgress();
-                    const fastRallyPressure = speedProgress > 0.6 ? (speedProgress - 0.6) / 0.4 : 0;
+                    const fastRallyPressure = speedProgress > 0.4 ? (speedProgress - 0.4) / 0.6 : 0;
                     const humanScorePressure = getHumanScore() / WIN_SCORE;
                     const aiDifficultyBoost = 1 + humanScorePressure * 0.4;
                     const aiMercyFactor = Math.max(0.15, 1 - humanScorePressure * 0.85);
