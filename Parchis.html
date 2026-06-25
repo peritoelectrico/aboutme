@@ -1728,6 +1728,15 @@
                                 <span style="font-size: 0.85rem; color: var(--text-muted);">Predict Landing:</span>
                                 <input type="checkbox" id="predictive-preview" checked style="width: 16px; height: 16px;">
                             </div>
+                            <div id="move-speed-row"
+                                style="display: flex; flex-direction: column; gap: 0.45rem; padding-top: 0.35rem; border-top: 1px solid rgba(255,255,255,0.06);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                                    <span style="font-size: 0.85rem; color: var(--text-muted);">AI Move Speed:</span>
+                                    <span id="move-speed-readout" style="font-size: 0.82rem; color: var(--yellow-main); font-weight: 600;">Fast (80 ms per step)</span>
+                                </div>
+                                <input type="range" id="move-speed-slider" min="1" max="10" step="1" value="10"
+                                    style="width: 100%; accent-color: var(--yellow-main);">
+                            </div>
                         </div>
                     </div>
 
@@ -2327,10 +2336,52 @@
                 this.set(name, '', -1);
             },
             clearGameCookies: function() {
-                const gameCookies = ['parchis_ruleset', 'parchis_player_setup', 'parchis_settings_dice_count', 'parchis_settings_empty_nest', 'parchis_settings_soplado', 'parchis_settings_predictive'];
+                const gameCookies = ['parchis_ruleset', 'parchis_player_setup', 'parchis_settings_dice_count', 'parchis_settings_empty_nest', 'parchis_settings_soplado', 'parchis_settings_predictive', 'parchis_settings_move_speed'];
                 gameCookies.forEach(cookie => this.delete(cookie));
             }
         };
+
+        const MOVE_SPEED_COOKIE = 'parchis_settings_move_speed';
+        const MOVE_SPEED_LEVEL_MIN = 1;
+        const MOVE_SPEED_LEVEL_MAX = 10;
+
+        function getMoveDelayFromLevel(level) {
+            const clampedLevel = Math.max(MOVE_SPEED_LEVEL_MIN, Math.min(MOVE_SPEED_LEVEL_MAX, level));
+            return 80 + ((MOVE_SPEED_LEVEL_MAX - clampedLevel) * 46.6666667);
+        }
+
+        function getMoveSpeedLabel(level) {
+            if (level >= 9) return 'Fast';
+            if (level >= 7) return 'Quick';
+            if (level >= 5) return 'Balanced';
+            if (level >= 3) return 'Slow';
+            return 'Very Slow';
+        }
+
+        function getNoMovePauseMs() {
+            const minStepDelay = 80;
+            const maxStepDelay = 500;
+            const minPauseMs = 800;
+            const maxPauseMs = 3000;
+            const clampedStep = Math.max(minStepDelay, Math.min(maxStepDelay, pawnMoveDelayMs));
+            const t = (clampedStep - minStepDelay) / (maxStepDelay - minStepDelay);
+            return Math.round(minPauseMs + (maxPauseMs - minPauseMs) * t);
+        }
+
+        function updateMoveSpeedUI(level) {
+            const slider = document.getElementById('move-speed-slider');
+            const readout = document.getElementById('move-speed-readout');
+            if (!slider || !readout) return;
+
+            const parsedLevel = Number.isFinite(level) ? level : parseInt(slider.value, 10);
+            const safeLevel = Math.max(MOVE_SPEED_LEVEL_MIN, Math.min(MOVE_SPEED_LEVEL_MAX, parsedLevel || MOVE_SPEED_LEVEL_MAX));
+            const delayMs = Math.round(getMoveDelayFromLevel(safeLevel));
+
+            slider.value = String(safeLevel);
+            readout.textContent = `${getMoveSpeedLabel(safeLevel)} (${delayMs} ms per step)`;
+
+            return delayMs;
+        }
 
         function loadGameSettingsFromCookies() {
             const savedRuleset = Cookie.get('parchis_ruleset');
@@ -2358,6 +2409,12 @@
                 configPredictivePreviewActive = Boolean(savedPredictive);
                 document.getElementById('predictive-preview').checked = savedPredictive;
             }
+            const savedMoveSpeed = Cookie.get(MOVE_SPEED_COOKIE);
+            if (savedMoveSpeed !== null && !Number.isNaN(parseInt(savedMoveSpeed, 10))) {
+                pawnMoveDelayMs = updateMoveSpeedUI(parseInt(savedMoveSpeed, 10)) || pawnMoveDelayMs;
+            } else {
+                pawnMoveDelayMs = updateMoveSpeedUI(MOVE_SPEED_LEVEL_MAX) || pawnMoveDelayMs;
+            }
             const savedPlayers = Cookie.get('parchis_player_setup');
             if (savedPlayers && Array.isArray(savedPlayers) && savedPlayers.length === 4) {
                 savedPlayers.forEach((playerData, idx) => {
@@ -2377,8 +2434,9 @@
             Cookie.set('parchis_settings_empty_nest', configEmptyNestActive);
             Cookie.set('parchis_settings_soplado', configSopladoActive);
             Cookie.set('parchis_settings_predictive', configPredictivePreviewActive);
-            const playerSetup = players.map(p => ({ name: p.name, type: p.type, color: p.color }));
-            Cookie.set('parchis_player_setup', playerSetup);
+            const moveSpeedSlider = document.getElementById('move-speed-slider');
+            const moveSpeedLevel = moveSpeedSlider ? Math.max(MOVE_SPEED_LEVEL_MIN, Math.min(MOVE_SPEED_LEVEL_MAX, parseInt(moveSpeedSlider.value, 10) || MOVE_SPEED_LEVEL_MAX)) : MOVE_SPEED_LEVEL_MAX;
+            Cookie.set(MOVE_SPEED_COOKIE, moveSpeedLevel);
         }
 
         function savePlayerSetupToCookies() {
@@ -2398,6 +2456,10 @@
             configEmptyNestActive = document.getElementById('rule-empty-nest').checked;
             configSopladoActive = document.getElementById('rule-soplado').checked;
             configPredictivePreviewActive = document.getElementById('predictive-preview').checked;
+            const moveSpeedSlider = document.getElementById('move-speed-slider');
+            if (moveSpeedSlider) {
+                pawnMoveDelayMs = updateMoveSpeedUI(parseInt(moveSpeedSlider.value, 10) || MOVE_SPEED_LEVEL_MAX) || pawnMoveDelayMs;
+            }
             saveGameSettingsToCookies();
         }
 
@@ -2417,6 +2479,7 @@
         let gameState = 'setup'; // 'setup', 'waiting_for_roll', 'waiting_for_move', 'game_over'
         let aiTimeoutId = null;
         let speedMs = 800; // AI turn delay
+        let pawnMoveDelayMs = 80; // Board movement step delay
         let isFirstRollOfTurn = true;
         let isAnimating = false; // Prevents double click movement bugs
         let selectedLandingPreviewPawn = null; // Touch screens: first tap previews, second tap moves.
@@ -3140,7 +3203,8 @@
                     currentStep++;
                     sounds.playMove();
                     renderPawns();
-                    setTimeout(animateStep, 80);
+                    const stepDelay = player.type === 'ai' ? pawnMoveDelayMs : 80;
+                    setTimeout(animateStep, stepDelay);
                 } else {
                     isAnimating = false;
                     // Landed
@@ -3287,10 +3351,14 @@
                         // No moves left
                         const vals = diceState.filter(d => !d.used).map(d => d.val);
                         addLog(`No legal moves for rolls: ${vals.join(', ')}. Passing turn.`, players[activeTurn].color);
-                        diceState.forEach(d => d.used = true);
-                        rolledDoublesThisTurn = false;
-                        consecutiveDoubles = 0;
-                        checkTurnSequence();
+                        const pauseMs = getNoMovePauseMs();
+                        if (aiTimeoutId) clearTimeout(aiTimeoutId);
+                        aiTimeoutId = setTimeout(() => {
+                            diceState.forEach(d => d.used = true);
+                            rolledDoublesThisTurn = false;
+                            consecutiveDoubles = 0;
+                            checkTurnSequence();
+                        }, pauseMs);
                     }
                 }
                 return;
@@ -3441,10 +3509,14 @@
                         // no moves
                         const vals = diceState.filter(d => !d.used).map(d => d.val);
                         addLog(`No legal moves for rolls: ${vals.join(', ')}. Passing turn.`, players[activeTurn].color);
-                        diceState.forEach(d => d.used = true);
-                        rolledDoublesThisTurn = false;
-                        consecutiveDoubles = 0;
-                        checkTurnSequence();
+                        const pauseMs = getNoMovePauseMs();
+                        if (aiTimeoutId) clearTimeout(aiTimeoutId);
+                        aiTimeoutId = setTimeout(() => {
+                            diceState.forEach(d => d.used = true);
+                            rolledDoublesThisTurn = false;
+                            consecutiveDoubles = 0;
+                            checkTurnSequence();
+                        }, pauseMs);
                     }
                 }
 
@@ -4011,6 +4083,7 @@
                 scoreBoxTitle.textContent = name.substring(0, 10);
                 document.getElementById(`score-p${idx}`).textContent = '0/4';
             });
+            savePlayerSetupToCookies();
 
             const enabled = players.filter(p => p.type !== 'off').length;
             if (enabled < 2) {
@@ -4151,6 +4224,18 @@
             saveCurrentSettings();
         });
 
+        const moveSpeedSlider = document.getElementById('move-speed-slider');
+        if (moveSpeedSlider) {
+            moveSpeedSlider.addEventListener('input', () => {
+                const level = parseInt(moveSpeedSlider.value, 10) || MOVE_SPEED_LEVEL_MAX;
+                const delayMs = updateMoveSpeedUI(level);
+                if (typeof delayMs === 'number') {
+                    pawnMoveDelayMs = delayMs;
+                }
+                Cookie.set(MOVE_SPEED_COOKIE, level);
+            });
+        }
+
         // Initialize board
         drawBoard();
     </script>
@@ -4269,8 +4354,12 @@
                 }
             } else {
                 addLog(`AI ${player.name} has no legal moves. Passing turn.`, player.color);
-                diceState.forEach(d => d.used = true);
-                checkTurnSequence();
+                const pauseMs = getNoMovePauseMs();
+                if (aiTimeoutId) clearTimeout(aiTimeoutId);
+                aiTimeoutId = setTimeout(() => {
+                    diceState.forEach(d => d.used = true);
+                    checkTurnSequence();
+                }, pauseMs);
             }
         }
 
