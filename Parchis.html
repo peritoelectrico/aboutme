@@ -2296,6 +2296,115 @@
         let configSopladoActive = true; // Toggle for missed capture penalty (PR only)
         let configPredictivePreviewActive = true; // Toggle landing ghost previews.
 
+        // ──────────────────────────────────────────────────────────────────────────────
+        // Cookie Management Functions
+        // ──────────────────────────────────────────────────────────────────────────────
+        const Cookie = {
+            set: function(name, value, days = 365) {
+                const date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                const expires = `; expires=${date.toUTCString()}`;
+                document.cookie = `${name}=${encodeURIComponent(JSON.stringify(value))}${expires}; path=/; SameSite=Lax`;
+            },
+            get: function(name) {
+                const nameEQ = `${name}=`;
+                const ca = document.cookie.split(';');
+                for (let i = 0; i < ca.length; i++) {
+                    let c = ca[i];
+                    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                    if (c.indexOf(nameEQ) === 0) {
+                        try {
+                            const value = c.substring(nameEQ.length, c.length);
+                            return JSON.parse(decodeURIComponent(value));
+                        } catch (e) {
+                            return c.substring(nameEQ.length, c.length);
+                        }
+                    }
+                }
+                return null;
+            },
+            delete: function(name) {
+                this.set(name, '', -1);
+            },
+            clearGameCookies: function() {
+                const gameCookies = ['parchis_ruleset', 'parchis_player_setup', 'parchis_settings_dice_count', 'parchis_settings_empty_nest', 'parchis_settings_soplado', 'parchis_settings_predictive'];
+                gameCookies.forEach(cookie => this.delete(cookie));
+            }
+        };
+
+        function loadGameSettingsFromCookies() {
+            const savedRuleset = Cookie.get('parchis_ruleset');
+            if (savedRuleset && ['cuban', 'puertorican', 'american'].includes(savedRuleset)) {
+                activeRuleset = savedRuleset;
+                document.getElementById('ruleset-select').value = savedRuleset;
+            }
+            const savedDiceCount = Cookie.get('parchis_settings_dice_count');
+            if (savedDiceCount && [1, 2].includes(savedDiceCount)) {
+                playDiceCount = savedDiceCount;
+                document.getElementById('dice-count-select').value = String(savedDiceCount);
+            }
+            const savedEmptyNest = Cookie.get('parchis_settings_empty_nest');
+            if (savedEmptyNest !== null) {
+                configEmptyNestActive = Boolean(savedEmptyNest);
+                document.getElementById('rule-empty-nest').checked = savedEmptyNest;
+            }
+            const savedSoplado = Cookie.get('parchis_settings_soplado');
+            if (savedSoplado !== null) {
+                configSopladoActive = Boolean(savedSoplado);
+                document.getElementById('rule-soplado').checked = savedSoplado;
+            }
+            const savedPredictive = Cookie.get('parchis_settings_predictive');
+            if (savedPredictive !== null) {
+                configPredictivePreviewActive = Boolean(savedPredictive);
+                document.getElementById('predictive-preview').checked = savedPredictive;
+            }
+            const savedPlayers = Cookie.get('parchis_player_setup');
+            if (savedPlayers && Array.isArray(savedPlayers) && savedPlayers.length === 4) {
+                savedPlayers.forEach((playerData, idx) => {
+                    const nameInput = document.getElementById(`p${idx}-name`);
+                    const typeSelect = document.getElementById(`p${idx}-type`);
+                    if (nameInput && typeSelect) {
+                        if (playerData.name) nameInput.value = playerData.name;
+                        if (playerData.type) typeSelect.value = playerData.type;
+                    }
+                });
+            }
+        }
+
+        function saveGameSettingsToCookies() {
+            Cookie.set('parchis_ruleset', activeRuleset);
+            Cookie.set('parchis_settings_dice_count', playDiceCount);
+            Cookie.set('parchis_settings_empty_nest', configEmptyNestActive);
+            Cookie.set('parchis_settings_soplado', configSopladoActive);
+            Cookie.set('parchis_settings_predictive', configPredictivePreviewActive);
+            const playerSetup = players.map(p => ({ name: p.name, type: p.type, color: p.color }));
+            Cookie.set('parchis_player_setup', playerSetup);
+        }
+
+        function savePlayerSetupToCookies() {
+            const playerSetup = [];
+            for (let i = 0; i < 4; i++) {
+                playerSetup.push({
+                    name: document.getElementById(`p${i}-name`).value,
+                    type: document.getElementById(`p${i}-type`).value
+                });
+            }
+            Cookie.set('parchis_player_setup', playerSetup);
+        }
+
+        function saveCurrentSettings() {
+            activeRuleset = document.getElementById('ruleset-select').value;
+            playDiceCount = parseInt(document.getElementById('dice-count-select').value) || 2;
+            configEmptyNestActive = document.getElementById('rule-empty-nest').checked;
+            configSopladoActive = document.getElementById('rule-soplado').checked;
+            configPredictivePreviewActive = document.getElementById('predictive-preview').checked;
+            saveGameSettingsToCookies();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadGameSettingsFromCookies();
+        });
+
         let players = [];
         let activeTurn = 0;
         let diceState = []; // Holds objects representing the rolled dice: { val: 1..7, used: boolean }
@@ -2386,7 +2495,34 @@
                 sopladoRow.style.display = 'none';
                 diceCountSelect.value = "2"; // locked to 2 dice
             }
+            saveCurrentSettings();
         });
+
+        diceCountSelect.addEventListener('change', () => {
+            saveCurrentSettings();
+        });
+
+        document.getElementById('rule-empty-nest').addEventListener('change', () => {
+            saveCurrentSettings();
+        });
+
+        document.getElementById('rule-soplado').addEventListener('change', () => {
+            saveCurrentSettings();
+        });
+
+        document.getElementById('predictive-preview').addEventListener('change', () => {
+            saveCurrentSettings();
+        });
+
+        // Save player setup when names or types change
+        for (let i = 0; i < 4; i++) {
+            document.getElementById(`p${i}-name`).addEventListener('input', () => {
+                savePlayerSetupToCookies();
+            });
+            document.getElementById(`p${i}-type`).addEventListener('change', () => {
+                savePlayerSetupToCookies();
+            });
+        }
 
         // Board Drawing (SVG)
         function drawBoard() {
@@ -3862,6 +3998,9 @@
             configPredictivePreviewActive = document.getElementById('predictive-preview').checked;
             resetLandingPreview();
 
+            // Save current settings to cookies
+            saveCurrentSettings();
+
             players = [];
             colors.forEach((color, idx) => {
                 const name = document.getElementById(`p${idx}-name`).value || `Player ${idx + 1}`;
@@ -4009,6 +4148,7 @@
         document.getElementById('predictive-preview').addEventListener('change', (event) => {
             configPredictivePreviewActive = event.target.checked;
             if (!configPredictivePreviewActive) resetLandingPreview();
+            saveCurrentSettings();
         });
 
         // Initialize board

@@ -14,6 +14,7 @@
 
     <style>
         :root {
+            color-scheme: dark;
             --bg-dark: #0f121d;
             --bg-card: rgba(25, 30, 48, 0.65);
             --border-card: rgba(255, 255, 255, 0.08);
@@ -347,6 +348,32 @@
             stroke-width: 2.5 !important;
         }
 
+        .pawn-landing-ghost {
+            pointer-events: none;
+            opacity: 0.78;
+            filter: drop-shadow(0 0 18px currentColor);
+        }
+
+        .pawn-landing-ghost .ghost-ring {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 4;
+            stroke-dasharray: 6 5;
+            opacity: 0.9;
+        }
+
+        .pawn-landing-ghost .ghost-body {
+            fill: currentColor;
+            stroke: #fff;
+            stroke-width: 1.5;
+            opacity: 0.35;
+        }
+
+        .pawn-landing-ghost .ghost-shine {
+            fill: rgba(255, 255, 255, 0.65);
+            opacity: 0.8;
+        }
+
         @keyframes pawn-bounce {
             0% {
                 transform: translateY(0);
@@ -448,7 +475,7 @@
         }
 
         .player-type-select {
-            background: rgba(0, 0, 0, 0.4);
+            background: #111422;
             border: 1px solid var(--border-card);
             color: var(--text-main);
             padding: 0.5rem;
@@ -457,6 +484,23 @@
             outline: none;
             cursor: pointer;
             font-size: 0.9rem;
+            color-scheme: dark;
+            transition: all 0.2s ease;
+        }
+
+        .player-type-select:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            background: #191e32;
+        }
+
+        .player-type-select:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+        }
+
+        .player-type-select option {
+            background-color: #0f121d;
+            color: var(--text-main);
         }
 
         /* Dashboard turn state */
@@ -553,7 +597,9 @@
             transform-style: preserve-3d;
             display: none;
             z-index: 30;
-            pointer-events: none;
+            pointer-events: auto;
+            cursor: pointer;
+            transform: translateZ(45px);
             animation: question-float 2.5s ease-in-out infinite;
         }
 
@@ -640,15 +686,15 @@
 
         @keyframes question-float {
             0% {
-                transform: translateZ(45px) translateY(0);
+                top: calc(50% - 35px);
             }
 
             50% {
-                transform: translateZ(45px) translateY(-6px);
+                top: calc(50% - 41px);
             }
 
             100% {
-                transform: translateZ(45px) translateY(0);
+                top: calc(50% - 35px);
             }
         }
 
@@ -1399,6 +1445,7 @@
                 height: 54px;
                 top: calc(50% - 27px);
                 left: calc(50% - 27px);
+                transform: translateZ(35px);
                 animation: question-float-mobile 2.5s ease-in-out infinite;
             }
 
@@ -1437,15 +1484,15 @@
 
             @keyframes question-float-mobile {
                 0% {
-                    transform: translateZ(35px) translateY(0);
+                    top: calc(50% - 27px);
                 }
 
                 50% {
-                    transform: translateZ(35px) translateY(-4px);
+                    top: calc(50% - 31px);
                 }
 
                 100% {
-                    transform: translateZ(35px) translateY(0);
+                    top: calc(50% - 27px);
                 }
             }
 
@@ -1562,6 +1609,8 @@
         #rule-notification.show {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+            cursor: pointer;
         }
 
         #rule-notification .rule-icon {
@@ -1673,6 +1722,11 @@
                                 style="display: flex; justify-content: space-between; align-items: center; display: none;">
                                 <span style="font-size: 0.85rem; color: var(--text-muted);">Soplado Rule:</span>
                                 <input type="checkbox" id="rule-soplado" checked style="width: 16px; height: 16px;">
+                            </div>
+                            <div id="predictive-preview-row"
+                                style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">Predict Landing:</span>
+                                <input type="checkbox" id="predictive-preview" checked style="width: 16px; height: 16px;">
                             </div>
                         </div>
                     </div>
@@ -1944,9 +1998,17 @@
             }
 
             init() {
-                if (this.ctx) return;
+                if (this.ctx) {
+                    if (this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
+                    return;
+                }
                 try {
                     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    if (this.ctx.state === 'suspended') {
+                        this.ctx.resume();
+                    }
                 } catch (e) {
                     console.error("AudioContext not supported", e);
                 }
@@ -1958,8 +2020,9 @@
             }
 
             playRoll() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
                 let duration = 0.3;
                 let osc = this.ctx.createOscillator();
@@ -1978,8 +2041,9 @@
             }
 
             playMove() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
                 let osc = this.ctx.createOscillator();
                 let gain = this.ctx.createGain();
@@ -1997,8 +2061,9 @@
             }
 
             playCapture() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
 
                 let osc = this.ctx.createOscillator();
@@ -2028,8 +2093,9 @@
             }
 
             playExit() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
                 let osc = this.ctx.createOscillator();
                 let gain = this.ctx.createGain();
@@ -2047,8 +2113,9 @@
             }
 
             playBlock() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
                 let osc = this.ctx.createOscillator();
                 let gain = this.ctx.createGain();
@@ -2066,8 +2133,9 @@
             }
 
             playWin() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
                 const playBeep = (freq, startOffset, duration) => {
                     let osc = this.ctx.createOscillator();
@@ -2087,8 +2155,9 @@
             }
 
             playGameOver() {
-                if (this.muted || !this.ctx) return;
+                if (this.muted) return;
                 this.init();
+                if (!this.ctx) return;
                 let now = this.ctx.currentTime;
                 const playBeep = (freq, startOffset, duration) => {
                     let osc = this.ctx.createOscillator();
@@ -2110,6 +2179,33 @@
         }
 
         const sounds = new SoundEngine();
+
+        // One-time listeners to unlock web audio on mobile devices
+        function unlockAudio() {
+            sounds.init();
+            if (sounds.ctx) {
+                sounds.ctx.resume().then(() => {
+                    if (sounds.ctx.state === 'running') {
+                        window.removeEventListener('click', unlockAudio);
+                        window.removeEventListener('touchend', unlockAudio);
+                        window.removeEventListener('touchstart', unlockAudio);
+                    }
+                }).catch(e => console.warn(e));
+
+                try {
+                    const buffer = sounds.ctx.createBuffer(1, 1, 22050);
+                    const source = sounds.ctx.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(sounds.ctx.destination);
+                    source.start(0);
+                } catch (e) {
+                    console.warn("Failed to play silent buffer", e);
+                }
+            }
+        }
+        window.addEventListener('click', unlockAudio);
+        window.addEventListener('touchend', unlockAudio);
+        window.addEventListener('touchstart', unlockAudio);
 
         // Sound button toggle
         document.getElementById('sound-btn').addEventListener('click', () => {
@@ -2198,6 +2294,7 @@
         let playDiceCount = 2; // 1 or 2
         let configEmptyNestActive = true; // Toggle for 6 becomes 7 (Cuban only)
         let configSopladoActive = true; // Toggle for missed capture penalty (PR only)
+        let configPredictivePreviewActive = true; // Toggle landing ghost previews.
 
         let players = [];
         let activeTurn = 0;
@@ -2213,6 +2310,7 @@
         let speedMs = 800; // AI turn delay
         let isFirstRollOfTurn = true;
         let isAnimating = false; // Prevents double click movement bugs
+        let selectedLandingPreviewPawn = null; // Touch screens: first tap previews, second tap moves.
 
         // Soplado logic variables
         let sopladoCandidate = null; // Stores { playerIdx, pawnId, rollValue, startSpaceId, targetSpaceId } if capture was missed
@@ -2883,9 +2981,6 @@
                     if (roll === 0) {
                         // sum of 5 exit consumed all rolls
                         diceState.forEach(d => d.used = true);
-                        if (players[playerIdx].type === 'human') {
-                            showRuleInfoNotification("Combination exit: both dice summed to 5, so the pawn left the nest and both dice were consumed.");
-                        }
                     }
                     // For roll > 0, the caller has already marked its specific die used.
                     // Do NOT consume another matching die here (with doubles like 5-5 that
@@ -3274,6 +3369,7 @@
         function selectDie(dIdx) {
             if (gameState !== 'waiting_for_move') return;
             if (diceState[dIdx].used) return;
+            resetLandingPreview();
 
             const roll = diceState[dIdx].val;
             const hasLegal = players[activeTurn].pawns.some((p, idx) => canPawnMove(activeTurn, idx, roll));
@@ -3357,8 +3453,127 @@
             });
         }
 
+        function clearLandingGhost() {
+            const ghost = document.getElementById('pawn-landing-ghost');
+            if (ghost) ghost.remove();
+        }
+
+        function resetLandingPreview() {
+            selectedLandingPreviewPawn = null;
+            clearLandingGhost();
+        }
+
+        function usesTapLandingPreview() {
+            return configPredictivePreviewActive && window.matchMedia('(hover: none)').matches;
+        }
+
+        function isSelectedLandingPreviewPawn(pawn) {
+            return selectedLandingPreviewPawn &&
+                selectedLandingPreviewPawn.playerIndex === pawn.playerIndex &&
+                selectedLandingPreviewPawn.id === pawn.id;
+        }
+
+        function selectLandingPreviewPawn(pawn) {
+            selectedLandingPreviewPawn = {
+                playerIndex: pawn.playerIndex,
+                id: pawn.id
+            };
+            showLandingGhost(pawn);
+        }
+
+        function getPreviewRollForPawn(pawn) {
+            if (!configPredictivePreviewActive) return null;
+            if (gameState !== 'waiting_for_move' || players[activeTurn].type !== 'human') return null;
+            if (pawn.playerIndex !== activeTurn) return null;
+
+            if (activeBonusMoveValue > 0) {
+                return canPawnMove(activeTurn, pawn.id, activeBonusMoveValue) ? activeBonusMoveValue : null;
+            }
+
+            if (pawn.pathIndex === -1 && canExitNestWithCombination(activeTurn)) {
+                return 0;
+            }
+
+            if (currentMovingRollIndex !== -1) {
+                const roll = diceState[currentMovingRollIndex]?.val;
+                return roll !== undefined && canPawnMove(activeTurn, pawn.id, roll) ? roll : null;
+            }
+
+            const playableDie = diceState.find(d => !d.used && canPawnMove(activeTurn, pawn.id, d.val));
+            return playableDie ? playableDie.val : null;
+        }
+
+        function getLandingSpaceForPreview(playerIdx, pawnId, roll) {
+            const player = players[playerIdx];
+            const pawn = player.pawns[pawnId];
+
+            if (pawn.pathIndex === -1) {
+                return roll === 0 || roll === 5 ? startSpaces[playerIdx].toString() : null;
+            }
+
+            return player.path[pawn.pathIndex + roll] || null;
+        }
+
+        function showLandingGhost(pawn) {
+            clearLandingGhost();
+
+            const roll = getPreviewRollForPawn(pawn);
+            if (roll === null) return;
+
+            const landingSpaceId = getLandingSpaceForPreview(pawn.playerIndex, pawn.id, roll);
+            const coords = landingSpaceId ? getCoordsForSpaceId(landingSpaceId) : null;
+            const container = document.getElementById('pawns-layer');
+            if (!coords || !container) return;
+
+            const x = coords.c * 50 + 25;
+            const y = coords.r * 50 + 25;
+            const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            group.setAttribute('id', 'pawn-landing-ghost');
+            group.setAttribute('class', 'pawn-landing-ghost');
+            group.setAttribute('color', pawn.color);
+            group.style.color = `var(--${pawn.color}-main)`;
+
+            const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            ring.setAttribute('class', 'ghost-ring');
+            ring.setAttribute('cx', x);
+            ring.setAttribute('cy', y);
+            ring.setAttribute('r', 23);
+            group.appendChild(ring);
+
+            const body = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            body.setAttribute('class', 'ghost-body');
+            body.setAttribute('cx', x);
+            body.setAttribute('cy', y);
+            body.setAttribute('r', 15);
+            group.appendChild(body);
+
+            const shine = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            shine.setAttribute('class', 'ghost-shine');
+            shine.setAttribute('cx', x - 5);
+            shine.setAttribute('cy', y - 5);
+            shine.setAttribute('r', 4.5);
+            group.appendChild(shine);
+
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', x);
+            label.setAttribute('y', y + 36);
+            label.setAttribute('font-size', '12px');
+            label.setAttribute('font-family', 'Space Grotesk');
+            label.setAttribute('font-weight', '700');
+            label.setAttribute('fill', '#fff');
+            label.setAttribute('text-anchor', 'middle');
+            label.setAttribute('paint-order', 'stroke');
+            label.setAttribute('stroke', 'rgba(15,18,29,0.9)');
+            label.setAttribute('stroke-width', '4');
+            label.textContent = roll === 0 ? '5' : roll;
+            group.appendChild(label);
+
+            container.appendChild(group);
+        }
+
         // Draw Pawns in SVG layer
         function renderPawns() {
+            resetLandingPreview();
             const container = document.getElementById('pawns-layer');
             container.innerHTML = '';
 
@@ -3416,6 +3631,7 @@
                     g.setAttribute('id', `pawn-g-${pawn.playerIndex}-${pawn.id}`);
                     g.setAttribute('class', 'pawn-glow');
                     g.setAttribute('color', pawn.color);
+                    g.setAttribute('tabindex', '0');
                     g.style.transformOrigin = `${px}px ${py}px`;
 
                     // Invisible enlarged hit-area for finger taps on mobile.
@@ -3446,6 +3662,13 @@
                     shine.setAttribute('fill', 'rgba(255, 255, 255, 0.45)');
                     g.appendChild(shine);
 
+                    g.addEventListener('mouseenter', () => {
+                        if (window.matchMedia('(hover: hover)').matches) showLandingGhost(pawn);
+                    });
+                    g.addEventListener('mouseleave', clearLandingGhost);
+                    g.addEventListener('focus', () => showLandingGhost(pawn));
+                    g.addEventListener('blur', clearLandingGhost);
+
                     g.addEventListener('click', () => {
                         if (isAnimating) return; // Block clicks during animations!
                         if (gameState === 'waiting_for_move' && activeTurn === pawn.playerIndex) {
@@ -3453,6 +3676,14 @@
 
                             const isActive = g.classList.contains('pawn-active');
                             if (isActive) {
+                                if (usesTapLandingPreview()) {
+                                    if (!isSelectedLandingPreviewPawn(pawn)) {
+                                        selectLandingPreviewPawn(pawn);
+                                        return;
+                                    }
+                                    resetLandingPreview();
+                                }
+
                                 if (activeBonusMoveValue > 0) {
                                     const moveVal = activeBonusMoveValue;
                                     activeBonusMoveValue = 0; // Reset before executing to prevent double clicks
@@ -3477,6 +3708,7 @@
                                     }
                                 }
                             } else {
+                                resetLandingPreview();
                                 // show warning explanation
                                 let rollVal = diceState.filter(d => !d.used).map(d => d.val)[0] || 0;
                                 if (activeBonusMoveValue > 0) rollVal = activeBonusMoveValue;
@@ -3536,7 +3768,7 @@
 
             // Question mark visibility
             const qEl = document.getElementById('dice-question-mark');
-            if (gameState === 'waiting_for_roll' && player.type === 'human' && isFirstRollOfTurn) {
+            if (gameState === 'waiting_for_roll' && player.type === 'human') {
                 qEl.style.display = 'flex';
             } else {
                 qEl.style.display = 'none';
@@ -3627,6 +3859,8 @@
             playDiceCount = parseInt(document.getElementById('dice-count-select').value) || 2;
             configEmptyNestActive = document.getElementById('rule-empty-nest').checked;
             configSopladoActive = document.getElementById('rule-soplado').checked;
+            configPredictivePreviewActive = document.getElementById('predictive-preview').checked;
+            resetLandingPreview();
 
             players = [];
             colors.forEach((color, idx) => {
@@ -3691,6 +3925,36 @@
         // Setup actions listeners
         document.getElementById('start-game-btn').addEventListener('click', startNewMatch);
         document.getElementById('roll-btn').addEventListener('click', rollDiceAction);
+
+        // Click on the frosted question mark cube to roll
+        const qMarkEl = document.getElementById('dice-question-mark');
+        if (qMarkEl) {
+            qMarkEl.addEventListener('click', () => {
+                if (gameState === 'waiting_for_roll' && players[activeTurn].type === 'human') {
+                    rollDiceAction();
+                }
+            });
+        }
+
+        // Tapping/clicking on the rule notification/explanation banner dismisses it immediately
+        window.addEventListener('DOMContentLoaded', () => {
+            const notificationEl = document.getElementById('rule-notification');
+            if (notificationEl) {
+                const dismissNotification = () => {
+                    notificationEl.classList.remove('show');
+                    notificationEl.classList.remove('info');
+                    if (ruleNotifyTimeout) {
+                        clearTimeout(ruleNotifyTimeout);
+                        ruleNotifyTimeout = null;
+                    }
+                };
+                notificationEl.addEventListener('click', dismissNotification);
+                notificationEl.addEventListener('touchstart', (e) => {
+                    dismissNotification();
+                    e.preventDefault();
+                }, { passive: false });
+            }
+        });
         document.getElementById('play-again-btn').addEventListener('click', () => {
             document.getElementById('gameover-overlay').classList.remove('active');
             document.getElementById('setup-screen').style.display = 'block';
@@ -3740,6 +4004,11 @@
             if (gameState === 'waiting_for_move' && players[activeTurn].type === 'human' && diceState.length > 3) {
                 selectDie(3);
             }
+        });
+
+        document.getElementById('predictive-preview').addEventListener('change', (event) => {
+            configPredictivePreviewActive = event.target.checked;
+            if (!configPredictivePreviewActive) resetLandingPreview();
         });
 
         // Initialize board
