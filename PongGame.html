@@ -317,6 +317,24 @@
                 width: 10px;
                 height: 10px;
             }
+
+            #physics-bar {
+                top: 10px;
+                left: 10px;
+                padding: 4px 10px;
+                gap: 8px;
+            }
+
+            #physics-bar span {
+                font-size: 0.7rem;
+                letter-spacing: 1px;
+            }
+
+            .effect-flash {
+                top: 46px;
+                min-width: 112px;
+                padding: 7px 10px;
+            }
         }
 
         /* Info lights bar and indicator styling */
@@ -387,17 +405,55 @@
 
         #physics-settings-panel {
             display: none;
-            position: absolute;
-            top: 74px;
-            left: 20px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             width: min(360px, calc(100vw - 40px));
+            max-height: min(80vh, 720px);
+            overflow-y: auto;
             padding: 24px 26px;
             gap: 18px;
             align-items: stretch;
             text-align: left;
             pointer-events: auto;
-            z-index: 101;
+            z-index: 1001;
             box-sizing: border-box;
+        }
+
+        .effect-flash {
+            position: absolute;
+            top: 66px;
+            padding: 9px 14px;
+            min-width: 138px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(12, 14, 22, 0.82);
+            color: #ffffff;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(-8px) scale(0.96);
+            transition: opacity 0.22s ease, transform 0.22s ease;
+            pointer-events: none;
+            z-index: 99;
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32);
+        }
+
+        .effect-flash.left {
+            left: 20px;
+        }
+
+        .effect-flash.right {
+            right: 20px;
+        }
+
+        .effect-flash.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
         }
 
         .panel-title {
@@ -631,6 +687,9 @@
             <div class="info-light cyan" id="physics-settings-trigger" title="Physics Settings"></div>
         </div>
 
+        <div id="effect-left" class="effect-flash left"></div>
+        <div id="effect-right" class="effect-flash right"></div>
+
         <div id="physics-settings-panel" class="glass-panel">
             <h2 class="panel-title">Physics Lab</h2>
 
@@ -663,34 +722,12 @@
 
                 <div class="physics-toggle-row">
                     <div class="physics-toggle-copy">
-                        <strong>Soft Block</strong>
-                        <span>Centered, absorbing contacts deaden the rebound for a controlled slower return.</span>
+                        <strong>Power Drive</strong>
+                        <span>Clean center hits add pace and make rallies climb faster.</span>
                     </div>
-                    <button id="toggle-softBlock" class="physics-toggle-btn">On</button>
+                    <button id="toggle-powerDrive" class="physics-toggle-btn">On</button>
                 </div>
             </div>
-
-            <div class="physics-section">
-                <p class="physics-section-label">Saved Defaults</p>
-
-                <div>
-                    <p class="panel-note">Preferred mode</p>
-                    <div class="prefs-btn-group">
-                        <button id="pref-mode-1p" class="prefs-btn">1 Player</button>
-                        <button id="pref-mode-2p" class="prefs-btn">2 Players</button>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="panel-note">Preferred side in 1P</p>
-                    <div class="prefs-btn-group">
-                        <button id="pref-side-left" class="prefs-btn">Play Left</button>
-                        <button id="pref-side-right" class="prefs-btn">Play Right</button>
-                    </div>
-                </div>
-            </div>
-
-            <p class="panel-note">Your shot toggles, difficulty, graphics, mode, and side are stored in a cookie so the game reloads with your preferred setup.</p>
 
             <button id="btn-close-physics" style="align-self: center; border-color: #00ffff; box-shadow: 0 0 10px rgba(0,255,255,0.2);">Close Physics</button>
         </div>
@@ -740,10 +777,10 @@
         const BALL_RADIUS = 0.6;
         const WIN_SCORE = 10;
         const MIN_PLANAR_X_RATIO = 0.24;
-        const MAGNUS_SPEED_THRESHOLD = 0.45;
+        const MAGNUS_SPEED_THRESHOLD = 0.25;
         const MAGNUS_ACCEL = 18;
         const SPIN_DECAY = 1.35;
-        const KNUCKLE_SPEED_THRESHOLD = 0.38;
+        const KNUCKLE_SPEED_THRESHOLD = 0.25;
         const KNUCKLE_SHEAR_THRESHOLD = 0.85;
         const KNUCKLE_TRAVEL_DISTANCE = GAME_WIDTH * 0.1;
         const KNUCKLE_WOBBLE_ACCEL = 20;
@@ -751,8 +788,8 @@
         const SLICE_SPIN_BOOST = 0.45;
         const SLICE_DRAG = 0.82;
         const SLICE_DECAY = 1.8;
-        const SOFT_BLOCK_SPEED_RETAIN = 0.84;
-        const SOFT_BLOCK_Y_DAMPING = 0.72;
+        const POWER_DRIVE_SPEED_BONUS = 0.85;
+        const POWER_DRIVE_Y_STABILITY = 0.9;
 
         // Keyboard paddle physics constants
         const KEYBOARD_MAX_SPEED = 60;
@@ -778,6 +815,9 @@
         let aiTrackingIncomingShot = false;
         let aiShotMissOffset = 0;
         let aiShotReactionPenalty = 0;
+        let aiShotStyle = 'drive';
+        let aiShotAimOffset = 0;
+        let aiShotBrushVel = 0;
         let ballSpin = 0;
         let ballVerticalVelocity = 0;
         let knuckleballActive = false;
@@ -785,11 +825,14 @@
         let knuckleHasBounced = false;
         let knuckleWobblePhase = 0;
         let sliceEffect = 0;
+        let lastShotBySide = 'left';
+        let wasPlayingBeforePhysics = false;
+        const effectLabelTimeouts = { left: null, right: null };
         const physicsSettings = {
             magnusCurve: true,
             knuckleball: true,
             sliceUnderspin: true,
-            softBlock: true
+            powerDrive: true
         };
         const playerPrefs = {
             defaultMode: '1P',
@@ -860,17 +903,11 @@
             magnusCurve: document.getElementById('toggle-magnusCurve'),
             knuckleball: document.getElementById('toggle-knuckleball'),
             sliceUnderspin: document.getElementById('toggle-sliceUnderspin'),
-            softBlock: document.getElementById('toggle-softBlock')
+            powerDrive: document.getElementById('toggle-powerDrive')
         };
-        const preferenceButtons = {
-            mode: {
-                '1P': document.getElementById('pref-mode-1p'),
-                '2P': document.getElementById('pref-mode-2p')
-            },
-            side: {
-                left: document.getElementById('pref-side-left'),
-                right: document.getElementById('pref-side-right')
-            }
+        const effectLabels = {
+            left: document.getElementById('effect-left'),
+            right: document.getElementById('effect-right')
         };
 
         // --- THREE.JS SETUP ---
@@ -1326,14 +1363,6 @@
                 btn.classList.toggle('enabled', enabled);
                 btn.textContent = enabled ? 'On' : 'Off';
             });
-
-            Object.entries(preferenceButtons.mode).forEach(([mode, btn]) => {
-                btn.classList.toggle('active', playerPrefs.defaultMode === mode);
-            });
-
-            Object.entries(preferenceButtons.side).forEach(([side, btn]) => {
-                btn.classList.toggle('active', playerPrefs.defaultSide === side);
-            });
         }
 
         function applyLoadedPreferences() {
@@ -1401,6 +1430,18 @@
             const shouldOpen = forceOpen === null
                 ? physicsSettingsPanel.style.display !== 'flex'
                 : forceOpen;
+            if (shouldOpen) {
+                wasPlayingBeforePhysics = gameState === 'PLAYING';
+                if (wasPlayingBeforePhysics) {
+                    gameState = 'PAUSED';
+                    pauseScreen.style.display = 'none';
+                }
+            } else if (physicsSettingsPanel.style.display === 'flex' && wasPlayingBeforePhysics) {
+                gameState = 'PLAYING';
+                wasPlayingBeforePhysics = false;
+            } else if (!shouldOpen) {
+                wasPlayingBeforePhysics = false;
+            }
             physicsSettingsPanel.style.display = shouldOpen ? 'flex' : 'none';
             physicsBar.classList.toggle('active', shouldOpen);
         }
@@ -1408,8 +1449,102 @@
         function setDefaultSide(side, persist = true) {
             if (side !== 'left' && side !== 'right') return;
             playerPrefs.defaultSide = side;
-            renderPhysicsSettingsUI();
             if (persist) savePreferences();
+        }
+
+        function flashEffectLabel(side, text, color = '#ffffff') {
+            const label = effectLabels[side];
+            if (!label) return;
+
+            label.textContent = text;
+            label.style.color = color;
+            label.style.borderColor = color;
+            label.style.boxShadow = `0 0 16px ${color}33, 0 10px 22px rgba(0, 0, 0, 0.32)`;
+            label.classList.add('visible');
+
+            if (effectLabelTimeouts[side]) {
+                clearTimeout(effectLabelTimeouts[side]);
+            }
+
+            effectLabelTimeouts[side] = setTimeout(() => {
+                label.classList.remove('visible');
+            }, 900);
+        }
+
+        function chooseAiShotStyle(speedProgress, humanScorePressure) {
+            const availableStyles = ['drive'];
+            if (physicsSettings.powerDrive) availableStyles.push('power');
+            if (physicsSettings.magnusCurve && speedProgress >= MAGNUS_SPEED_THRESHOLD) availableStyles.push('magnus');
+            if (physicsSettings.sliceUnderspin && speedProgress >= MAGNUS_SPEED_THRESHOLD) availableStyles.push('slice');
+            if (physicsSettings.knuckleball && speedProgress >= KNUCKLE_SPEED_THRESHOLD) availableStyles.push('knuckle');
+
+            const creativity = THREE.MathUtils.clamp(0.25 + speedProgress * 0.45 + humanScorePressure * 0.25, 0, 0.85);
+            if (availableStyles.length === 1 || Math.random() > creativity) return 'drive';
+
+            const effectStyles = availableStyles.filter(style => style !== 'drive');
+            return effectStyles[Math.floor(Math.random() * effectStyles.length)];
+        }
+
+        function configureAiShotStyle(speedProgress, humanScorePressure) {
+            aiShotStyle = chooseAiShotStyle(speedProgress, humanScorePressure);
+            const direction = Math.random() < 0.5 ? -1 : 1;
+
+            if (aiShotStyle === 'magnus') {
+                aiShotAimOffset = direction * PADDLE_HEIGHT * 0.22;
+                aiShotBrushVel = direction * (18 + speedProgress * 16 + humanScorePressure * 10);
+            } else if (aiShotStyle === 'slice') {
+                aiShotAimOffset = direction * PADDLE_HEIGHT * 0.3;
+                aiShotBrushVel = -direction * (20 + speedProgress * 14 + humanScorePressure * 8);
+            } else if (aiShotStyle === 'knuckle') {
+                aiShotAimOffset = direction * PADDLE_HEIGHT * 0.16;
+                aiShotBrushVel = direction * 3;
+            } else if (aiShotStyle === 'power') {
+                aiShotAimOffset = 0;
+                aiShotBrushVel = direction * 9;
+            } else {
+                aiShotAimOffset = 0;
+                aiShotBrushVel = 0;
+            }
+        }
+
+        function applyAiShotStyle(side, hitFactor, paddleVelY, ballVelY) {
+            const isAiHit = gameMode === '1P' && playerSide !== side;
+            if (!isAiHit) {
+                return {
+                    hitFactor,
+                    paddleVelY,
+                    forceKnuckle: false,
+                    forcePower: false
+                };
+            }
+
+            let styledHitFactor = hitFactor;
+            let styledPaddleVelY = paddleVelY;
+            let forceKnuckle = false;
+            let forcePower = false;
+
+            if (aiShotStyle === 'magnus') {
+                styledHitFactor = THREE.MathUtils.clamp(hitFactor + Math.sign(aiShotAimOffset || 1) * 0.28, -0.92, 0.92);
+                styledPaddleVelY += aiShotBrushVel;
+            } else if (aiShotStyle === 'slice') {
+                styledHitFactor = THREE.MathUtils.clamp(hitFactor + Math.sign(aiShotAimOffset || 1) * 0.34, -0.92, 0.92);
+                styledPaddleVelY += aiShotBrushVel;
+            } else if (aiShotStyle === 'knuckle') {
+                styledHitFactor = THREE.MathUtils.clamp(hitFactor + Math.sign(aiShotAimOffset || 1) * 0.18, -0.75, 0.75);
+                styledPaddleVelY = ballVelY * 0.6;
+                forceKnuckle = true;
+            } else if (aiShotStyle === 'power') {
+                styledHitFactor = THREE.MathUtils.clamp(hitFactor * 0.45, -0.18, 0.18);
+                styledPaddleVelY += aiShotBrushVel;
+                forcePower = true;
+            }
+
+            return {
+                hitFactor: styledHitFactor,
+                paddleVelY: styledPaddleVelY,
+                forceKnuckle,
+                forcePower
+            };
         }
 
         function clampBallPlanarVelocity() {
@@ -1441,6 +1576,7 @@
             knuckleHasBounced = false;
             knuckleWobblePhase = 0;
             sliceEffect = 0;
+            lastShotBySide = 'left';
             ball.position.z = BALL_RADIUS;
         }
 
@@ -1520,6 +1656,9 @@
             aiTrackingIncomingShot = false;
             aiShotMissOffset = 0;
             aiShotReactionPenalty = 0;
+            aiShotStyle = 'drive';
+            aiShotAimOffset = 0;
+            aiShotBrushVel = 0;
         }
 
         function resetAdaptiveAiMatch() {
@@ -2027,10 +2166,6 @@
                 setPhysicsFeature(feature, !physicsSettings[feature]);
             });
         });
-        preferenceButtons.mode['1P'].addEventListener('click', () => setGameMode('1P'));
-        preferenceButtons.mode['2P'].addEventListener('click', () => setGameMode('2P'));
-        preferenceButtons.side.left.addEventListener('click', () => setDefaultSide('left'));
-        preferenceButtons.side.right.addEventListener('click', () => setDefaultSide('right'));
 
         // About Panel Listeners
         document.getElementById('btn-close-about').addEventListener('click', closeAboutPanel);
@@ -2251,6 +2386,7 @@
                         if (!aiTrackingIncomingShot) {
                             aiTrackingIncomingShot = true;
                             aiShotReactionPenalty = fastRallyPressure * 0.45 * aiMercyFactor;
+                            configureAiShotStyle(speedProgress, humanScorePressure);
 
                             let missChance = fastRallyPressure * 0.18 * aiMercyFactor;
                             const humanInLastThreePoints = getHumanScore() >= WIN_SCORE - 3;
@@ -2265,7 +2401,7 @@
                             }
                         }
 
-                        const targetY = ball.position.y + ballVelocity.y * 0.1 + aiShotMissOffset;
+                        const targetY = ball.position.y + ballVelocity.y * 0.1 + aiShotMissOffset + aiShotAimOffset;
                         const reactionWindow = 0.5 + fastRallyPressure * 0.9 * aiMercyFactor;
                         const aiStep = aiSpeed * (1 - aiShotReactionPenalty);
                         if (aiPaddle.position.y < targetY - reactionWindow) aiPaddle.position.y += aiStep * dt;
@@ -2380,13 +2516,19 @@
 
                             ball.position.x = leftPaddle.position.x + PADDLE_WIDTH / 2 + BALL_RADIUS;
                             ballVelocity.x *= -1;
+                            lastShotBySide = 'left';
+                            let effectLabel = '';
+                            let effectColor = '#00ffff';
 
                             // Accentuated physics: add english based on hit position AND paddle velocity
-                            const hitFactor = (ball.position.y - leftPaddle.position.y) / (PADDLE_HEIGHT / 2);
+                            const rawHitFactor = (ball.position.y - leftPaddle.position.y) / (PADDLE_HEIGHT / 2);
                             const incomingY = ballVelocity.y;
-                            ballVelocity.y += (hitFactor * 8) + (leftPaddleVelY * 0.15); // Toned down effect
+                            const styledShot = applyAiShotStyle('left', rawHitFactor, leftPaddleVelY, incomingY);
+                            const hitFactor = styledShot.hitFactor;
+                            const paddleVelY = styledShot.paddleVelY;
+                            ballVelocity.y += (hitFactor * 8) + (paddleVelY * 0.15); // Toned down effect
 
-                            const spinShear = (hitFactor * 3.4) + (leftPaddleVelY * 0.05) - (ballVelocity.y * 0.03);
+                            const spinShear = (hitFactor * 3.4) + (paddleVelY * 0.05) - (ballVelocity.y * 0.03);
                             const speedProgress = getSpeedRangeProgress(ballSpeed);
                             const magnusBlend = speedProgress > MAGNUS_SPEED_THRESHOLD
                                 ? (speedProgress - MAGNUS_SPEED_THRESHOLD) / (1 - MAGNUS_SPEED_THRESHOLD)
@@ -2395,42 +2537,44 @@
                                 ? THREE.MathUtils.clamp(spinShear * 0.16 * (0.35 + magnusBlend), -1.4, 1.4)
                                 : 0;
 
-                            const sliceIntent = Math.max(0, (-Math.sign(hitFactor || 0) * Math.sign(leftPaddleVelY || 0))) *
+                            const sliceIntent = Math.max(0, (-Math.sign(hitFactor || 0) * Math.sign(paddleVelY || 0))) *
                                 Math.min(1, Math.abs(hitFactor) * 1.15) *
-                                Math.min(1, Math.abs(leftPaddleVelY) / KEYBOARD_MAX_SPEED);
+                                Math.min(1, Math.abs(paddleVelY) / KEYBOARD_MAX_SPEED);
                             if (physicsSettings.sliceUnderspin && sliceIntent > 0.18) {
                                 sliceEffect = Math.max(sliceEffect, sliceIntent * SLICE_SPIN_BOOST * (1.2 + speedProgress));
                                 ballSpin *= 0.45;
                                 ballVelocity.y *= 1 - (sliceIntent * 0.16);
+                                effectLabel = 'Slice';
                             } else {
                                 sliceEffect *= 0.5;
                             }
 
-                            const cushioningContact = Math.abs(hitFactor) < 0.22 &&
-                                (Math.abs(leftPaddleVelY) < 6 || Math.sign(incomingY || 0) === Math.sign(leftPaddleVelY || 0));
-                            const canSoftBlock = physicsSettings.softBlock &&
-                                cushioningContact &&
-                                Math.abs(spinShear) < 1.05;
+                            const cleanPowerContact = physicsSettings.powerDrive &&
+                                (styledShot.forcePower || (Math.abs(hitFactor) < 0.18 && Math.abs(spinShear) < 1.35));
 
-                            if (canSoftBlock) {
-                                ballVelocity.y *= SOFT_BLOCK_Y_DAMPING;
-                                ballSpeed = Math.max(initialBallSpeed * 0.9, ballSpeed * SOFT_BLOCK_SPEED_RETAIN);
-                                ballSpin *= 0.5;
-                                sliceEffect *= 0.5;
+                            if (cleanPowerContact) {
+                                ballVelocity.y *= POWER_DRIVE_Y_STABILITY;
+                                ballSpin *= 0.55;
+                                sliceEffect *= 0.55;
+                                if (!effectLabel) effectLabel = 'Power Drive';
                             }
 
                             const canKnuckle = physicsSettings.knuckleball &&
                                 speedProgress >= KNUCKLE_SPEED_THRESHOLD &&
-                                Math.abs(spinShear) <= KNUCKLE_SHEAR_THRESHOLD &&
-                                sliceIntent < 0.22 &&
-                                (Math.abs(hitFactor) > 0.12 || Math.abs(leftPaddleVelY) > 7);
+                                (styledShot.forceKnuckle || Math.abs(spinShear) <= KNUCKLE_SHEAR_THRESHOLD) &&
+                                (styledShot.forceKnuckle || sliceIntent < 0.22) &&
+                                (styledShot.forceKnuckle || Math.abs(hitFactor) > 0.12 || Math.abs(paddleVelY) > 7);
 
                             if (canKnuckle) {
                                 ballSpin = 0;
                                 sliceEffect = 0;
                                 activateKnuckleball(speedProgress);
+                                effectLabel = 'Knuckleball';
                             } else if (Math.abs(ballSpin) < 0.08) {
                                 ballSpin = 0;
+                            }
+                            if (!effectLabel && physicsSettings.magnusCurve && Math.abs(ballSpin) > 0.18) {
+                                effectLabel = 'Magnus';
                             }
 
                             if (gameMode === '1P') {
@@ -2441,10 +2585,12 @@
                                 }
                             }
 
-                            ballSpeed = canSoftBlock
-                                ? Math.min(ballSpeed + speedIncrement * 0.35, maxBallSpeed)
-                                : Math.min(ballSpeed + speedIncrement, maxBallSpeed);
+                            ballSpeed = Math.min(
+                                ballSpeed + speedIncrement + (cleanPowerContact ? speedIncrement * POWER_DRIVE_SPEED_BONUS : 0),
+                                maxBallSpeed
+                            );
                             clampBallPlanarVelocity();
+                            if (effectLabel) flashEffectLabel('left', effectLabel, effectColor);
                             createSparks(ball.position, 0x00ffff, 25); // Cyan sparks on left paddle hit
                         }
                     }
@@ -2459,13 +2605,19 @@
 
                             ball.position.x = rightPaddle.position.x - PADDLE_WIDTH / 2 - BALL_RADIUS;
                             ballVelocity.x *= -1;
+                            lastShotBySide = 'right';
+                            let effectLabel = '';
+                            let effectColor = '#ff00ff';
 
                             // Accentuated physics: add english based on hit position AND paddle velocity
-                            const hitFactor = (ball.position.y - rightPaddle.position.y) / (PADDLE_HEIGHT / 2);
+                            const rawHitFactor = (ball.position.y - rightPaddle.position.y) / (PADDLE_HEIGHT / 2);
                             const incomingY = ballVelocity.y;
-                            ballVelocity.y += (hitFactor * 8) + (rightPaddleVelY * 0.15); // Toned down effect
+                            const styledShot = applyAiShotStyle('right', rawHitFactor, rightPaddleVelY, incomingY);
+                            const hitFactor = styledShot.hitFactor;
+                            const paddleVelY = styledShot.paddleVelY;
+                            ballVelocity.y += (hitFactor * 8) + (paddleVelY * 0.15); // Toned down effect
 
-                            const spinShear = (hitFactor * 3.4) + (rightPaddleVelY * 0.05) - (ballVelocity.y * 0.03);
+                            const spinShear = (hitFactor * 3.4) + (paddleVelY * 0.05) - (ballVelocity.y * 0.03);
                             const speedProgress = getSpeedRangeProgress(ballSpeed);
                             const magnusBlend = speedProgress > MAGNUS_SPEED_THRESHOLD
                                 ? (speedProgress - MAGNUS_SPEED_THRESHOLD) / (1 - MAGNUS_SPEED_THRESHOLD)
@@ -2474,42 +2626,44 @@
                                 ? THREE.MathUtils.clamp(spinShear * 0.16 * (0.35 + magnusBlend), -1.4, 1.4)
                                 : 0;
 
-                            const sliceIntent = Math.max(0, (-Math.sign(hitFactor || 0) * Math.sign(rightPaddleVelY || 0))) *
+                            const sliceIntent = Math.max(0, (-Math.sign(hitFactor || 0) * Math.sign(paddleVelY || 0))) *
                                 Math.min(1, Math.abs(hitFactor) * 1.15) *
-                                Math.min(1, Math.abs(rightPaddleVelY) / KEYBOARD_MAX_SPEED);
+                                Math.min(1, Math.abs(paddleVelY) / KEYBOARD_MAX_SPEED);
                             if (physicsSettings.sliceUnderspin && sliceIntent > 0.18) {
                                 sliceEffect = Math.max(sliceEffect, sliceIntent * SLICE_SPIN_BOOST * (1.2 + speedProgress));
                                 ballSpin *= 0.45;
                                 ballVelocity.y *= 1 - (sliceIntent * 0.16);
+                                effectLabel = 'Slice';
                             } else {
                                 sliceEffect *= 0.5;
                             }
 
-                            const cushioningContact = Math.abs(hitFactor) < 0.22 &&
-                                (Math.abs(rightPaddleVelY) < 6 || Math.sign(incomingY || 0) === Math.sign(rightPaddleVelY || 0));
-                            const canSoftBlock = physicsSettings.softBlock &&
-                                cushioningContact &&
-                                Math.abs(spinShear) < 1.05;
+                            const cleanPowerContact = physicsSettings.powerDrive &&
+                                (styledShot.forcePower || (Math.abs(hitFactor) < 0.18 && Math.abs(spinShear) < 1.35));
 
-                            if (canSoftBlock) {
-                                ballVelocity.y *= SOFT_BLOCK_Y_DAMPING;
-                                ballSpeed = Math.max(initialBallSpeed * 0.9, ballSpeed * SOFT_BLOCK_SPEED_RETAIN);
-                                ballSpin *= 0.5;
-                                sliceEffect *= 0.5;
+                            if (cleanPowerContact) {
+                                ballVelocity.y *= POWER_DRIVE_Y_STABILITY;
+                                ballSpin *= 0.55;
+                                sliceEffect *= 0.55;
+                                if (!effectLabel) effectLabel = 'Power Drive';
                             }
 
                             const canKnuckle = physicsSettings.knuckleball &&
                                 speedProgress >= KNUCKLE_SPEED_THRESHOLD &&
-                                Math.abs(spinShear) <= KNUCKLE_SHEAR_THRESHOLD &&
-                                sliceIntent < 0.22 &&
-                                (Math.abs(hitFactor) > 0.12 || Math.abs(rightPaddleVelY) > 7);
+                                (styledShot.forceKnuckle || Math.abs(spinShear) <= KNUCKLE_SHEAR_THRESHOLD) &&
+                                (styledShot.forceKnuckle || sliceIntent < 0.22) &&
+                                (styledShot.forceKnuckle || Math.abs(hitFactor) > 0.12 || Math.abs(paddleVelY) > 7);
 
                             if (canKnuckle) {
                                 ballSpin = 0;
                                 sliceEffect = 0;
                                 activateKnuckleball(speedProgress);
+                                effectLabel = 'Knuckleball';
                             } else if (Math.abs(ballSpin) < 0.08) {
                                 ballSpin = 0;
+                            }
+                            if (!effectLabel && physicsSettings.magnusCurve && Math.abs(ballSpin) > 0.18) {
+                                effectLabel = 'Magnus';
                             }
 
                             if (gameMode === '1P') {
@@ -2520,10 +2674,12 @@
                                 }
                             }
 
-                            ballSpeed = canSoftBlock
-                                ? Math.min(ballSpeed + speedIncrement * 0.35, maxBallSpeed)
-                                : Math.min(ballSpeed + speedIncrement, maxBallSpeed);
+                            ballSpeed = Math.min(
+                                ballSpeed + speedIncrement + (cleanPowerContact ? speedIncrement * POWER_DRIVE_SPEED_BONUS : 0),
+                                maxBallSpeed
+                            );
                             clampBallPlanarVelocity();
+                            if (effectLabel) flashEffectLabel('right', effectLabel, effectColor);
                             createSparks(ball.position, 0xff00ff, 25); // Magenta sparks on right paddle hit
                         }
                     }
