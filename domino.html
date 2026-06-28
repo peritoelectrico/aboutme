@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caribbean Dominoes</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #05070d;
+      --panel: rgba(12, 18, 30, .64);
+      --panel-strong: rgba(10, 15, 27, .84);
+      --line: rgba(104, 244, 255, .26);
+      --cyan: #37e8ff;
+      --cyan-soft: rgba(55, 232, 255, .18);
+      --magenta: #ff43d1;
+      --magenta-soft: rgba(255, 67, 209, .18);
+      --ink: #eefaff;
+      --muted: #a8b9c6;
+      --danger: #ff6f91;
+      --success: #7dffb5;
+      --tile: #edf7fb;
+      --tile-ink: #111722;
+      --shadow: 0 22px 80px rgba(0, 0, 0, .42);
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 15%, rgba(55, 232, 255, .18), transparent 28rem),
+        radial-gradient(circle at 88% 22%, rgba(255, 67, 209, .18), transparent 28rem),
+        linear-gradient(145deg, #03050a 0%, #09111c 46%, #05070d 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .12;
+      background-image:
+        repeating-radial-gradient(circle at 18% 22%, rgba(255,255,255,.72) 0 1px, transparent 1px 5px),
+        repeating-linear-gradient(115deg, rgba(255,255,255,.18) 0 1px, transparent 1px 9px);
+      mix-blend-mode: screen;
+    }
+
+    button, select {
+      font: inherit;
+      color: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: rgba(10, 18, 30, .72);
+      border-radius: var(--radius);
+      padding: .68rem .9rem;
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+
+    button:hover:not(:disabled), button:focus-visible {
+      transform: translateY(-1px);
+      border-color: var(--cyan);
+      box-shadow: 0 0 22px rgba(55, 232, 255, .18);
+      outline: none;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .45;
+    }
+
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(4, 8, 16, .74);
+      border-radius: var(--radius);
+      padding: .68rem .75rem;
+    }
+
+    .screen {
+      min-height: 100vh;
+      display: none;
+    }
+
+    .screen.active { display: block; }
+
+    .menu {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      place-items: center;
+      padding: .9rem;
+      background: rgba(0, 0, 0, .64);
+      backdrop-filter: blur(10px);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .menu.active { display: grid; }
+
+    .menu-shell {
+      width: min(980px, 100%);
+      max-height: calc(100vh - 1.8rem);
+      display: grid;
+      grid-template-columns: .85fr 1.15fr;
+      gap: .8rem;
+      align-items: stretch;
+    }
+
+    .glass {
+      position: relative;
+      border: 1px solid rgba(119, 244, 255, .22);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02)),
+        var(--panel);
+      backdrop-filter: blur(18px) saturate(125%);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .glass::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .14;
+      background-image:
+        linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent),
+        repeating-linear-gradient(0deg, rgba(255,255,255,.15) 0 1px, transparent 1px 6px);
+      mix-blend-mode: screen;
+    }
+
+    .glass > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero {
+      padding: clamp(1rem, 3vw, 2rem);
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background:
+        linear-gradient(rgba(5, 7, 13, .24), rgba(5, 7, 13, .82)),
+        radial-gradient(circle at 72% 28%, rgba(255,67,209,.2), transparent 18rem),
+        radial-gradient(circle at 24% 38%, rgba(55,232,255,.2), transparent 20rem);
+    }
+
+    .brand {
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      font-size: .78rem;
+    }
+
+    h1 {
+      margin: .75rem 0;
+      max-width: 10ch;
+      font-size: clamp(2.35rem, 6vw, 4.7rem);
+      line-height: .9;
+      letter-spacing: 0;
+      text-shadow: 0 0 36px rgba(55, 232, 255, .2);
+    }
+
+    .hero p {
+      max-width: 52ch;
+      color: var(--muted);
+      font-size: .94rem;
+      line-height: 1.45;
+    }
+
+    .neon-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .65rem;
+    }
+
+    .chip {
+      border: 1px solid rgba(255, 67, 209, .36);
+      color: #ffd8f5;
+      background: rgba(255, 67, 209, .09);
+      border-radius: 999px;
+      padding: .42rem .68rem;
+      font-size: .84rem;
+    }
+
+    .setup {
+      padding: clamp(.85rem, 2vw, 1.1rem);
+      display: grid;
+      gap: .72rem;
+    }
+
+    .setup h2, .panel h2, .panel h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: .03em;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .7rem;
+    }
+
+    .choice {
+      min-height: 118px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: .48rem;
+      justify-content: space-between;
+      border-color: rgba(255,255,255,.13);
+    }
+
+    .choice.active {
+      border-color: var(--cyan);
+      background: linear-gradient(135deg, rgba(55,232,255,.16), rgba(255,67,209,.12));
+      box-shadow: inset 0 0 0 1px rgba(55,232,255,.18), 0 0 32px rgba(55,232,255,.16);
+    }
+
+    .choice strong {
+      display: block;
+      font-size: 1.02rem;
+    }
+
+    .choice span, .field small {
+      color: var(--muted);
+      line-height: 1.4;
+      font-size: .86rem;
+    }
+
+    .field {
+      display: grid;
+      gap: .45rem;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: .82rem;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+    }
+
+    .start {
+      background: linear-gradient(90deg, rgba(55,232,255,.28), rgba(255,67,209,.28));
+      border-color: rgba(255,255,255,.28);
+      font-weight: 800;
+    }
+
+    .game {
+      height: 100vh;
+      padding: clamp(.35rem, 1vw, .8rem);
+      display: grid;
+      grid-template-columns: minmax(210px, 280px) minmax(0, 1fr) minmax(220px, 300px);
+      gap: clamp(.35rem, 1vw, .8rem);
+      overflow: hidden;
+    }
+
+    .panel {
+      min-height: 0;
+      padding: clamp(.55rem, 1.1vw, .9rem);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(.45rem, 1vw, .85rem);
+      overflow: hidden;
+    }
+
+    .score-grid, .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .55rem;
+    }
+
+    .metric {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.04);
+      border-radius: var(--radius);
+      padding: .62rem;
+      min-height: 68px;
+    }
+
+    .metric b {
+      display: block;
+      color: var(--cyan);
+      font-size: 1.3rem;
+      line-height: 1.1;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: .76rem;
+    }
+
+    .table {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: minmax(86px, 112px) minmax(0, 1fr) minmax(124px, 152px);
+      gap: clamp(.35rem, 1vw, .8rem);
+      overflow: hidden;
+    }
+
+    .player-zone {
+      position: relative;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(8, 12, 22, .5);
+      border-radius: var(--radius);
+      padding: clamp(.48rem, 1vw, .7rem);
+      display: flex;
+      flex-direction: column;
+      gap: .42rem;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .player-zone.active-turn {
+      border-color: var(--cyan);
+      box-shadow: inset 0 0 24px rgba(55,232,255,.1);
+    }
+
+    .turn-status {
+      position: absolute;
+      right: .55rem;
+      top: 2rem;
+      width: 1.35rem;
+      height: 1.35rem;
+      display: none;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, .48);
+      border: 1px solid rgba(255,255,255,.2);
+      font-size: 1rem;
+      font-weight: 900;
+      line-height: 1;
+      z-index: 2;
+    }
+
+    .turn-status.played {
+      display: grid;
+      color: var(--success);
+      border-color: rgba(125, 255, 181, .6);
+      box-shadow: 0 0 18px rgba(125, 255, 181, .22);
+    }
+
+    .turn-status.passed {
+      display: grid;
+      color: var(--danger);
+      border-color: rgba(255, 111, 145, .64);
+      box-shadow: 0 0 18px rgba(255, 111, 145, .22);
+    }
+
+    .player-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .6rem;
+      min-width: 0;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .player-head strong {
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+    }
+
+    .player-dot,
+    .played-dot {
+      width: .72rem;
+      height: .72rem;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--player-color, var(--cyan));
+      box-shadow: 0 0 14px var(--player-glow, rgba(55, 232, 255, .5));
+      border: 1px solid rgba(255,255,255,.58);
+    }
+
+    .played-dot {
+      position: absolute;
+      left: 50%;
+      top: -10px;
+      transform: translateX(-50%);
+      width: .78rem;
+      height: .78rem;
+      z-index: 2;
+    }
+
+    .opponents {
+      display: grid;
+      grid-template-columns: 120px minmax(0, 1fr) 120px;
+      gap: .8rem;
+    }
+
+    .side-hand .hand {
+      flex-direction: column;
+      align-items: center;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .board-wrap {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      border: 1px solid rgba(119,244,255,.22);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background:
+        linear-gradient(140deg, rgba(255,255,255,.06), rgba(255,255,255,.015)),
+        rgba(5, 10, 18, .62);
+      backdrop-filter: blur(14px);
+      box-shadow: inset 0 0 90px rgba(55,232,255,.05), var(--shadow);
+    }
+
+    .board-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(55,232,255,.08) 1px, transparent 1px),
+        linear-gradient(rgba(255,67,209,.07) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: radial-gradient(circle, #000 10%, transparent 78%);
+      pointer-events: none;
+    }
+
+    .board {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .empty-board {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      margin: auto;
+      color: rgba(238,250,255,.52);
+      text-align: center;
+      line-height: 1.45;
+      padding: 1rem;
+    }
+
+    .hand {
+      display: flex;
+      gap: .42rem;
+      align-items: center;
+      overflow-x: auto;
+      padding-bottom: .2rem;
+      min-height: 64px;
+      min-width: 0;
+    }
+
+    .tile {
+      flex: 0 0 auto;
+      width: 70px;
+      height: 34px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,.78);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.96), rgba(199,223,232,.92));
+      color: var(--tile-ink);
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr;
+      align-items: center;
+      box-shadow: 0 7px 16px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.35);
+      user-select: none;
+      font-weight: 900;
+      position: relative;
+    }
+
+    .tile.vertical {
+      width: 34px;
+      height: 70px;
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr 1px 1fr;
+    }
+
+    .tile.hidden {
+      background:
+        linear-gradient(135deg, rgba(18,32,48,.95), rgba(7,12,22,.95)),
+        repeating-linear-gradient(45deg, rgba(55,232,255,.18) 0 4px, rgba(255,67,209,.18) 4px 8px);
+      border-color: rgba(55,232,255,.42);
+      color: transparent;
+    }
+
+    .tile.playable {
+      cursor: pointer;
+      border-color: var(--cyan);
+      box-shadow: 0 0 24px rgba(55,232,255,.26), 0 9px 18px rgba(0,0,0,.32);
+    }
+
+    .tile.selected {
+      transform: translateY(-8px);
+      border-color: var(--magenta);
+      box-shadow: 0 0 30px rgba(255,67,209,.3), 0 9px 18px rgba(0,0,0,.32);
+    }
+
+    .half {
+      display: grid;
+      place-items: center;
+      height: 100%;
+      font-size: .95rem;
+    }
+
+    .divider {
+      width: 1px;
+      height: 84%;
+      background: rgba(17,23,34,.34);
+    }
+
+    .vertical .divider {
+      width: 84%;
+      height: 1px;
+      justify-self: center;
+    }
+
+    .pip {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.04);
+    }
+
+    .pip-grid {
+      width: 24px;
+      height: 24px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      place-items: center;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .55rem;
+    }
+
+    .player-controls {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: .35rem;
+    }
+
+    .player-controls button {
+      padding: .48rem .36rem;
+      min-width: 0;
+      font-size: clamp(.72rem, 1.4vw, .86rem);
+      white-space: nowrap;
+    }
+
+    .log {
+      min-height: 0;
+      max-height: none;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: .45rem;
+      padding-right: .2rem;
+    }
+
+    .log-entry {
+      border-left: 2px solid rgba(55,232,255,.42);
+      padding: .38rem .48rem;
+      color: var(--muted);
+      background: rgba(255,255,255,.035);
+      border-radius: 0 6px 6px 0;
+      font-size: .82rem;
+      line-height: 1.35;
+    }
+
+    .rules {
+      color: var(--muted);
+      font-size: .84rem;
+      line-height: 1.5;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: rgba(0,0,0,.62);
+      z-index: 10;
+      padding: 1rem;
+    }
+
+    .modal.active { display: grid; }
+
+    .modal-card {
+      width: min(560px, 100%);
+      padding: 1rem;
+      display: grid;
+      gap: .8rem;
+    }
+
+    .modal-card p {
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .end-buttons {
+      display: flex;
+      gap: .55rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 1040px) {
+      .game {
+        grid-template-columns: minmax(170px, 210px) minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr) 132px;
+      }
+      .table {
+        min-height: 0;
+      }
+      .left-panel {
+        grid-column: 1;
+        grid-row: 1;
+      }
+      .table {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+      }
+      .right-panel {
+        grid-column: 1;
+        grid-row: 2;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .menu-shell, .choice-grid, .score-grid {
+        grid-template-columns: 1fr;
+      }
+      .game {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+      .left-panel {
+        grid-column: 1;
+        grid-row: 1;
+      }
+      .right-panel {
+        display: none;
+      }
+      .table {
+        grid-column: 1;
+        grid-row: 2;
+        grid-template-rows: minmax(64px, 82px) minmax(0, 1fr) minmax(106px, 130px);
+      }
+      .hero {
+        min-height: 0;
+      }
+      .menu-shell {
+        overflow: auto;
+      }
+      .opponents {
+        grid-template-columns: 78px minmax(0, 1fr) 78px;
+        gap: .35rem;
+      }
+      .side-hand .hand {
+        flex-direction: column;
+        overflow-y: auto;
+      }
+      .tile {
+        width: 62px;
+        height: 31px;
+      }
+      .tile.vertical {
+        width: 31px;
+        height: 62px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="menuScreen" class="menu active">
+    <section class="menu-shell">
+      <div class="hero glass">
+        <div>
+          <div class="brand">Puerto Rican and Cuban dominoes</div>
+          <h1>Neon Domino</h1>
+          <p>Choose the island rules, pick the opposing table strength, and play 2v2 with a calculating computer partner across a frosty glass table.</p>
+        </div>
+        <div class="neon-row">
+          <span class="chip">2 vs 2</span>
+          <span class="chip">No hints</span>
+          <span class="chip">Partner AI</span>
+          <span class="chip">Pass deduction</span>
+        </div>
+      </div>
+
+      <div class="setup glass">
+        <h2>Game Setup</h2>
+        <div class="choice-grid" role="group" aria-label="Domino variant">
+          <button class="choice active" id="pickPR" type="button">
+            <strong>Puerto Rican Doble Seis</strong>
+            <span>28 tiles, 7 each, no boneyard, first to 200. The double six opens the first round.</span>
+          </button>
+          <button class="choice" id="pickCU" type="button">
+            <strong>Cuban Doble Nueve</strong>
+            <span>55 tiles, 9 each, 19 locked away, first to 100 or 150. The double nine opens the first round.</span>
+          </button>
+        </div>
+
+        <div class="field">
+          <label for="difficulty">Opponent Difficulty</label>
+          <select id="difficulty">
+            <option value="easy">Heuristic Rule Engine - Easy</option>
+            <option value="moderate">Expectiminimax Lite - Moderate</option>
+            <option value="advanced" selected>Information Set Search - Advanced</option>
+          </select>
+          <small>Your partner always uses the strongest available table evaluation.</small>
+        </div>
+
+        <div class="field" id="cubaGoalField" hidden>
+          <label for="cubaGoal">Cuban Match Goal</label>
+          <select id="cubaGoal">
+            <option value="100">100 points</option>
+            <option value="150" selected>150 points</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="openingRule">After Round One</label>
+          <select id="openingRule">
+            <option value="winner" selected>Previous round winner opens</option>
+            <option value="rotation">Opening turn rotates clockwise</option>
+          </select>
+        </div>
+
+        <button class="start" id="startGame" type="button" onclick="startMatch()">Start Match</button>
+      </div>
+    </section>
+  </main>
+
+  <main id="gameScreen" class="screen active">
+    <section class="game">
+      <aside class="panel glass left-panel">
+        <h2 id="variantTitle">Dominoes</h2>
+        <div class="score-grid">
+          <div class="metric"><b id="teamAScore">0</b><span>You and Partner</span></div>
+          <div class="metric"><b id="teamBScore">0</b><span>Opponents</span></div>
+        </div>
+        <div class="info-grid">
+          <div class="metric"><b id="roundNo">1</b><span>Round</span></div>
+          <div class="metric"><b id="targetScore">200</b><span>Target</span></div>
+        </div>
+        <div class="rules" id="ruleSummary"></div>
+        <div class="controls">
+          <button id="newRound" type="button">New Round</button>
+          <button id="backMenu" type="button">Menu</button>
+        </div>
+      </aside>
+
+      <section class="table">
+        <div class="player-zone" id="p2zone">
+          <div class="player-head"><strong><span class="player-dot" id="p2dot"></span>Partner</strong><span id="p2meta">Team A</span></div>
+          <div class="hand" id="p2hand"></div>
+          <div class="turn-status" id="p2status" aria-hidden="true"></div>
+        </div>
+
+        <div class="opponents">
+          <div class="player-zone side-hand" id="p3zone">
+            <div class="player-head"><strong><span class="player-dot" id="p3dot"></span>Opponent L</strong><span id="p3meta">Team B</span></div>
+            <div class="hand" id="p3hand"></div>
+            <div class="turn-status" id="p3status" aria-hidden="true"></div>
+          </div>
+          <div class="board-wrap">
+            <div class="board" id="board"></div>
+          </div>
+          <div class="player-zone side-hand" id="p1zone">
+            <div class="player-head"><strong><span class="player-dot" id="p1dot"></span>Opponent R</strong><span id="p1meta">Team B</span></div>
+            <div class="hand" id="p1hand"></div>
+            <div class="turn-status" id="p1status" aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <div class="player-zone" id="p0zone">
+          <div class="player-head"><strong><span class="player-dot" id="p0dot"></span>You</strong><span id="p0meta">Team A</span></div>
+          <div class="hand" id="p0hand"></div>
+          <div class="controls player-controls">
+            <button id="playLeft" type="button" disabled>Play Left</button>
+            <button id="playRight" type="button" disabled>Play Right</button>
+            <button id="passTurn" type="button" disabled>Pass</button>
+            <button id="hintMove" type="button">Hint</button>
+            <button id="cheatPartner" type="button">Cheat</button>
+          </div>
+          <div class="turn-status" id="p0status" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <aside class="panel glass right-panel">
+        <h2>Table Log</h2>
+        <div class="log" id="log"></div>
+      </aside>
+    </section>
+  </main>
+
+  <div class="modal" id="roundModal" aria-live="polite">
+    <div class="modal-card glass">
+      <h2 id="modalTitle">Round Over</h2>
+      <p id="modalText"></p>
+      <div class="end-buttons">
+        <button id="continueRound" type="button">Continue</button>
+        <button id="modalMenu" type="button">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const players = [
+      { name: "You", team: "A", color: "#37e8ff", glow: "rgba(55, 232, 255, .65)", human: true, hand: [], passes: new Set(), lastAction: null },
+      { name: "Opponent R", team: "B", color: "#ff43d1", glow: "rgba(255, 67, 209, .65)", hand: [], passes: new Set(), lastAction: null },
+      { name: "Partner", team: "A", color: "#7dffb5", glow: "rgba(125, 255, 181, .62)", hand: [], passes: new Set(), lastAction: null },
+      { name: "Opponent L", team: "B", color: "#ffd166", glow: "rgba(255, 209, 102, .62)", hand: [], passes: new Set(), lastAction: null }
+    ];
+
+    const state = {
+      variant: "pr",
+      difficulty: "advanced",
+      openingRule: "winner",
+      target: 200,
+      round: 1,
+      scores: { A: 0, B: 0 },
+      current: 0,
+      firstRound: true,
+      nextOpener: null,
+      board: [],
+      leftEnd: null,
+      rightEnd: null,
+      selectedTileId: null,
+      lock: false,
+      history: [],
+      boneyard: [],
+      openingTileId: null,
+      matchStarted: false,
+      partnerReveal: false,
+      partnerRevealTimer: null,
+      knowledge: Array.from({ length: 4 }, () => new Set())
+    };
+
+    const settings = {
+      pr: {
+        name: "Puerto Rican Doble Seis",
+        max: 6,
+        hand: 7,
+        goal: 200,
+        scoring: "Winning team scores every remaining pip except the player who finished. In a block, the lowest team wins and scores the other three hands.",
+        summary: "28 tiles. All tiles are dealt. Passes reveal exact absence of an open number."
+      },
+      cu: {
+        name: "Cuban Doble Nueve",
+        max: 9,
+        hand: 9,
+        goal: 150,
+        scoring: "Winning team only counts pips left in the two opponents' hands. Partner pips are discarded.",
+        summary: "55 tiles. 36 are dealt and 19 remain locked in El Chucho, so missing tiles are uncertain."
+      }
+    };
+
+    function tileId(a, b) {
+      return a <= b ? `${a}-${b}` : `${b}-${a}`;
+    }
+
+    function makeTile(a, b) {
+      return { a, b, id: tileId(a, b) };
+    }
+
+    function buildSet(max) {
+      const tiles = [];
+      for (let a = 0; a <= max; a++) {
+        for (let b = a; b <= max; b++) tiles.push(makeTile(a, b));
+      }
+      return tiles;
+    }
+
+    function shuffle(items) {
+      const copy = [...items];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function pips(tile) {
+      return tile.a + tile.b;
+    }
+
+    function handPips(playerIndex) {
+      return players[playerIndex].hand.reduce((sum, tile) => sum + pips(tile), 0);
+    }
+
+    function isDouble(tile) {
+      return tile.a === tile.b;
+    }
+
+    function pipFace(n) {
+      const spots = {
+        0: [],
+        1: [5],
+        2: [1, 9],
+        3: [1, 5, 9],
+        4: [1, 3, 7, 9],
+        5: [1, 3, 5, 7, 9],
+        6: [1, 3, 4, 6, 7, 9],
+        7: [1, 2, 3, 5, 7, 8, 9],
+        8: [1, 2, 3, 4, 6, 7, 8, 9],
+        9: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      };
+      const wrap = document.createElement("div");
+      wrap.className = "pip-grid";
+      for (let i = 1; i <= 9; i++) {
+        const dot = document.createElement("span");
+        if (spots[n].includes(i)) dot.className = "pip";
+        wrap.appendChild(dot);
+      }
+      return wrap;
+    }
+
+    function tileElement(tile, options = {}) {
+      const el = document.createElement("div");
+      el.className = `tile${options.hidden ? " hidden" : ""}${options.vertical ? " vertical" : ""}`;
+      el.dataset.id = tile.id;
+      if (options.hidden) return el;
+      if (options.playedBy !== undefined && players[options.playedBy]) {
+        const dot = document.createElement("span");
+        dot.className = "played-dot";
+        dot.title = `Played by ${players[options.playedBy].name}`;
+        dot.style.setProperty("--player-color", players[options.playedBy].color);
+        dot.style.setProperty("--player-glow", players[options.playedBy].glow);
+        el.appendChild(dot);
+      }
+      const left = document.createElement("div");
+      left.className = "half";
+      left.appendChild(pipFace(tile.a));
+      const divider = document.createElement("div");
+      divider.className = "divider";
+      const right = document.createElement("div");
+      right.className = "half";
+      right.appendChild(pipFace(tile.b));
+      el.append(left, divider, right);
+      return el;
+    }
+
+    function possibleMoves(playerIndex, board = state.board, left = state.leftEnd, right = state.rightEnd) {
+      const hand = players[playerIndex].hand;
+      if (!board.length) return hand.map((tile) => ({ tile, side: "center", score: 0 }));
+      const moves = [];
+      for (const tile of hand) {
+        if (tile.a === left || tile.b === left) moves.push({ tile, side: "left" });
+        if (tile.a === right || tile.b === right) moves.push({ tile, side: "right" });
+      }
+      return moves;
+    }
+
+    function legalHumanMoves() {
+      let moves = possibleMoves(0);
+      if (state.firstRound && !state.board.length) {
+        moves = moves.filter((move) => move.tile.id === state.openingTileId);
+      }
+      return moves;
+    }
+
+    function orientMove(tile, side) {
+      if (!state.board.length || side === "center") return { tile: { ...tile }, leftEnd: tile.a, rightEnd: tile.b };
+      if (side === "left") {
+        const placed = tile.b === state.leftEnd ? { a: tile.a, b: tile.b } : { a: tile.b, b: tile.a };
+        return { tile: placed, leftEnd: placed.a, rightEnd: state.rightEnd };
+      }
+      const placed = tile.a === state.rightEnd ? { a: tile.a, b: tile.b } : { a: tile.b, b: tile.a };
+      return { tile: placed, leftEnd: state.leftEnd, rightEnd: placed.b };
+    }
+
+    function removeTile(playerIndex, id) {
+      const hand = players[playerIndex].hand;
+      const idx = hand.findIndex((tile) => tile.id === id);
+      return idx >= 0 ? hand.splice(idx, 1)[0] : null;
+    }
+
+    function playMove(playerIndex, move) {
+      const removed = removeTile(playerIndex, move.tile.id);
+      if (!removed) return false;
+      const oriented = orientMove(removed, move.side);
+      oriented.tile.playedBy = playerIndex;
+      if (!state.board.length || move.side === "center") state.board.push(oriented.tile);
+      else if (move.side === "left") state.board.unshift(oriented.tile);
+      else state.board.push(oriented.tile);
+      state.leftEnd = oriented.leftEnd;
+      state.rightEnd = oriented.rightEnd;
+      players[playerIndex].passes.clear();
+      players[playerIndex].lastAction = "played";
+      state.selectedTileId = null;
+      log(`${players[playerIndex].name} played ${removed.a}|${removed.b}${move.side === "center" ? "" : ` on ${move.side}`}.`);
+      return true;
+    }
+
+    function passPlayer(playerIndex) {
+      if (state.leftEnd !== null) players[playerIndex].passes.add(state.leftEnd);
+      if (state.rightEnd !== null) players[playerIndex].passes.add(state.rightEnd);
+      players[playerIndex].lastAction = "passed";
+      log(`${players[playerIndex].name} passed.`);
+    }
+
+    function nextPlayer() {
+      state.current = (state.current + 1) % 4;
+    }
+
+    function log(message) {
+      state.history.unshift(message);
+      state.history = state.history.slice(0, 80);
+      renderLog();
+    }
+
+    function startMatch() {
+      state.variant = $("pickPR").classList.contains("active") ? "pr" : "cu";
+      state.difficulty = $("difficulty").value;
+      state.openingRule = $("openingRule").value;
+      state.target = state.variant === "cu" ? Number($("cubaGoal").value) : 200;
+      state.round = 1;
+      state.scores = { A: 0, B: 0 };
+      state.firstRound = true;
+      state.nextOpener = null;
+      state.history = [];
+      state.matchStarted = true;
+      state.partnerReveal = false;
+      if (state.partnerRevealTimer) clearTimeout(state.partnerRevealTimer);
+      state.partnerRevealTimer = null;
+      $("menuScreen").classList.remove("active");
+      setupRound();
+    }
+
+    function closeSetupMenu() {
+      if (!state.matchStarted) return;
+      $("menuScreen").classList.remove("active");
+    }
+
+    function setupRound() {
+      const cfg = settings[state.variant];
+      state.board = [];
+      state.leftEnd = null;
+      state.rightEnd = null;
+      state.selectedTileId = null;
+      state.lock = false;
+      state.boneyard = [];
+      state.openingTileId = null;
+      state.knowledge = Array.from({ length: 4 }, () => new Set());
+      for (const player of players) {
+        player.hand = [];
+        player.passes = new Set();
+        player.lastAction = null;
+      }
+
+      const stack = shuffle(buildSet(cfg.max));
+      for (let c = 0; c < cfg.hand; c++) {
+        for (let p = 0; p < 4; p++) players[p].hand.push(stack.pop());
+      }
+      state.boneyard = stack;
+
+      const requiredDouble = tileId(cfg.max, cfg.max);
+      if (state.firstRound) {
+        state.openingTileId = requiredDouble;
+        state.current = players.findIndex((player) => player.hand.some((tile) => tile.id === requiredDouble));
+        if (state.current === -1) {
+          const fallback = highestPlayableOpening();
+          state.openingTileId = fallback.id;
+          state.current = fallback.playerIndex;
+          log(`${cfg.max}|${cfg.max} is locked away. Highest double ${fallback.tile.a}|${fallback.tile.b} opens.`);
+        }
+      } else if (state.nextOpener !== null) {
+        state.current = state.nextOpener;
+      }
+
+      sortHands();
+      log(`Round ${state.round} started: ${cfg.name}.`);
+      render();
+      setTimeout(runTurn, 450);
+    }
+
+    function highestPlayableOpening() {
+      let best = null;
+      for (let playerIndex = 0; playerIndex < players.length; playerIndex++) {
+        for (const tile of players[playerIndex].hand) {
+          const value = isDouble(tile) ? 100 + tile.a : pips(tile);
+          if (!best || value > best.value) best = { playerIndex, tile, id: tile.id, value };
+        }
+      }
+      return best;
+    }
+
+    function sortHands() {
+      for (const player of players) {
+        player.hand.sort((x, y) => (y.a + y.b) - (x.a + x.b) || y.a - x.a || y.b - x.b);
+      }
+    }
+
+    function scoreMove(playerIndex, move, mode = "advanced") {
+      const tile = move.tile;
+      const team = players[playerIndex].team;
+      const partner = (playerIndex + 2) % 4;
+      const opponents = [1, 3].includes(playerIndex) ? [0, 2] : [1, 3];
+      const cfg = settings[state.variant];
+      const remaining = players[playerIndex].hand.length - 1;
+      let score = pips(tile) * 1.3;
+
+      if (isDouble(tile)) score += 2.4;
+      if (remaining === 0) score += 1000;
+      if (state.board.length === 0 && isDouble(tile)) score += 8;
+
+      const after = simulateEnds(tile, move.side);
+      const ownNext = players[playerIndex].hand.filter((t) => t.id !== tile.id).some((t) => t.a === after.left || t.b === after.left || t.a === after.right || t.b === after.right);
+      if (ownNext) score += 3;
+
+      for (const opp of opponents) {
+        if (players[opp].passes.has(after.left)) score += 4;
+        if (players[opp].passes.has(after.right)) score += 4;
+      }
+      if (players[partner].passes.has(after.left)) score -= 3.5;
+      if (players[partner].passes.has(after.right)) score -= 3.5;
+
+      const leftCount = countKnownPips(playerIndex, after.left);
+      const rightCount = countKnownPips(playerIndex, after.right);
+      score += (leftCount + rightCount) * .45;
+
+      if (mode !== "easy") {
+        score += defensivePressure(playerIndex, tile, after) * (mode === "advanced" ? 1.15 : .65);
+        score -= openOpponentMobility(playerIndex, tile, after) * (mode === "advanced" ? 1.35 : .75);
+      }
+
+      if (mode === "advanced") {
+        score += informationSetBonus(playerIndex, tile, after, cfg.max);
+        if (team === "A") score += partnerProtection(playerIndex, after);
+      }
+
+      return score + Math.random() * .01;
+    }
+
+    function simulateEnds(tile, side) {
+      if (!state.board.length || side === "center") return { left: tile.a, right: tile.b };
+      if (side === "left") return { left: tile.a === state.leftEnd ? tile.b : tile.a, right: state.rightEnd };
+      return { left: state.leftEnd, right: tile.a === state.rightEnd ? tile.b : tile.a };
+    }
+
+    function countKnownPips(playerIndex, n) {
+      return players[playerIndex].hand.filter((tile) => tile.a === n || tile.b === n).length;
+    }
+
+    function defensivePressure(playerIndex, tile, after) {
+      const opponents = [1, 3].includes(playerIndex) ? [0, 2] : [1, 3];
+      let pressure = 0;
+      for (const opp of opponents) {
+        if (players[opp].passes.has(after.left) || players[opp].passes.has(after.right)) pressure += 6;
+        if (players[opp].hand.length <= 2) pressure += pips(tile) > 8 ? 2 : -2;
+      }
+      return pressure;
+    }
+
+    function openOpponentMobility(playerIndex, tile, after) {
+      const opponents = [1, 3].includes(playerIndex) ? [0, 2] : [1, 3];
+      let mobility = 0;
+      for (const opp of opponents) {
+        if (!players[opp].passes.has(after.left)) mobility += .8;
+        if (!players[opp].passes.has(after.right)) mobility += .8;
+        if (players[opp].hand.length <= 2) mobility += 1.2;
+      }
+      return mobility;
+    }
+
+    function informationSetBonus(playerIndex, tile, after, max) {
+      const unseen = buildSet(max).filter((t) => !isSeenByAI(playerIndex, t.id));
+      const leftScarce = unseen.filter((t) => t.a === after.left || t.b === after.left).length;
+      const rightScarce = unseen.filter((t) => t.a === after.right || t.b === after.right).length;
+      return (7 - Math.min(7, leftScarce)) + (7 - Math.min(7, rightScarce));
+    }
+
+    function isSeenByAI(playerIndex, id) {
+      if (players[playerIndex].hand.some((tile) => tile.id === id)) return true;
+      if (state.board.some((tile) => tile.id === id)) return true;
+      return false;
+    }
+
+    function partnerProtection(playerIndex, after) {
+      const partner = (playerIndex + 2) % 4;
+      let value = 0;
+      if (players[partner].hand.some((tile) => tile.a === after.left || tile.b === after.left)) value += 2.2;
+      if (players[partner].hand.some((tile) => tile.a === after.right || tile.b === after.right)) value += 2.2;
+      return value;
+    }
+
+    function chooseMove(playerIndex, forcedOpening = false) {
+      let moves = possibleMoves(playerIndex);
+      if (forcedOpening) moves = moves.filter((move) => move.tile.id === state.openingTileId);
+      if (!moves.length) return null;
+      const aiMode = players[playerIndex].team === "A" ? "advanced" : state.difficulty;
+      moves.forEach((move) => move.score = scoreMove(playerIndex, move, aiMode));
+      moves.sort((a, b) => b.score - a.score);
+      return moves[0];
+    }
+
+    function runTurn() {
+      if (state.lock) return;
+      render();
+      const current = state.current;
+      const cfg = settings[state.variant];
+      const forcedOpening = state.firstRound && state.board.length === 0;
+      if (players[current].human) {
+        const moves = legalHumanMoves();
+        if (forcedOpening) {
+          state.selectedTileId = state.openingTileId;
+        }
+        if (!moves.length) $("passTurn").disabled = false;
+        render();
+        return;
+      }
+      state.lock = true;
+      setTimeout(() => {
+        const move = chooseMove(current, forcedOpening);
+        if (move) playMove(current, move);
+        else passPlayer(current);
+        state.lock = false;
+        afterTurn(current);
+      }, 650);
+    }
+
+    function afterTurn(playerIndex) {
+      render();
+      if (players[playerIndex].hand.length === 0) {
+        finishRound({ type: "domino", winnerTeam: players[playerIndex].team, finisher: playerIndex });
+        return;
+      }
+      if (isBlocked()) {
+        const aPips = handPips(0) + handPips(2);
+        const bPips = handPips(1) + handPips(3);
+        const winnerTeam = aPips <= bPips ? "A" : "B";
+        const finisher = winnerTeam === "A" ? (handPips(0) <= handPips(2) ? 0 : 2) : (handPips(1) <= handPips(3) ? 1 : 3);
+        finishRound({ type: "blocked", winnerTeam, finisher, aPips, bPips });
+        return;
+      }
+      nextPlayer();
+      setTimeout(runTurn, 250);
+    }
+
+    function isBlocked() {
+      if (!state.board.length) return false;
+      return players.every((_, idx) => possibleMoves(idx).length === 0);
+    }
+
+    function finishRound(result) {
+      state.lock = true;
+      const cfg = settings[state.variant];
+      let points = 0;
+      if (state.variant === "pr") {
+        points = [0, 1, 2, 3].filter((idx) => idx !== result.finisher).reduce((sum, idx) => sum + handPips(idx), 0);
+      } else {
+        const opponents = result.winnerTeam === "A" ? [1, 3] : [0, 2];
+        points = opponents.reduce((sum, idx) => sum + handPips(idx), 0);
+      }
+      state.scores[result.winnerTeam] += points;
+      const winnerName = result.winnerTeam === "A" ? "You and Partner" : "Opponents";
+      const reason = result.type === "domino" ? `${players[result.finisher].name} emptied their hand.` : `Blocked table: Team A ${result.aPips}, Team B ${result.bPips}.`;
+      log(`${winnerName} win the round for ${points} points.`);
+
+      const matchOver = state.scores[result.winnerTeam] >= state.target;
+      $("modalTitle").textContent = matchOver ? `${winnerName} Win the Match` : `${winnerName} Win the Round`;
+      $("modalText").textContent = `${reason} ${cfg.scoring} Round points: ${points}. Score is A ${state.scores.A} to B ${state.scores.B}.`;
+      $("continueRound").textContent = matchOver ? "New Match" : "Next Round";
+      $("roundModal").classList.add("active");
+
+      if (state.openingRule === "rotation") {
+        state.nextOpener = state.nextOpener === null ? (state.current + 1) % 4 : (state.nextOpener + 1) % 4;
+      } else {
+        state.nextOpener = result.finisher;
+      }
+      state.firstRound = false;
+    }
+
+    function continueAfterModal() {
+      $("roundModal").classList.remove("active");
+      if (state.scores.A >= state.target || state.scores.B >= state.target) {
+        $("menuScreen").classList.add("active");
+        return;
+      }
+      state.round += 1;
+      setupRound();
+    }
+
+    function humanPlay(side) {
+      if (state.current !== 0 || state.lock || !state.selectedTileId) return;
+      const tile = players[0].hand.find((t) => t.id === state.selectedTileId);
+      if (!tile) return;
+      const legal = legalHumanMoves().some((move) => move.tile.id === tile.id && (move.side === side || move.side === "center"));
+      if (!legal) return;
+      playMove(0, { tile, side: state.board.length ? side : "center" });
+      afterTurn(0);
+    }
+
+    function humanPass() {
+      if (state.current !== 0 || state.lock || legalHumanMoves().length) return;
+      passPlayer(0);
+      afterTurn(0);
+    }
+
+    function showHint() {
+      if (state.current !== 0) {
+        log("Hint: wait for your turn.");
+        return;
+      }
+      const move = chooseMove(0, state.firstRound && !state.board.length);
+      if (!move) {
+        log("Hint: no legal tile. Pass.");
+        return;
+      }
+      state.selectedTileId = move.tile.id;
+      log(`Hint: play ${move.tile.a}|${move.tile.b}${move.side === "center" ? " to open" : ` on ${move.side}`}.`);
+      render();
+    }
+
+    function revealPartnerTiles() {
+      if (!state.matchStarted || state.partnerReveal) return;
+      state.partnerReveal = true;
+      renderHand(2);
+      $("cheatPartner").disabled = true;
+      if (state.partnerRevealTimer) clearTimeout(state.partnerRevealTimer);
+      state.partnerRevealTimer = setTimeout(() => {
+        state.partnerReveal = false;
+        $("cheatPartner").disabled = false;
+        renderHand(2);
+      }, 3000);
+    }
+
+    function render() {
+      const cfg = settings[state.variant];
+      $("variantTitle").textContent = cfg.name;
+      $("teamAScore").textContent = state.scores.A;
+      $("teamBScore").textContent = state.scores.B;
+      $("roundNo").textContent = state.round;
+      $("targetScore").textContent = state.target;
+      $("ruleSummary").textContent = `${cfg.summary} ${cfg.scoring}`;
+
+      for (let i = 0; i < 4; i++) {
+        $(`p${i}zone`).classList.toggle("active-turn", state.current === i && !state.lock);
+        $(`p${i}zone`).style.setProperty("--player-color", players[i].color);
+        $(`p${i}zone`).style.setProperty("--player-glow", players[i].glow);
+        $(`p${i}dot`).style.setProperty("--player-color", players[i].color);
+        $(`p${i}dot`).style.setProperty("--player-glow", players[i].glow);
+        renderTurnStatus(i);
+        $(`p${i}meta`).textContent = `${players[i].team === "A" ? "Team A" : "Team B"} - ${players[i].hand.length} tiles`;
+        renderHand(i);
+      }
+      renderBoard();
+      renderControls();
+      renderLog();
+    }
+
+    function renderHand(playerIndex) {
+      const wrap = $(`p${playerIndex}hand`);
+      wrap.innerHTML = "";
+      for (const tile of players[playerIndex].hand) {
+        const hidden = playerIndex !== 0 && !(playerIndex === 2 && state.partnerReveal);
+        const el = tileElement(tile, { hidden, vertical: playerIndex === 1 || playerIndex === 3 });
+        if (playerIndex === 0) {
+          const legal = legalHumanMoves().some((move) => move.tile.id === tile.id);
+          el.classList.toggle("playable", state.current === 0 && legal);
+          el.classList.toggle("selected", state.selectedTileId === tile.id);
+          el.addEventListener("click", () => {
+            if (state.current !== 0 || !legal) return;
+            state.selectedTileId = tile.id;
+            render();
+          });
+        }
+        wrap.appendChild(el);
+      }
+    }
+
+    function renderTurnStatus(playerIndex) {
+      const status = $(`p${playerIndex}status`);
+      const action = players[playerIndex].lastAction;
+      status.className = "turn-status";
+      status.textContent = "";
+      if (action === "played") {
+        status.classList.add("played");
+        status.textContent = "✓";
+      } else if (action === "passed") {
+        status.classList.add("passed");
+        status.textContent = "X";
+      }
+    }
+
+    function renderBoard() {
+      const board = $("board");
+      board.innerHTML = "";
+      if (!state.board.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-board";
+        const opener = state.openingTileId ? state.openingTileId.replace("-", "|") : `${settings[state.variant].max}|${settings[state.variant].max}`;
+        empty.textContent = state.firstRound ? `The ${opener} opens this match.` : "Opening player may lead any tile.";
+        board.appendChild(empty);
+        return;
+      }
+      state.board.forEach((tile) => {
+        const el = tileElement(tile, { vertical: isDouble(tile), playedBy: tile.playedBy });
+        el.classList.add("board-tile");
+        el.dataset.double = isDouble(tile) ? "true" : "false";
+        board.appendChild(el);
+      });
+      requestAnimationFrame(layoutBoardTiles);
+    }
+
+    function layoutBoardTiles() {
+      const board = $("board");
+      const tiles = [...board.querySelectorAll(".board-tile")];
+      if (!tiles.length) return;
+
+      const width = board.clientWidth;
+      const height = board.clientHeight;
+      if (!width || !height) return;
+
+      const smallest = Math.min(width, height);
+      const scale = Math.max(.68, Math.min(1, smallest / 420, width / 620));
+      const gap = Math.max(6, Math.round(12 * scale));
+      const margin = Math.max(14, Math.round(24 * scale));
+      const dotRoom = Math.max(10, Math.round(13 * scale));
+      const usableTop = margin + dotRoom;
+      const usableBottom = Math.max(usableTop + 32, height - margin);
+
+      if (tiles.length === 1) {
+        const tile = tiles[0];
+        tile.style.position = "absolute";
+        tile.style.setProperty("--tile-scale", scale);
+        tile.classList.toggle("vertical", tile.dataset.double === "true");
+        const tileWidth = tile.offsetWidth * scale;
+        const tileHeight = tile.offsetHeight * scale;
+        tile.style.left = `${Math.max(margin, (width - tileWidth) / 2)}px`;
+        tile.style.top = `${Math.max(dotRoom, (height - tileHeight) / 2)}px`;
+        tile.style.transform = `scale(${scale})`;
+        tile.style.transformOrigin = "top left";
+        return;
+      }
+
+      let x = margin;
+      let y = usableTop;
+      let direction = 1;
+      let rowHeight = 0;
+      let maxY = y;
+
+      tiles.forEach((tile) => {
+        tile.style.position = "absolute";
+        tile.style.setProperty("--tile-scale", scale);
+        tile.style.transform = "";
+        tile.classList.toggle("vertical", tile.dataset.double === "true");
+      });
+
+      tiles.forEach((tile) => {
+        let tileWidth = tile.offsetWidth * scale;
+        let tileHeight = tile.offsetHeight * scale;
+        const rowLimit = width - margin;
+
+        if (direction === 1 && x + tileWidth > rowLimit && rowHeight > 0) {
+          if (tile.dataset.double !== "true") {
+            tile.classList.add("vertical");
+            tileWidth = tile.offsetWidth * scale;
+            tileHeight = tile.offsetHeight * scale;
+          }
+          y += rowHeight + gap + dotRoom;
+          direction = -1;
+          x = rowLimit - tileWidth;
+          rowHeight = 0;
+        } else if (direction === -1 && x < margin && rowHeight > 0) {
+          if (tile.dataset.double !== "true") {
+            tile.classList.add("vertical");
+            tileWidth = tile.offsetWidth * scale;
+            tileHeight = tile.offsetHeight * scale;
+          }
+          y += rowHeight + gap + dotRoom;
+          direction = 1;
+          x = margin;
+          rowHeight = 0;
+        }
+
+        if (y + tileHeight > usableBottom) {
+          const overflow = y + tileHeight - usableBottom;
+          const previousRows = [...tiles].filter((el) => el.style.top);
+          previousRows.forEach((el) => {
+            const currentTop = Number.parseFloat(el.style.top) || 0;
+            el.style.top = `${Math.max(dotRoom, currentTop - overflow)}px`;
+          });
+          y = Math.max(dotRoom, usableBottom - tileHeight);
+        }
+
+        tile.style.left = `${Math.max(margin, Math.min(width - margin - tileWidth, x))}px`;
+        tile.style.top = `${y}px`;
+        tile.style.transform = `scale(${scale})`;
+        tile.style.transformOrigin = "top left";
+
+        rowHeight = Math.max(rowHeight, tileHeight);
+        maxY = Math.max(maxY, y + tileHeight);
+        x += direction * (tileWidth + gap);
+      });
+
+      if (maxY < height - margin) {
+        const usedTop = Math.min(...tiles.map((tile) => Number.parseFloat(tile.style.top) || 0));
+        const usedBottom = Math.max(...tiles.map((tile) => (Number.parseFloat(tile.style.top) || 0) + tile.offsetHeight * scale));
+        const lift = Math.max(0, ((height - usedBottom - usedTop) / 2) - dotRoom);
+        tiles.forEach((tile) => {
+          const currentTop = Number.parseFloat(tile.style.top) || 0;
+          tile.style.top = `${currentTop + lift}px`;
+        });
+      }
+    }
+
+    function renderControls() {
+      const selected = players[0].hand.find((tile) => tile.id === state.selectedTileId);
+      const humanMoves = legalHumanMoves();
+      const moves = selected ? humanMoves.filter((move) => move.tile.id === selected.id) : [];
+      const humanTurn = state.current === 0 && !state.lock;
+      $("playLeft").disabled = !humanTurn || !moves.some((move) => move.side === "left" || move.side === "center");
+      $("playRight").disabled = !humanTurn || !moves.some((move) => move.side === "right" || move.side === "center");
+      $("passTurn").disabled = !humanTurn || humanMoves.length > 0;
+    }
+
+    function renderLog() {
+      const logBox = $("log");
+      logBox.innerHTML = "";
+      state.history.forEach((line) => {
+        const entry = document.createElement("div");
+        entry.className = "log-entry";
+        entry.textContent = line;
+        logBox.appendChild(entry);
+      });
+    }
+
+    $("pickPR").addEventListener("click", () => {
+      $("pickPR").classList.add("active");
+      $("pickCU").classList.remove("active");
+      $("cubaGoalField").hidden = true;
+    });
+
+    $("pickCU").addEventListener("click", () => {
+      $("pickCU").classList.add("active");
+      $("pickPR").classList.remove("active");
+      $("cubaGoalField").hidden = false;
+    });
+
+    window.startMatch = startMatch;
+    $("startGame").addEventListener("click", startMatch);
+    $("playLeft").addEventListener("click", () => humanPlay("left"));
+    $("playRight").addEventListener("click", () => humanPlay("right"));
+    $("passTurn").addEventListener("click", humanPass);
+    $("hintMove").addEventListener("click", showHint);
+    $("cheatPartner").addEventListener("click", revealPartnerTiles);
+    $("continueRound").addEventListener("click", continueAfterModal);
+    $("modalMenu").addEventListener("click", () => {
+      $("roundModal").classList.remove("active");
+      $("menuScreen").classList.add("active");
+    });
+    $("backMenu").addEventListener("click", () => {
+      $("menuScreen").classList.add("active");
+    });
+    $("menuScreen").addEventListener("click", (event) => {
+      if (event.target === $("menuScreen")) closeSetupMenu();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && $("menuScreen").classList.contains("active")) closeSetupMenu();
+    });
+    $("newRound").addEventListener("click", setupRound);
+    window.addEventListener("resize", layoutBoardTiles);
+    if ("ResizeObserver" in window) {
+      new ResizeObserver(layoutBoardTiles).observe($("board"));
+    }
+  </script>
+</body>
+</html>
