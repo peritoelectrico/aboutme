@@ -1,5 +1,5 @@
 [
-  { "title": "HTML WYSIWYG", "url": "https://peritoelectrico.github.io/htmlEditor/editor-html.html", "icon": "fa-terminal",   "category": "Engineering"},
+  { "title": "HTML WYSIWYG",                      "url": "https://peritoelectrico.github.io/htmlEditor/editor-html.html", "icon": "fa-terminal",   "category": "Engineering"},
   { "title": "Connect Four 3D",                   "url": "Connect4.html",                        "icon": "fa-gamepad",   "category": "Game"         },
   { "title": "Pong Game 3D",                      "url": "PongGame.html",                        "icon": "fa-gamepad",   "category": "Physics Demo" },
   { "title": "Cuban, PR or American Parchis",     "url": "Parchis.html",                         "icon": "fa-gamepad",   "category": "Game"   },
